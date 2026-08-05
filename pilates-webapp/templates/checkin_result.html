@@ -3,28 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Check-in Presenza</title>
+    <title>Postura & Pilates - Esito Check-in</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-[#fff9fb] min-h-screen flex items-center justify-center p-4">
     <div class="max-w-md w-full bg-white border border-[#f9d1df] p-6 rounded-2xl shadow-xl text-center">
-        <h1 class="text-xl font-bold text-[#880E4F] mb-4">Postura & Pilates - Check-In</h1>
         
+        <!-- Brand Header -->
+        <h1 class="text-2xl font-bold text-[#880E4F] mb-1">Postura & Pilates</h1>
+        <p class="text-xs text-gray-500 mb-6">Esito Check-In Presenza</p>
+        
+        <!-- Messaggio di Successo -->
         {% if success %}
-            <div class="bg-green-100 border border-green-400 text-green-800 p-4 rounded-xl text-sm font-semibold mb-4">
-                ✓ {{ success }}
+            <div class="bg-emerald-100 border border-emerald-400 text-emerald-800 p-4 rounded-xl text-xs font-semibold mb-6 flex items-center justify-center gap-2 shadow-sm">
+                <span>✅</span>
+                <span>{{ success }}</span>
             </div>
         {% endif %}
 
+        <!-- Messaggio di Errore -->
         {% if error %}
-            <div class="bg-red-100 border border-red-400 text-red-800 p-4 rounded-xl text-sm font-semibold mb-4">
-                ✕ {{ error }}
+            <div class="bg-red-100 border border-red-400 text-red-800 p-4 rounded-xl text-xs font-semibold mb-6 flex items-center justify-center gap-2 shadow-sm">
+                <span>⚠️</span>
+                <span>{{ error }}</span>
             </div>
         {% endif %}
 
-        <a href="/prenota" class="inline-block bg-[#D81B60] text-white font-bold py-2.5 px-6 rounded-xl text-xs hover:bg-[#AD1457]">
+        <!-- Bottone di Ritorno -->
+        <a href="/prenota" class="inline-block w-full bg-gradient-to-r from-[#D81B60] to-[#AD1457] text-white font-bold py-3 px-6 rounded-xl text-xs hover:opacity-95 transition shadow-md">
             Torna all'area personale
         </a>
+        
     </div>
 </body>
 </html>
