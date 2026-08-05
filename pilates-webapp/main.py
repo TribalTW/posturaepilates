@@ -190,7 +190,6 @@ def effettua_prenotazione(
 
     ha_usato_prova = utente_ha_usato_prova(user['cf'])
 
-    # Blocco nel caso l'utente tenti di prenotare se ha GIÀ completato il check-in in passato per una Prova
     if "prova" in trattamento.lower() and ha_usato_prova:
         return templates.TemplateResponse(request=request, name="prenota.html", context={
             "user": user, 
@@ -223,13 +222,27 @@ def effettua_prenotazione(
         nome_completo_2 = f"{nome_2.strip().title()} {cognome_2.strip().title()}"
         cf_2_clean = cf_2.strip().upper()
 
+    # Calcolo posti occupati in tempo reale (Capienza massima = 2 lettini)
     with engine.begin() as conn:
-        occupati = [r[0] for r in conn.execute(text("SELECT ora FROM prenotazioni WHERE data = :d"), {"d": data}).fetchall()]
-        if ora in occupati:
+        prenotazioni_esistenti = conn.execute(
+            text("SELECT trattamento, COALESCE(stato, 'confermata') FROM prenotazioni WHERE data = :d AND ora = :o"), 
+            {"d": data, "o": ora}
+        ).fetchall()
+
+        posti_occupati = 0
+        for p_trattamento, p_stato in prenotazioni_esistenti:
+            if str(p_stato).lower() == 'cancellata':
+                continue
+            peso = 2 if "coppia" in str(p_trattamento).lower() else 1
+            posti_occupati += peso
+
+        posti_richiesti = 2 if "coppia" in trattamento.lower() else 1
+
+        if (posti_occupati + posti_richiesti) > 2:
             return templates.TemplateResponse(request=request, name="prenota.html", context={
                 "user": user, 
                 "ha_usato_prova": ha_usato_prova,
-                "error": "Spiacenti, questo orario è stato appena prenotato da qualcun altro!"
+                "error": "Spiacenti, i lettini per questo orario sono appena stati occupati da un'altra prenotazione!"
             })
 
         conn.execute(
@@ -272,47 +285,34 @@ def get_orari_disponibili(data: str):
         orari_bloccati = [r[0] for r in conn.execute(text("SELECT ora FROM blocchi WHERE data = :d AND ora IS NOT NULL"), {"d": data}).fetchall()]
         
         # Estrae le prenotazioni esistenti per calcolare quanti posti sono occupati
-        # Controlliamo il trattamento per capire se occupano 1 o 2 posti
         prenotazioni_giorno = conn.execute(
             text("SELECT ora, trattamento, COALESCE(stato, 'confermata') FROM prenotazioni WHERE data = :d"), 
             {"d": data}
         ).fetchall()
 
-    # Calcoliamo i posti occupati per ogni ora (Max 2 posti per slot)
+    # Calcoliamo i posti occupati per ogni ora (Max 2 posti / 2 lettini)
     posti_occupati_per_ora = {}
     for ora, trattamento, stato in prenotazioni_giorno:
-        if stato.lower() == 'cancellata': # Se gestisci le cancellazioni
+        if stato.lower() == 'cancellata':
             continue
         
-        # Di default occupano 1 posto (singolo). Se è coppia, occupa 2 posti.
         peso = 2 if "coppia" in trattamento.lower() else 1
-        
         posti_occupati_per_ora[ora] = posti_occupati_per_ora.get(ora, 0) + peso
 
     orari_teorici = logic.get_orari_per_data(dt)
     if not orari_teorici:
         return JSONResponse({"orari": []})
 
-    now_local = logic.get_current_time_local()
-    oggi_str = now_local.strftime("%Y-%m-%d")
-    ora_corrente = now_local.time()
+    # Filtra prima gli orari passati tramite la funzione centralizzata in logic.py
+    orari_filtrati = logic.get_orari_disponibili_filtrati(data, orari_teorici)
 
     orari_liberi = []
-    for o in orari_teorici:
-        # 1. Salta se l'orario è già passato (solo se la data è oggi)
-        if data == oggi_str:
-            try:
-                ora_obj = datetime.strptime(o, "%H:%M").time()
-                if ora_obj <= ora_corrente:
-                    continue
-            except ValueError:
-                pass
-
-        # 2. Salta se l'orario è bloccato dall'admin
+    for o in orari_filtrati:
+        # Salta se l'orario è bloccato dall'admin
         if o in orari_bloccati:
             continue
 
-        # 3. Verifica capienza (massimo 2 posti disponibili per slot)
+        # Verifica capienza (massimo 2 posti disponibili in totale per slot)
         posti_occupati = posti_occupati_per_ora.get(o, 0)
         if posti_occupati < 2:
             orari_liberi.append(o)
@@ -320,6 +320,37 @@ def get_orari_disponibili(data: str):
     return JSONResponse({"orari": orari_liberi})
 
 # --- AZIONI ADMIN ---
+@app.get("/admin", response_class=HTMLResponse)
+def admin_panel(request: Request, data: str = None):
+    user = request.session.get("user")
+    if not user or user.get("cf") != ADMIN_CF:
+        return RedirectResponse(url="/admin/login", status_code=303)
+
+    if not data:
+        data = logic.get_current_time_local().strftime("%Y-%m-%d")
+
+    with engine.begin() as conn:
+        prenotazioni = conn.execute(
+            text("""
+                SELECT id, nome, data, ora, trattamento, codice_fiscale, stato, 
+                       nome_2, codice_fiscale_2, stato_2 
+                FROM prenotazioni 
+                WHERE data = :d 
+                ORDER BY ora ASC
+            """),
+            {"d": data}
+        ).fetchall()
+
+        blocchi = conn.execute(text("SELECT id, data, ora FROM blocchi ORDER BY data ASC")).fetchall()
+        utenti = conn.execute(text("SELECT id, nome, cognome, codice_fiscale, data_registrazione, COALESCE(bannato, false) FROM utenti")).fetchall()
+
+    return templates.TemplateResponse(request=request, name="admin.html", context={
+        "prenotazioni": prenotazioni,
+        "blocchi": blocchi,
+        "utenti": utenti,
+        "data_selezionata": data
+    })
+
 @app.post("/admin/prenotazione/elimina")
 def elimina_prenotazione(request: Request, id_prenotazione: int = Form(...)):
     user = request.session.get("user")
