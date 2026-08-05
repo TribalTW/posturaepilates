@@ -20,6 +20,34 @@
             </a>
         </div>
 
+        <!-- SEZIONE 0: BOX QR CODE FISSO RECEPTION -->
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
+            <div class="space-y-2 text-center md:text-left">
+                <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full uppercase">Ingresso Studio</span>
+                <h2 class="text-xl font-bold text-blue-950">📱 QR Code Fisso Reception</h2>
+                <p class="text-sm text-blue-800 max-w-xl">
+                    Questo è il QR Code unico per il check-in. Stampalo o mostralo su un tablet/iPad all'ingresso dello studio. 
+                    I clienti lo inquadreranno con il telefono per confermare la loro presenza.
+                </p>
+                <div class="pt-2 flex flex-wrap gap-3 justify-center md:justify-start">
+                    <a href="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={{ request.base_url }}checkin" 
+                       target="_blank" 
+                       class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition shadow-sm">
+                        🖨️ Stampare / Ingrandire QR Code
+                    </a>
+                    <a href="/checkin" target="_blank" class="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-blue-700 border border-blue-300 text-xs font-semibold px-4 py-2.5 rounded-lg transition">
+                        🔗 Apri Pagina Check-in
+                    </a>
+                </div>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-blue-200 shadow-sm flex flex-col items-center shrink-0">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ request.base_url }}checkin" 
+                     alt="QR Code Fisso Reception" 
+                     class="w-32 h-32 rounded-lg">
+                <span class="text-[11px] text-gray-500 font-mono mt-2">URL: /checkin</span>
+            </div>
+        </div>
+
         <!-- SEZIONE 1: TABELLA PRENOTAZIONI -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h2 class="text-lg font-bold text-gray-800 mb-4">📅 Elenco Prenotazioni</h2>
@@ -31,7 +59,6 @@
                             <th class="p-3">Data e Ora</th>
                             <th class="p-3">Trattamento</th>
                             <th class="p-3">Partecipanti (Nome / CF)</th>
-                            <th class="p-3 text-center">QR Code Presenze</th>
                             <th class="p-3">Stato Presenza</th>
                             <th class="p-3 text-center">Azioni</th>
                         </tr>
@@ -71,20 +98,6 @@
                                 </div>
                                 {% endif %}
                             </td>
-
-                            <!-- QR Code Check-in / Presenze -->
-                            <td class="p-3 text-center">
-                                <div class="flex flex-col items-center justify-center space-y-1">
-                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ request.base_url }}checkin/{{ p[0] }}" 
-                                         alt="QR Code Prenotazione #{{ p[0] }}" 
-                                         class="w-16 h-16 border rounded bg-white p-1 shadow-sm hover:scale-105 transition cursor-pointer"
-                                         title="Clicca per ingrandire"
-                                         onclick="window.open('https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{ request.base_url }}checkin/{{ p[0] }}', '_blank')">
-                                    <a href="/checkin/{{ p[0] }}" target="_blank" class="text-xs text-blue-600 hover:underline font-medium">
-                                        🔗 Link Check-in
-                                    </a>
-                                </div>
-                            </td>
                             
                             <!-- Stato Presenza -->
                             <td class="p-3">
@@ -120,7 +133,7 @@
 
                         {% if not prenotazioni %}
                         <tr>
-                            <td colspan="7" class="p-4 text-center text-gray-500">Nessuna prenotazione presente.</td>
+                            <td colspan="6" class="p-4 text-center text-gray-500">Nessuna prenotazione presente.</td>
                         </tr>
                         {% endif %}
                     </tbody>
