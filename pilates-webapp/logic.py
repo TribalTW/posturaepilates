@@ -53,6 +53,27 @@ def get_current_time_local():
     try: return datetime.now(ZoneInfo("Europe/Rome"))
     except Exception: return datetime.now()
 
+def get_orari_disponibili_filtrati(data_str: str, orari_teorici: list) -> list:
+    """
+    Filtra gli orari teorici rimuovendo quelli già passati se la data selezionata è oggi.
+    """
+    now_local = get_current_time_local()
+    oggi_str = now_local.strftime("%Y-%m-%d")
+    ora_corrente = now_local.time()
+
+    orari_validi = []
+    for ora in orari_teorici:
+        if data_str == oggi_str:
+            try:
+                ora_obj = datetime.strptime(ora, "%H:%M").time()
+                if ora_obj <= ora_corrente:
+                    continue  # Salta l'orario perché è già passato
+            except ValueError:
+                pass
+        orari_validi.append(ora)
+        
+    return orari_validi
+
 def genera_file_ics(trattamento, data_str, ora_str):
     dt_inizio = datetime.strptime(f"{data_str} {ora_str}", "%Y-%m-%d %H:%M")
     dt_fine = dt_inizio + timedelta(minutes=50)
