@@ -234,13 +234,15 @@ def elimina_utente(request: Request, id_utente: int = Form(...)):
     return RedirectResponse(url="/admin", status_code=303)
 
 # --- CHECK-IN QR CODE PAZIENTE (RANGE ±30 MINUTI) ---
+# --- CHECK-IN QR CODE PAZIENTE (RANGE ±30 MINUTI) ---
 @app.get("/checkin", response_class=HTMLResponse)
 def checkin_qr(request: Request):
     user = request.session.get("user")
     if not user:
         return RedirectResponse(url="/", status_code=303)
 
-    now = datetime.now()
+    # Usa l'ora locale italiana invece di datetime.now() per evitare discrepanze UTC
+    now = logic.get_current_time_local()
     data_oggi = now.strftime("%Y-%m-%d")
 
     with engine.begin() as conn:
@@ -251,8 +253,13 @@ def checkin_qr(request: Request):
 
         for p_id, p_ora in prenotazioni:
             try:
-                dt_appuntamento = datetime.strptime(f"{data_oggi} {p_ora}", "%Y-%m-%d %H:%M")
-                diff_minuti = (now - dt_appuntamento).total_seconds() / 60
+                # Mantiene solo le prime 5 cifre HH:MM per evitare errori con i secondi (es. "16:00:00")
+                ora_pulita = str(p_ora).strip()[:5]
+                dt_appuntamento = datetime.strptime(f"{data_oggi} {ora_pulita}", "%Y-%m-%d %H:%M")
+                
+                # Rimuove le informazioni sulla timezone da 'now' per un confronto preciso
+                now_naive = now.replace(tzinfo=None)
+                diff_minuti = (now_naive - dt_appuntamento).total_seconds() / 60
                 
                 if -30 <= diff_minuti <= 30:
                     conn.execute(text("UPDATE prenotazioni SET stato = 'presente' WHERE id = :id"), {"id": p_id})
