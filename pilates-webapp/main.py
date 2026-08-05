@@ -272,9 +272,13 @@ def elimina_utente(request: Request, id_utente: int = Form(...)):
     return RedirectResponse(url="/admin", status_code=303)
 
 # --- FUNZIONE CHECK-IN CON SUPPORTO PER ENTRAMBI I PARTECIPANTI ---
+# --- FUNZIONE CHECK-IN CON SUPPORTO PER ENTRAMBI I PARTECIPANTI ---
 def esegui_checkin_utente(cf: str):
     now = logic.get_current_time_local()
-    data_oggi = now.strftime("%Y-%m-%d")
+    # Rimuoviamo il fuso orario per confrontare le date in modo uniforme
+    now_naive = now.replace(tzinfo=None)
+    data_oggi = now_naive.strftime("%Y-%m-%d")
+    cf_upper = cf.strip().upper()
 
     with engine.begin() as conn:
         prenotazioni = conn.execute(
@@ -282,26 +286,28 @@ def esegui_checkin_utente(cf: str):
                 SELECT id, ora, COALESCE(stato, 'confermata'), COALESCE(stato_2, 'confermata'), 
                        codice_fiscale, codice_fiscale_2 
                 FROM prenotazioni 
-                WHERE (codice_fiscale = :cf OR codice_fiscale_2 = :cf) AND data = :d
+                WHERE (UPPER(codice_fiscale) = :cf OR UPPER(codice_fiscale_2) = :cf) AND data = :d
             """),
-            {"cf": cf, "d": data_oggi}
+            {"cf": cf_upper, "d": data_oggi}
         ).fetchall()
 
         for p_id, p_ora, p_stato, p_stato_2, cf1, cf2 in prenotazioni:
             try:
                 ora_pulita = str(p_ora).strip()[:5]
                 dt_appuntamento = datetime.strptime(f"{data_oggi} {ora_pulita}", "%Y-%m-%d %H:%M")
-                now_naive = now.replace(tzinfo=None)
+                
+                # Differenza temporale in minuti
                 diff_minuti = (now_naive - dt_appuntamento).total_seconds() / 60
 
-                if -30 <= diff_minuti <= 30:
-                    if cf == cf1:
+                # Finestra estesa a 35 minuti per comprendere anche i secondi scattati dopo le 16:30
+                if -35 <= diff_minuti <= 35:
+                    if cf1 and cf_upper == cf1.strip().upper():
                         if p_stato == 'presente':
                             return True, "Presenza già confermata per la prima persona!"
                         conn.execute(text("UPDATE prenotazioni SET stato = 'presente' WHERE id = :id"), {"id": p_id})
                         return True, "Presenza confermata con successo! Buon allenamento!"
                     
-                    elif cf == cf2:
+                    elif cf2 and cf_upper == cf2.strip().upper():
                         if p_stato_2 == 'presente':
                             return True, "Presenza già confermata per la seconda persona!"
                         conn.execute(text("UPDATE prenotazioni SET stato_2 = 'presente' WHERE id = :id"), {"id": p_id})
