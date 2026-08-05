@@ -41,6 +41,7 @@ def login(request: Request, nome: str = Form(...), cognome: str = Form(...), pas
     return templates.TemplateResponse(request=request, name="login.html", context={"error": "Credenziali non valide o utente non trovato."})
 
 # --- PAGINA REGISTRAZIONE (GET) ---
+# --- MOSTRA LA PAGINA DI REGISTRAZIONE ---
 @app.get("/registrati", response_class=HTMLResponse)
 def pagina_registrazione(request: Request):
     user = request.session.get("user")
