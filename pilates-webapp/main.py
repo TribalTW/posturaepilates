@@ -203,12 +203,15 @@ def effettua_prenotazione(
     nome_completo_2 = None
     cf_2_clean = None
 
-    if "coppia" in trattamento.lower():
+    # Solo "Pilates di Coppia" richiede la seconda persona ed impegna entrambi i lettini
+    is_coppia = "coppia" in trattamento.lower()
+
+    if is_coppia:
         if not nome_2 or not cognome_2 or not cf_2:
             return templates.TemplateResponse(request=request, name="prenota.html", context={
                 "user": user, 
                 "ha_usato_prova": ha_usato_prova,
-                "error": "Per la lezione di coppia è necessario inserire tutti i dati della seconda persona."
+                "error": "Per il Pilates di Coppia è necessario inserire tutti i dati della seconda persona."
             })
         
         valido, msg = logic.valida_codice_fiscale(nome_2.strip(), cognome_2.strip(), cf_2.strip())
@@ -233,16 +236,17 @@ def effettua_prenotazione(
         for p_trattamento, p_stato in prenotazioni_esistenti:
             if str(p_stato).lower() == 'cancellata':
                 continue
+            # Pesa 2 solo se è coppia, altrimenti 1
             peso = 2 if "coppia" in str(p_trattamento).lower() else 1
             posti_occupati += peso
 
-        posti_richiesti = 2 if "coppia" in trattamento.lower() else 1
+        posti_richiesti = 2 if is_coppia else 1
 
         if (posti_occupati + posti_richiesti) > 2:
             return templates.TemplateResponse(request=request, name="prenota.html", context={
                 "user": user, 
                 "ha_usato_prova": ha_usato_prova,
-                "error": "Spiacenti, i lettini per questo orario sono appena stati occupati da un'altra prenotazione!"
+                "error": "Spiacenti, i lettini per questo orario sono esauriti o non sufficienti per questa prenotazione!"
             })
 
         conn.execute(
@@ -269,7 +273,7 @@ def effettua_prenotazione(
 
 # --- API ORARI DISPONIBILI ---
 @app.get("/api/orari")
-def get_orari_disponibili(data: str):
+def get_orari_disponibili(data: str, trattamento: str = ""):
     try:
         dt = datetime.strptime(data, "%Y-%m-%d")
     except ValueError:
@@ -284,27 +288,30 @@ def get_orari_disponibili(data: str):
         # Estrae orari bloccati specifici per quel giorno
         orari_bloccati = [r[0] for r in conn.execute(text("SELECT ora FROM blocchi WHERE data = :d AND ora IS NOT NULL"), {"d": data}).fetchall()]
         
-        # Estrae le prenotazioni esistenti per calcolare quanti posti sono occupati
+        # Estrae le prenotazioni esistenti
         prenotazioni_giorno = conn.execute(
             text("SELECT ora, trattamento, COALESCE(stato, 'confermata') FROM prenotazioni WHERE data = :d"), 
             {"d": data}
         ).fetchall()
 
-    # Calcoliamo i posti occupati per ogni ora (Max 2 posti / 2 lettini)
+    # Calcoliamo i posti occupati per ogni ora (Max 2 lettini)
     posti_occupati_per_ora = {}
-    for ora, trattamento, stato in prenotazioni_giorno:
+    for ora, t_esistente, stato in prenotazioni_giorno:
         if stato.lower() == 'cancellata':
             continue
         
-        peso = 2 if "coppia" in trattamento.lower() else 1
+        peso = 2 if "coppia" in t_esistente.lower() else 1
         posti_occupati_per_ora[ora] = posti_occupati_per_ora.get(ora, 0) + peso
 
     orari_teorici = logic.get_orari_per_data(dt)
     if not orari_teorici:
         return JSONResponse({"orari": []})
 
-    # Filtra prima gli orari passati tramite la funzione centralizzata in logic.py
+    # Filtra prima gli orari passati nella giornata odierna
     orari_filtrati = logic.get_orari_disponibili_filtrati(data, orari_teorici)
+
+    # Controlliamo quanti posti richiede il trattamento attualmente selezionato dall'utente
+    richiede_due_posti = "coppia" in trattamento.lower()
 
     orari_liberi = []
     for o in orari_filtrati:
@@ -312,10 +319,16 @@ def get_orari_disponibili(data: str):
         if o in orari_bloccati:
             continue
 
-        # Verifica capienza (massimo 2 posti disponibili in totale per slot)
         posti_occupati = posti_occupati_per_ora.get(o, 0)
-        if posti_occupati < 2:
-            orari_liberi.append(o)
+        
+        # Se è di coppia servono entrambi i lettini liberi (0 occupati), 
+        # altrimenti se è singolo/prova/valutazione basta che ci sia almeno 1 posto libero (< 2)
+        if richiede_due_posti:
+            if posti_occupati == 0:
+                orari_liberi.append(o)
+        else:
+            if posti_occupati < 2:
+                orari_liberi.append(o)
 
     return JSONResponse({"orari": orari_liberi})
 
