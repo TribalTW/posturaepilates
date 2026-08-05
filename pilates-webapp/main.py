@@ -20,6 +20,17 @@ ADMIN_CF = os.getenv("ADMIN_CF", "BRNFRC04E27C351V")
 @app.on_event("startup")
 def startup():
     init_db()
+    # Migrazione automatica colonne per prenotazioni di coppia
+    with engine.begin() as conn:
+        for q in [
+            "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS nome_2 TEXT",
+            "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS codice_fiscale_2 TEXT",
+            "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS stato_2 TEXT DEFAULT 'confermata'"
+        ]:
+            try:
+                conn.execute(text(q))
+            except Exception:
+                pass
 
 # --- PAGINA PRINCIPALE / LOGIN ---
 @app.get("/", response_class=HTMLResponse)
@@ -65,19 +76,11 @@ def registrati(
     conferma_password: str = Form(...)
 ):
     if password != conferma_password:
-        return templates.TemplateResponse(
-            request=request, 
-            name="register.html", 
-            context={"error": "Le password non coincidono."}
-        )
+        return templates.TemplateResponse(request=request, name="register.html", context={"error": "Le password non coincidono."})
     
     valido, msg = logic.valida_codice_fiscale(nome, cognome, cf)
     if not valido:
-        return templates.TemplateResponse(
-            request=request, 
-            name="register.html", 
-            context={"error": msg}
-        )
+        return templates.TemplateResponse(request=request, name="register.html", context={"error": msg})
 
     salt, pwd_hash = logic.hash_password(password)
     data_reg = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -88,17 +91,9 @@ def registrati(
                 text("INSERT INTO utenti (nome, cognome, codice_fiscale, password_salt, password_hash, data_registrazione) VALUES (:n, :c, :cf, :s, :h, :d)"),
                 {"n": nome.strip().title(), "c": cognome.strip().title(), "cf": cf.strip().upper(), "s": salt, "h": pwd_hash, "d": data_reg}
             )
-        return templates.TemplateResponse(
-            request=request, 
-            name="login.html", 
-            context={"success": "Registrazione completata! Ora puoi effettuare il login."}
-        )
+        return templates.TemplateResponse(request=request, name="login.html", context={"success": "Registrazione completata! Ora puoi effettuare il login."})
     except Exception:
-        return templates.TemplateResponse(
-            request=request, 
-            name="register.html", 
-            context={"error": "Codice Fiscale già registrato."}
-        )
+        return templates.TemplateResponse(request=request, name="register.html", context={"error": "Codice Fiscale già registrato."})
 
 @app.get("/logout")
 def logout(request: Request):
@@ -114,13 +109,33 @@ def prenota_page(request: Request):
     return templates.TemplateResponse(request=request, name="prenota.html", context={"user": user})
 
 @app.post("/prenota")
-def effettua_prenotazione(request: Request, trattamento: str = Form(...), data: str = Form(...), ora: str = Form(...)):
+def effettua_prenotazione(
+    request: Request, 
+    trattamento: str = Form(...), 
+    data: str = Form(...), 
+    ora: str = Form(...),
+    nome_2: str = Form(None),
+    cognome_2: str = Form(None),
+    cf_2: str = Form(None)
+):
     user = request.session.get("user")
     if not user:
         return RedirectResponse(url="/", status_code=303)
 
     nome_completo = f"{user['nome']} {user['cognome']}"
     data_creazione = logic.get_current_time_local().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Gestione Dati Persona 2 per Lezione di Coppia
+    nome_completo_2 = None
+    cf_2_clean = None
+
+    if "coppia" in trattamento.lower():
+        if not nome_2 or not cognome_2 or not cf_2:
+            return templates.TemplateResponse("prenota.html", {
+                "request": request, "user": user, "error": "Per la lezione di coppia è necessario inserire tutti i dati della seconda persona."
+            })
+        nome_completo_2 = f"{nome_2.strip().title()} {cognome_2.strip().title()}"
+        cf_2_clean = cf_2.strip().upper()
 
     with engine.begin() as conn:
         occupati = [r[0] for r in conn.execute(text("SELECT ora FROM prenotazioni WHERE data = :d"), {"d": data}).fetchall()]
@@ -130,8 +145,16 @@ def effettua_prenotazione(request: Request, trattamento: str = Form(...), data: 
             })
 
         conn.execute(
-            text("INSERT INTO prenotazioni (nome, data, ora, trattamento, data_creazione, codice_fiscale) VALUES (:n, :d, :o, :t, :dc, :cf)"),
-            {"n": nome_completo, "d": data, "o": ora, "t": trattamento, "dc": data_creazione, "cf": user['cf']}
+            text("""
+                INSERT INTO prenotazioni 
+                (nome, data, ora, trattamento, data_creazione, codice_fiscale, nome_2, codice_fiscale_2, stato, stato_2) 
+                VALUES (:n, :d, :o, :t, :dc, :cf, :n2, :cf2, 'confermata', 'confermata')
+            """),
+            {
+                "n": nome_completo, "d": data, "o": ora, "t": trattamento,
+                "dc": data_creazione, "cf": user['cf'],
+                "n2": nome_completo_2, "cf2": cf_2_clean
+            }
         )
 
     return templates.TemplateResponse(request=request, name="prenota.html", context={
@@ -142,7 +165,7 @@ def effettua_prenotazione(request: Request, trattamento: str = Form(...), data: 
         "ultima_ora": ora
     })
 
-# --- API ORARI DISPONIBILI (CON GESTIONE BLOCCAGGI ADMIN) ---
+# --- API ORARI DISPONIBILI ---
 @app.get("/api/orari")
 def get_orari_disponibili(data: str):
     try:
@@ -173,7 +196,12 @@ def admin_dashboard(request: Request):
         return RedirectResponse(url="/", status_code=303)
 
     with engine.begin() as conn:
-        prenotazioni = conn.execute(text("SELECT id, nome, data, ora, trattamento, codice_fiscale, COALESCE(stato, 'confermata') FROM prenotazioni ORDER BY data DESC, ora ASC")).fetchall()
+        prenotazioni = conn.execute(text("""
+            SELECT id, nome, data, ora, trattamento, codice_fiscale, COALESCE(stato, 'confermata'),
+                   nome_2, codice_fiscale_2, COALESCE(stato_2, 'confermata') 
+            FROM prenotazioni 
+            ORDER BY data DESC, ora ASC
+        """)).fetchall()
         utenti = conn.execute(text("SELECT id, nome, cognome, codice_fiscale, data_registrazione, COALESCE(bannato, false) FROM utenti ORDER BY nome ASC")).fetchall()
         blocchi = conn.execute(text("SELECT id, data, ora FROM blocchi ORDER BY data DESC")).fetchall()
 
@@ -181,7 +209,7 @@ def admin_dashboard(request: Request):
         "user": user, "prenotazioni": prenotazioni, "utenti": utenti, "blocchi": blocchi
     })
 
-# --- AZIONI ADMIN PRENOTAZIONI ---
+# --- AZIONI ADMIN ---
 @app.post("/admin/prenotazione/elimina")
 def elimina_prenotazione(request: Request, id_prenotazione: int = Form(...)):
     user = request.session.get("user")
@@ -195,10 +223,9 @@ def cambia_stato_prenotazione(request: Request, id_prenotazione: int = Form(...)
     user = request.session.get("user")
     if user and user.get("cf") == ADMIN_CF:
         with engine.begin() as conn:
-            conn.execute(text("UPDATE prenotazioni SET stato = :s WHERE id = :id"), {"s": nuovo_stato, "id": id_prenotazione})
+            conn.execute(text("UPDATE prenotazioni SET stato = :s, stato_2 = :s WHERE id = :id"), {"s": nuovo_stato, "id": id_prenotazione})
     return RedirectResponse(url="/admin", status_code=303)
 
-# --- AZIONI ADMIN BLOCCO CALENDARIO ---
 @app.post("/admin/blocca")
 def blocca_orario(request: Request, data: str = Form(...), ora: str = Form(None)):
     user = request.session.get("user")
@@ -216,7 +243,6 @@ def sblocca_orario(request: Request, id_blocco: int = Form(...)):
             conn.execute(text("DELETE FROM blocchi WHERE id = :id"), {"id": id_blocco})
     return RedirectResponse(url="/admin", status_code=303)
 
-# --- AZIONI ADMIN UTENTI ---
 @app.post("/admin/utente/banna")
 def toggle_ban_utente(request: Request, id_utente: int = Form(...), stato_ban: bool = Form(...)):
     user = request.session.get("user")
@@ -233,19 +259,23 @@ def elimina_utente(request: Request, id_utente: int = Form(...)):
             conn.execute(text("DELETE FROM utenti WHERE id = :id"), {"id": id_utente})
     return RedirectResponse(url="/admin", status_code=303)
 
-# --- FUNZIONE AUSILIARIA CHECK-IN ---
+# --- FUNZIONE CHECK-IN CON SUPPORTO PER ENTRAMBI I PARTECIPANTI ---
 def esegui_checkin_utente(cf: str):
-    """Verifica le prenotazioni dell'utente nell'orario corrente (±30 min) e aggiorna lo stato."""
     now = logic.get_current_time_local()
     data_oggi = now.strftime("%Y-%m-%d")
 
     with engine.begin() as conn:
         prenotazioni = conn.execute(
-            text("SELECT id, ora, COALESCE(stato, 'confermata') FROM prenotazioni WHERE codice_fiscale = :cf AND data = :d"),
+            text("""
+                SELECT id, ora, COALESCE(stato, 'confermata'), COALESCE(stato_2, 'confermata'), 
+                       codice_fiscale, codice_fiscale_2 
+                FROM prenotazioni 
+                WHERE (codice_fiscale = :cf OR codice_fiscale_2 = :cf) AND data = :d
+            """),
             {"cf": cf, "d": data_oggi}
         ).fetchall()
 
-        for p_id, p_ora, p_stato in prenotazioni:
+        for p_id, p_ora, p_stato, p_stato_2, cf1, cf2 in prenotazioni:
             try:
                 ora_pulita = str(p_ora).strip()[:5]
                 dt_appuntamento = datetime.strptime(f"{data_oggi} {ora_pulita}", "%Y-%m-%d %H:%M")
@@ -253,31 +283,32 @@ def esegui_checkin_utente(cf: str):
                 diff_minuti = (now_naive - dt_appuntamento).total_seconds() / 60
 
                 if -30 <= diff_minuti <= 30:
-                    if p_stato == 'presente':
-                        return True, "Presenza già confermata in precedenza! Buon allenamento!"
-
-                    conn.execute(text("UPDATE prenotazioni SET stato = 'presente' WHERE id = :id"), {"id": p_id})
-                    return True, "Presenza confermata con successo! Buon allenamento!"
+                    if cf == cf1:
+                        if p_stato == 'presente':
+                            return True, "Presenza già confermata per la prima persona!"
+                        conn.execute(text("UPDATE prenotazioni SET stato = 'presente' WHERE id = :id"), {"id": p_id})
+                        return True, "Presenza confermata con successo! Buon allenamento!"
+                    
+                    elif cf == cf2:
+                        if p_stato_2 == 'presente':
+                            return True, "Presenza già confermata per la seconda persona!"
+                        conn.execute(text("UPDATE prenotazioni SET stato_2 = 'presente' WHERE id = :id"), {"id": p_id})
+                        return True, "Presenza confermata con successo! Buon allenamento!"
             except Exception:
                 continue
 
     return False, "Nessuna prenotazione a tuo nome trovata per l'orario attuale (finestra consentita: ±30 min)."
 
-# --- CHECK-IN QR CODE PAZIENTE (GET: AUTOMATICO O REDIRECT A LOGIN CHECKIN) ---
 @app.get("/checkin", response_class=HTMLResponse)
 def checkin_qr_get(request: Request):
     user = request.session.get("user")
-    
-    # Se non è loggato, mostra la pagina di login specifica per il Check-in
     if not user:
         return templates.TemplateResponse(request=request, name="checkin_login.html", context={"error": None})
 
-    # Se è già loggato, esegue il check-in per il suo codice fiscale
     successo, messaggio = esegui_checkin_utente(user['cf'])
     context = {"success": messaggio} if successo else {"error": messaggio}
     return templates.TemplateResponse(request=request, name="checkin_result.html", context=context)
 
-# --- CHECK-IN QR CODE PAZIENTE (POST: AUTENTICAZIONE E CHECK-IN CONTESTUALE) ---
 @app.post("/checkin", response_class=HTMLResponse)
 def checkin_qr_post(
     request: Request,
@@ -294,14 +325,12 @@ def checkin_qr_post(
         if not res or not logic.verifica_password(password, res[4], res[5]):
             return templates.TemplateResponse(request=request, name="checkin_login.html", context={"error": "Credenziali non valide o utente non trovato."})
 
-        if res[6]:  # Utente Bannato
+        if res[6]:
             return templates.TemplateResponse(request=request, name="checkin_login.html", context={"error": "Account disabilitato. Contatta l'amministrazione."})
 
-        # Autenticazione riuscita: salva la sessione
         user = {"id": str(res[0]), "nome": str(res[1]), "cognome": str(res[2]), "cf": str(res[3])}
         request.session["user"] = user
 
-    # Esegue il check-in immediato
     successo, messaggio = esegui_checkin_utente(user['cf'])
     context = {"success": messaggio} if successo else {"error": messaggio}
     return templates.TemplateResponse(request=request, name="checkin_result.html", context=context)
