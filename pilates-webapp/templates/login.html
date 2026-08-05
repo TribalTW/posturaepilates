@@ -3,113 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Accedi - Studio Postura & Pilates</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Postura e Pilates - Accesso</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: #fdf2f8; min-height: 100vh; padding: 20px; display: flex; justify-content: center; align-items: center; }
+        .container { background: #ffffff; width: 100%; max-width: 400px; padding: 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(225, 29, 72, 0.08); }
+        
+        .brand-header { text-align: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f3e8ff; }
+        .brand-title { font-size: 18px; font-weight: 700; color: #831843; letter-spacing: 0.5px; text-transform: uppercase; }
+
+        h1 { font-size: 18px; font-weight: 700; color: #4c0519; margin-bottom: 20px; text-align: center; }
+        
+        .alert-success { background: #fdf2f8; border: 1px solid #fbcfe8; color: #831843; padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 16px; text-align: center; }
+        .alert-error { background: #fff1f2; border: 1px solid #fecdd3; color: #9f1239; padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 16px; text-align: center; }
+
+        .form-group { margin-bottom: 16px; text-align: left; }
+        label { display: block; font-size: 13px; font-weight: 600; color: #9d174d; margin-bottom: 6px; }
+        input[type="text"], input[type="password"] {
+            width: 100%; padding: 10px 12px; border: 1.5px solid #fbcfe8; border-radius: 8px; font-size: 15px; background: #fff1f2; outline: none; transition: all 0.2s; color: #4c0519;
+        }
+        input:focus { border-color: #e11d48; background: #fff; box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.12); }
+
+        .btn-submit { width: 100%; padding: 12px; background: #e11d48; color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 8px; }
+        .btn-submit:hover { background: #be123c; }
+
+        .link-container { text-align: center; margin-top: 16px; font-size: 14px; color: #881337; }
+        .link-container a { color: #e11d48; text-decoration: none; font-weight: 600; }
+        .link-container a:hover { text-decoration: underline; }
+
+        .admin-section { margin-top: 24px; border-top: 1px dashed #fbcfe8; padding-top: 16px; text-align: center; }
+        .admin-toggle { background: none; border: none; color: #9d174d; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline; }
+        .admin-box { margin-top: 12px; display: {% if open_admin %}block{% else %}none{% endif %}; }
+    </style>
 </head>
-<body class="bg-slate-100 min-h-screen flex items-center justify-center relative overflow-x-hidden font-sans">
-
-    <!-- BOTTONE APERTURA TENDINA ADMIN (IN ALTO A SINISTRA) -->
-    <button onclick="toggleAdminPanel()" 
-            class="fixed top-4 left-4 z-50 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-3.5 py-2.5 rounded-xl shadow-md flex items-center gap-2 transition-all hover:scale-105 cursor-pointer">
-        <span>⚙️ Accesso Admin</span>
-    </button>
-
-    <!-- TENDINA / PANNELLO LATERALE ADMIN (SLIDE DA SINISTRA) -->
-    <div id="adminDrawer" 
-         class="fixed top-0 left-0 h-full w-80 bg-slate-900 text-white z-50 transform -translate-x-full transition-transform duration-300 ease-in-out shadow-2xl p-6 flex flex-col justify-between">
-        <div>
-            <!-- Header Tendina -->
-            <div class="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
-                <h2 class="text-base font-bold flex items-center gap-2 text-slate-100">
-                    <span>🔒</span> Area Riservata Admin
-                </h2>
-                <button onclick="toggleAdminPanel()" class="text-slate-400 hover:text-white text-xl font-bold p-1">&times;</button>
-            </div>
-
-            <!-- Messaggio Errore Admin -->
-            {% if admin_error %}
-            <div class="bg-red-500/20 border border-red-500 text-red-200 text-xs p-3 rounded-lg mb-4">
-                ⚠️ {{ admin_error }}
-            </div>
-            {% endif %}
-
-            <!-- Form Credenziali Admin -->
-            <form action="/admin/login" method="POST" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1">Username / Email Admin</label>
-                    <input type="text" name="username" required placeholder="Inserisci username" 
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1">Password Admin</label>
-                    <input type="password" name="password" required placeholder="••••••••" 
-                           class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500">
-                </div>
-                <button type="submit" 
-                        class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 font-semibold rounded-lg text-sm text-white transition shadow-md">
-                    Accedi al Pannello Admin
-                </button>
-            </form>
+<body>
+    <div class="container">
+        <div class="brand-header">
+            <div class="brand-title">Postura e Pilates</div>
         </div>
 
-        <div class="text-[11px] text-slate-500 text-center border-t border-slate-800 pt-4">
-            Riservato alla Dott.ssa Roberta Sinagra
-        </div>
-    </div>
+        <h1>Accedi al tuo Account</h1>
 
-    <!-- OVERLAY SFONDO SCURO (Chiude la tendina cliccando fuori) -->
-    <div id="adminOverlay" onclick="toggleAdminPanel()" class="fixed inset-0 bg-black/50 z-40 hidden transition-opacity"></div>
-
-    <!-- FORM LOGIN UTENTE CLIENTE (AL CENTRO DELLA PAGINA) -->
-    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200 m-4">
-        <div class="text-center mb-6">
-            <h1 class="text-2xl font-bold text-slate-800">Benvenuto</h1>
-            <p class="text-xs text-slate-500 mt-1">Accedi per prenotare la tua lezione</p>
-        </div>
-
+        {% if success %}
+            <div class="alert-success">✅ {{ success }}</div>
+        {% endif %}
         {% if error %}
-        <div class="bg-red-50 border border-red-200 text-red-700 text-xs p-3 rounded-lg mb-4 text-center">
-            ⚠️ {{ error }}
-        </div>
+            <div class="alert-error">⚠️ {{ error }}</div>
         {% endif %}
 
-        <form action="/login" method="POST" class="space-y-4">
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Nome</label>
-                <input type="text" name="nome" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        <form action="/login" method="POST">
+            <div class="form-group">
+                <label for="nome">Nome</label>
+                <input type="text" name="nome" id="nome" required placeholder="Inserisci il tuo nome">
             </div>
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Cognome</label>
-                <input type="text" name="cognome" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <div class="form-group">
+                <label for="cognome">Cognome</label>
+                <input type="text" name="cognome" id="cognome" required placeholder="Inserisci il tuo cognome">
             </div>
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
-                <input type="password" name="password" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" name="password" id="password" required placeholder="Inserisci la password">
             </div>
-            <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm transition shadow">
-                Accedi
-            </button>
+            <button type="submit" class="btn-submit">Accedi</button>
         </form>
 
-        <div class="mt-6 text-center text-xs text-slate-500">
-            Non hai ancora un account? <a href="/registrati" class="text-blue-600 font-semibold hover:underline">Registrati qui</a>
+        <div class="link-container">
+            Non hai un account? <a href="/registrati">Registrati qui</a>
+        </div>
+
+        <div class="admin-section">
+            <button type="button" class="admin-toggle" onclick="toggleAdmin()">Accesso Amministratore</button>
+            <div id="adminBox" class="admin-box">
+                {% if admin_error %}
+                    <div class="alert-error" style="margin-bottom: 10px; font-size: 13px;">⚠️ {{ admin_error }}</div>
+                {% endif %}
+                <form action="/admin/login" method="POST">
+                    <div class="form-group" style="text-align: left;">
+                        <label for="username">Username Admin</label>
+                        <input type="text" name="username" id="username" placeholder="Username">
+                    </div>
+                    <div class="form-group" style="text-align: left;">
+                        <label for="password_admin">Password Admin</label>
+                        <input type="password" name="password" id="password_admin" placeholder="Password">
+                    </div>
+                    <button type="submit" class="btn-submit" style="background: #831843;">Login Admin</button>
+                </form>
+            </div>
         </div>
     </div>
 
-    <!-- JAVASCRIPT APERTURA / CHIUSURA TENDINA -->
-    <!-- JAVASCRIPT APERTURA / CHIUSURA TENDINA -->
     <script>
-        function toggleAdminPanel() {
-            const drawer = document.getElementById('adminDrawer');
-            const overlay = document.getElementById('adminOverlay');
-            drawer.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
+        function toggleAdmin() {
+            const box = document.getElementById('adminBox');
+            box.style.display = box.style.display === 'none' || box.style.display === '' ? 'block' : 'none';
         }
-
-        // Apre automaticamente la tendina se c'è un errore o se si accede a /admin/login
-        {% if admin_error or open_admin %}
-        toggleAdminPanel();
-        {% endif %}
     </script>
 </body>
 </html>
