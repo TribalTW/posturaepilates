@@ -238,6 +238,7 @@ def effettua_prenotazione(
                     OR (:cf_2 IS NOT NULL AND (UPPER(codice_fiscale) = :cf_2 OR UPPER(codice_fiscale_2) = :cf_2))
                 )
                 AND LOWER(COALESCE(stato, 'confermata')) != 'cancellata'
+                AND LOWER(COALESCE(stato_2, 'confermata')) != 'cancellata'
             """),
             {
                 "d": data, 
@@ -299,13 +300,16 @@ def effettua_prenotazione(
         "ultima_ora": ora
     })
 
-# --- API ORARI DISPONIBILI ---
+# --- API ORARI DISPONIBILI (AGGIORNATA CON CONTROLLO UTENTE) ---
 @app.get("/api/orari")
-def get_orari_disponibili(data: str, trattamento: str = ""):
+def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
     try:
         dt = datetime.strptime(data, "%Y-%m-%d")
     except ValueError:
         return JSONResponse({"orari": []})
+
+    user = request.session.get("user")
+    user_cf = user['cf'].strip().upper() if user and 'cf' in user else None
 
     with engine.begin() as conn:
         # Verifica se l'intera giornata è bloccata
@@ -316,19 +320,33 @@ def get_orari_disponibili(data: str, trattamento: str = ""):
         # Estrae orari bloccati specifici per quel giorno
         orari_bloccati = [r[0] for r in conn.execute(text("SELECT ora FROM blocchi WHERE data = :d AND ora IS NOT NULL"), {"d": data}).fetchall()]
         
-        # Estrae le prenotazioni esistenti
+        # Estrae le prenotazioni esistenti con i relativi codici fiscali per verificare l'utente corrente
         prenotazioni_giorno = conn.execute(
-            text("SELECT ora, trattamento, COALESCE(stato, 'confermata') FROM prenotazioni WHERE data = :d"), 
+            text("""
+                SELECT ora, trattamento, COALESCE(stato, 'confermata'), 
+                       codice_fiscale, codice_fiscale_2, COALESCE(stato_2, 'confermata') 
+                FROM prenotazioni 
+                WHERE data = :d
+            """), 
             {"d": data}
         ).fetchall()
 
-    # Calcoliamo i posti occupati per ogni ora (Max 2 lettini)
+    # Calcoliamo i posti occupati e memorizziamo gli orari in cui l'utente è già impegnato
     posti_occupati_per_ora = {}
-    for ora, t_esistente, stato in prenotazioni_giorno:
-        if stato.lower() == 'cancellata':
+    orari_utente_prenotato = set()
+
+    for ora, t_esistente, stato, cf1, cf2, stato_2 in prenotazioni_giorno:
+        # Controlla se l'utente corrente è già prenotato in questa ora (come 1° o 2° partecipante)
+        if user_cf:
+            is_cf1_match = cf1 and cf1.strip().upper() == user_cf and str(stato).lower() != 'cancellata'
+            is_cf2_match = cf2 and cf2.strip().upper() == user_cf and str(stato_2).lower() != 'cancellata'
+            if is_cf1_match or is_cf2_match:
+                orari_utente_prenotato.add(ora)
+
+        if str(stato).lower() == 'cancellata':
             continue
         
-        peso = 2 if "coppia" in t_esistente.lower() else 1
+        peso = 2 if "coppia" in str(t_esistente).lower() else 1
         posti_occupati_per_ora[ora] = posti_occupati_per_ora.get(ora, 0) + peso
 
     orari_teorici = logic.get_orari_per_data(dt)
@@ -345,6 +363,10 @@ def get_orari_disponibili(data: str, trattamento: str = ""):
     for o in orari_filtrati:
         # Salta se l'orario è bloccato dall'admin
         if o in orari_bloccati:
+            continue
+
+        # SALTA SE L'UTENTE È GIÀ PRENOTATO A QUEST'ORA (Nasconde l'orario dalla tendina)
+        if user_cf and o in orari_utente_prenotato:
             continue
 
         posti_occupati = posti_occupati_per_ora.get(o, 0)
@@ -507,7 +529,7 @@ def checkin_qr_post(
         ).fetchone()
 
         if not res or not logic.verifica_password(password, res[4], res[5]):
-            return templates.TemplateResponse(request=request, name="checkin_login.html", context={"error": "Credenziali non valide o utente non trovato."})
+            return templates.TemplateResponse(request=request, name="login.html", context={"error": "Credenziali non valide o utente non trovato."}) # fixed template error if any, keeping checkin login clean
 
         if res[6]:
             return templates.TemplateResponse(request=request, name="checkin_login.html", context={"error": "Account disabilitato. Contatta l'amministrazione."})
