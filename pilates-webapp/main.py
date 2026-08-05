@@ -40,6 +40,15 @@ def login(request: Request, nome: str = Form(...), cognome: str = Form(...), pas
             
     return templates.TemplateResponse(request=request, name="login.html", context={"error": "Credenziali non valide o utente non trovato."})
 
+# --- PAGINA REGISTRAZIONE (GET) ---
+@app.get("/registrati", response_class=HTMLResponse)
+def pagina_registrazione(request: Request):
+    user = request.session.get("user")
+    if user:
+        return RedirectResponse(url="/prenota", status_code=303)
+    return templates.TemplateResponse(request=request, name="register.html", context={"error": None})
+
+# --- ELABORAZIONE REGISTRAZIONE (POST) ---
 @app.post("/registrati")
 def registrati(
     request: Request, 
@@ -52,7 +61,7 @@ def registrati(
     if password != conferma_password:
         return templates.TemplateResponse(
             request=request, 
-            name="login.html", 
+            name="register.html", 
             context={"error": "Le password non coincidono."}
         )
     
@@ -60,7 +69,7 @@ def registrati(
     if not valido:
         return templates.TemplateResponse(
             request=request, 
-            name="login.html", 
+            name="register.html", 
             context={"error": msg}
         )
 
@@ -81,7 +90,7 @@ def registrati(
     except Exception:
         return templates.TemplateResponse(
             request=request, 
-            name="login.html", 
+            name="register.html", 
             context={"error": "Codice Fiscale già registrato."}
         )
     
