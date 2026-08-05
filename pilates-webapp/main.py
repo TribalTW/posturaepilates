@@ -14,7 +14,7 @@ app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "su
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# CODICE FISCALE DELL'AMMINISTRATORE (Modifica con il tuo Codice Fiscale reale)
+# CODICE FISCALE DELL'AMMINISTRATORE
 ADMIN_CF = os.getenv("ADMIN_CF", "BRNFRC04E27C351V")
 
 @app.on_event("startup")
@@ -233,45 +233,78 @@ def elimina_utente(request: Request, id_utente: int = Form(...)):
             conn.execute(text("DELETE FROM utenti WHERE id = :id"), {"id": id_utente})
     return RedirectResponse(url="/admin", status_code=303)
 
-# --- CHECK-IN QR CODE PAZIENTE (RANGE ±30 MINUTI) ---
-# --- CHECK-IN QR CODE PAZIENTE (RANGE ±30 MINUTI) ---
-@app.get("/checkin", response_class=HTMLResponse)
-def checkin_qr(request: Request):
-    user = request.session.get("user")
-    if not user:
-        return RedirectResponse(url="/", status_code=303)
-
-    # Usa l'ora locale italiana invece di datetime.now() per evitare discrepanze UTC
+# --- FUNZIONE AUSILIARIA CHECK-IN ---
+def esegui_checkin_utente(cf: str):
+    """Verifica le prenotazioni dell'utente nell'orario corrente (±30 min) e aggiorna lo stato."""
     now = logic.get_current_time_local()
     data_oggi = now.strftime("%Y-%m-%d")
 
     with engine.begin() as conn:
         prenotazioni = conn.execute(
-            text("SELECT id, ora FROM prenotazioni WHERE codice_fiscale = :cf AND data = :d"),
-            {"cf": user['cf'], "d": data_oggi}
+            text("SELECT id, ora, COALESCE(stato, 'confermata') FROM prenotazioni WHERE codice_fiscale = :cf AND data = :d"),
+            {"cf": cf, "d": data_oggi}
         ).fetchall()
 
-        for p_id, p_ora in prenotazioni:
+        for p_id, p_ora, p_stato in prenotazioni:
             try:
-                # Mantiene solo le prime 5 cifre HH:MM per evitare errori con i secondi (es. "16:00:00")
                 ora_pulita = str(p_ora).strip()[:5]
                 dt_appuntamento = datetime.strptime(f"{data_oggi} {ora_pulita}", "%Y-%m-%d %H:%M")
-                
-                # Rimuove le informazioni sulla timezone da 'now' per un confronto preciso
                 now_naive = now.replace(tzinfo=None)
                 diff_minuti = (now_naive - dt_appuntamento).total_seconds() / 60
-                
+
                 if -30 <= diff_minuti <= 30:
+                    if p_stato == 'presente':
+                        return True, "Presenza già confermata in precedenza! Buon allenamento!"
+
                     conn.execute(text("UPDATE prenotazioni SET stato = 'presente' WHERE id = :id"), {"id": p_id})
-                    return templates.TemplateResponse(request=request, name="checkin_result.html", context={
-                        "success": "Presenza confermata con successo! Buon allenamento!"
-                    })
+                    return True, "Presenza confermata con successo! Buon allenamento!"
             except Exception:
                 continue
 
-    return templates.TemplateResponse(request=request, name="checkin_result.html", context={
-        "error": "Nessuna prenotazione valida trovata per l'orario attuale (finestra consentita: ±30 min)."
-    })
+    return False, "Nessuna prenotazione a tuo nome trovata per l'orario attuale (finestra consentita: ±30 min)."
+
+# --- CHECK-IN QR CODE PAZIENTE (GET: AUTOMATICO O REDIRECT A LOGIN CHECKIN) ---
+@app.get("/checkin", response_class=HTMLResponse)
+def checkin_qr_get(request: Request):
+    user = request.session.get("user")
+    
+    # Se non è loggato, mostra la pagina di login specifica per il Check-in
+    if not user:
+        return templates.TemplateResponse(request=request, name="checkin_login.html", context={"error": None})
+
+    # Se è già loggato, esegue il check-in per il suo codice fiscale
+    successo, messaggio = esegui_checkin_utente(user['cf'])
+    context = {"success": messaggio} if successo else {"error": messaggio}
+    return templates.TemplateResponse(request=request, name="checkin_result.html", context=context)
+
+# --- CHECK-IN QR CODE PAZIENTE (POST: AUTENTICAZIONE E CHECK-IN CONTESTUALE) ---
+@app.post("/checkin", response_class=HTMLResponse)
+def checkin_qr_post(
+    request: Request,
+    nome: str = Form(...),
+    cognome: str = Form(...),
+    password: str = Form(...)
+):
+    with engine.begin() as conn:
+        res = conn.execute(
+            text("SELECT id, nome, cognome, codice_fiscale, password_salt, password_hash, COALESCE(bannato, false) FROM utenti WHERE UPPER(nome) = :n AND UPPER(cognome) = :c"),
+            {"n": nome.strip().upper(), "c": cognome.strip().upper()}
+        ).fetchone()
+
+        if not res or not logic.verifica_password(password, res[4], res[5]):
+            return templates.TemplateResponse(request=request, name="checkin_login.html", context={"error": "Credenziali non valide o utente non trovato."})
+
+        if res[6]:  # Utente Bannato
+            return templates.TemplateResponse(request=request, name="checkin_login.html", context={"error": "Account disabilitato. Contatta l'amministrazione."})
+
+        # Autenticazione riuscita: salva la sessione
+        user = {"id": str(res[0]), "nome": str(res[1]), "cognome": str(res[2]), "cf": str(res[3])}
+        request.session["user"] = user
+
+    # Esegue il check-in immediato
+    successo, messaggio = esegui_checkin_utente(user['cf'])
+    context = {"success": messaggio} if successo else {"error": messaggio}
+    return templates.TemplateResponse(request=request, name="checkin_result.html", context=context)
 
 # --- DOWNLOAD CALENDARIO .ICS ---
 @app.get("/download-ics")
