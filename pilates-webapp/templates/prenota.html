@@ -64,13 +64,14 @@
             <!-- SELEZIONE TRATTAMENTO / TIPO LEZIONE -->
             <div class="form-group">
                 <label for="trattamento">Seleziona Trattamento:</label>
-                    <select name="trattamento" id="trattamento" required class="...">
-                        <option value="" disabled selected>Seleziona un trattamento</option>
-                        <option value="Seduta di Prova">Seduta di Prova</option>
-                        <option value="Valutazione Posturale">Valutazione Posturale</option>
-                        <option value="Pilates Individuale">Pilates Individuale</option>
-                        <option value="Pilates di Coppia">Pilates di Coppia</option>
-                    </select>
+                <!-- AGGIUNTO: onchange per attivare la funzione e ricaricare gli orari -->
+                <select name="trattamento" id="trattamento" onchange="gestisciCambioTrattamento()" required class="form-control">
+                    <option value="" disabled selected>Seleziona un trattamento</option>
+                    <option value="Seduta di Prova">Seduta di Prova</option>
+                    <option value="Valutazione Posturale">Valutazione Posturale</option>
+                    <option value="Pilates Individuale">Pilates Individuale</option>
+                    <option value="Pilates di Coppia">Pilates di Coppia</option>
+                </select>
             </div>
 
             <!-- CAMPI DINAMICI PER LA SECONDA PERSONA (PILATES DI COPPIA) -->
@@ -113,8 +114,8 @@
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('data').setAttribute('min', today);
 
-        // Mostra/Nasconde i campi del 2° partecipante
-        function toggleCampiCoppia() {
+        // Funzione combinata quando cambia il trattamento
+        function gestisciCambioTrattamento() {
             const trattamento = document.getElementById("trattamento").value;
             const box = document.getElementById("box_coppia");
             const nome2 = document.getElementById("nome_2");
@@ -135,18 +136,28 @@
                 cognome2.value = "";
                 cf2.value = "";
             }
+
+            // Ricarica gli orari perché la disponibilità cambia (Coppia = 2 lettini, Altri = 1 lettino)
+            if (document.getElementById('data').value) {
+                caricaOrariDisponibili();
+            }
         }
 
-        // Carica gli orari disponibili tramite API FastAPI
+        // Carica gli orari disponibili tramite API FastAPI passando anche il trattamento
         async function caricaOrariDisponibili() {
             const dataVal = document.getElementById('data').value;
+            const trattamentoVal = document.getElementById('trattamento').value;
             const selectOra = document.getElementById('ora');
+            
             selectOra.innerHTML = '<option value="">Caricamento orari...</option>';
 
-            if (!dataVal) return;
+            if (!dataVal) {
+                selectOra.innerHTML = '<option value="">Seleziona prima una data...</option>';
+                return;
+            }
 
             try {
-                const response = await fetch(`/api/orari?data=${dataVal}`);
+                const response = await fetch(`/api/orari?data=${dataVal}&trattamento=${encodeURIComponent(trattamentoVal)}`);
                 const data = await response.json();
 
                 selectOra.innerHTML = '';
