@@ -97,6 +97,7 @@
     </div>
 
     <!-- JAVASCRIPT APERTURA / CHIUSURA TENDINA -->
+    <!-- JAVASCRIPT APERTURA / CHIUSURA TENDINA -->
     <script>
         function toggleAdminPanel() {
             const drawer = document.getElementById('adminDrawer');
@@ -105,8 +106,8 @@
             overlay.classList.toggle('hidden');
         }
 
-        // Se c'è un errore di accesso admin, apre automaticamente la tendina all'avvio
-        {% if admin_error %}
+        // Apre automaticamente la tendina se c'è un errore o se si accede a /admin/login
+        {% if admin_error or open_admin %}
         toggleAdminPanel();
         {% endif %}
     </script>
