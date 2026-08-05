@@ -15,7 +15,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # CREDENZIALI E CODICE FISCALE AMMINISTRATORE
-ADMIN_CF = os.getenv("ADMIN_CF", "BRNFRC04E27C351V")
+ADMIN_CF = os.getenv("ADMIN_CF", "")
 ADMIN_USER = os.getenv("ADMIN_USER", "admin")
 ADMIN_PWD = os.getenv("ADMIN_PWD", "admin123")
 
