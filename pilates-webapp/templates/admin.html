@@ -3,119 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Postura e Pilates - Area Admin</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: #fdf2f8; min-height: 100vh; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: #ffffff; padding: 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(225, 29, 72, 0.08); }
-        
-        .brand-header { text-align: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f3e8ff; }
-        .brand-title { font-size: 20px; font-weight: 700; color: #831843; letter-spacing: 0.5px; text-transform: uppercase; }
-
-        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; background: #fff1f2; padding: 12px 16px; border-radius: 8px; }
-        .admin-title { font-size: 16px; font-weight: 700; color: #881337; }
-        .logout-btn { font-size: 14px; color: #e11d48; text-decoration: none; font-weight: 600; }
-        .logout-btn:hover { text-decoration: underline; }
-
-        h2 { font-size: 18px; color: #4c0519; margin-bottom: 16px; padding-bottom: 6px; border-bottom: 2px solid #fbcfe8; }
-        
-        .section-box { margin-bottom: 30px; background: #fff1f2; padding: 16px; border-radius: 12px; border: 1.5px solid #fbcfe8; }
-        
-        .form-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 12px; }
-        .form-group { flex: 1; min-width: 200px; text-align: left; }
-        label { display: block; font-size: 13px; font-weight: 600; color: #9d174d; margin-bottom: 6px; }
-        input[type="date"], input[type="text"], input[type="time"], select {
-            width: 100%; padding: 8px 12px; border: 1.5px solid #fbcfe8; border-radius: 8px; font-size: 14px; background: #fff; outline: none; color: #4c0519;
-        }
-
-        .btn { padding: 9px 16px; background: #e11d48; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .btn:hover { background: #be123c; }
-        .btn-danger { background: #e11d48; }
-        .btn-danger:hover { background: #be123c; }
-        .btn-secondary { background: #db2777; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; background: #fff; border-radius: 8px; overflow: hidden; }
-        th, td { padding: 10px 12px; text-align: left; font-size: 13px; border-bottom: 1px solid #fbcfe8; color: #4c0519; }
-        th { background: #fdf2f8; color: #831843; font-weight: 700; }
-        
-        .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
-        .badge-confermata { background: #fdf2f8; color: #9d174d; border: 1px solid #fbcfe8; }
-        .badge-presente { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-        .badge-bannato { background: #fee2e2; color: #991b1b; }
-    </style>
+    <title>Postura & Pilates - Pannello Amministrazione</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div class="container">
-        <div class="brand-header">
-            <div class="brand-title">Postura e Pilates - Pannello Amministrazione</div>
+<body class="bg-[#fff9fb] min-h-screen p-4 md:p-8">
+    <div class="max-w-7xl mx-auto space-y-8">
+        
+        <!-- Intestazione Brand & Header Amministratore -->
+        <div class="bg-white border border-[#f9d1df] p-6 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="text-center md:text-left">
+                <h1 class="text-2xl font-bold text-[#880E4F]">Postura & Pilates</h1>
+                <p class="text-xs text-gray-500 mt-1">⚙️ Pannello Amministrazione: Gestione Prenotazioni, Utenti e Calendario</p>
+            </div>
+            <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-xl text-xs transition shadow-sm">
+                Esci dal Pannello
+            </a>
         </div>
 
-        <div class="header-top">
-            <div class="admin-title">🛠️ Loggato come Amministratore</div>
-            <a href="/logout" class="logout-btn">Esci</a>
-        </div>
-
-        <!-- SEZIONE PRENOTAZIONI -->
-        <div class="section-box">
-            <h2>Gestione Prenotazioni per Data</h2>
-            <form method="GET" action="/admin" class="form-row">
-                <div class="form-group">
-                    <label for="data">Seleziona Data:</label>
-                    <input type="date" name="data" id="data" value="{{ data_selezionata }}" onchange="this.form.submit()">
+        <!-- SEZIONE 0: BOX QR CODE FISSO RECEPTION -->
+        <div class="bg-[#fff0f5] border border-[#f9d1df] rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md">
+            <div class="space-y-2 text-center md:text-left">
+                <span class="bg-[#fce7f3] text-[#880E4F] text-xs font-semibold px-2.5 py-0.5 rounded-full uppercase">Ingresso Studio</span>
+                <h2 class="text-xl font-bold text-[#880E4F]">📱 QR Code Fisso Reception</h2>
+                <p class="text-sm text-gray-700 max-w-xl">
+                    Questo è il QR Code unico per il check-in. Stampalo o mostralo su un tablet/iPad all'ingresso dello studio. 
+                    I clienti lo inquadreranno con il telefono per confermare la loro presenza.
+                </p>
+                <div class="pt-2 flex flex-wrap gap-3 justify-center md:justify-start">
+                    <a href="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={{ request.base_url }}checkin" 
+                       target="_blank" 
+                       class="inline-flex items-center gap-2 bg-gradient-to-r from-[#D81B60] to-[#AD1457] hover:opacity-95 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-md">
+                        🖨️ Stampare / Ingrandire QR Code
+                    </a>
+                    <a href="/checkin" target="_blank" class="inline-flex items-center gap-2 bg-white hover:bg-[#fff0f5] text-[#D81B60] border border-[#f9d1df] text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-sm">
+                        🔗 Apri Pagina Check-in
+                    </a>
                 </div>
-            </form>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-[#f9d1df] shadow-sm flex flex-col items-center shrink-0">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ request.base_url }}checkin" 
+                     alt="QR Code Fisso Reception" 
+                     class="w-32 h-32 rounded-lg">
+                <span class="text-[11px] text-gray-500 font-mono mt-2">URL: /checkin</span>
+            </div>
+        </div>
 
-            <div style="overflow-x: auto;">
-                <table>
+        <!-- SEZIONE 1: TABELLA PRENOTAZIONI -->
+        <div class="bg-white rounded-2xl shadow-xl border border-[#f9d1df] p-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <h2 class="text-lg font-bold text-[#880E4F]">📅 Elenco Prenotazioni</h2>
+                
+                <!-- Filtro per Data -->
+                <form method="GET" action="/admin" class="flex items-center gap-2 bg-[#fff9fb] p-2 rounded-xl border border-[#f9d1df]">
+                    <label for="data" class="text-xs font-semibold text-gray-700">Filtra data:</label>
+                    <input type="date" id="data" name="data" value="{{ data_selezionata }}" onchange="this.form.submit()" class="text-sm border border-[#f2c2d5] rounded-xl px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+                    <noscript>
+                        <button type="submit" class="text-xs bg-gradient-to-r from-[#D81B60] to-[#AD1457] text-white px-3 py-1 rounded-xl">Cerca</button>
+                    </noscript>
+                </form>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr>
-                            <th>Ora</th>
-                            <th>Trattamento</th>
-                            <th>Partecipante 1</th>
-                            <th>Partecipante 2</th>
-                            <th>Stato</th>
-                            <th>Azioni</th>
+                        <tr class="bg-[#fff0f5] border-b border-[#f9d1df] text-xs font-semibold text-[#880E4F] uppercase tracking-wider">
+                            <th class="p-3">ID</th>
+                            <th class="p-3">Data e Ora</th>
+                            <th class="p-3">Trattamento</th>
+                            <th class="p-3">Partecipanti (Nome / CF)</th>
+                            <th class="p-3">Stato Presenza</th>
+                            <th class="p-3 text-center">Azioni</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-[#f9d1df] text-sm">
                         {% for p in prenotazioni %}
-                        <tr>
-                            <td><strong>{{ p.ora }}</strong></td>
-                            <td>{{ p.trattamento }}</td>
-                            <td>
-                                {{ p.nome }}<br><small style="color: #6b7280;">{{ p.codice_fiscale }}</small>
+                        <tr class="hover:bg-[#fff9fb]">
+                            <!-- ID -->
+                            <td class="p-3 font-semibold text-gray-600">#{{ p[0] }}</td>
+                            
+                            <!-- Data e Ora -->
+                            <td class="p-3">
+                                <div class="font-medium text-gray-900">{{ p[2] }}</div>
+                                <div class="text-xs text-gray-500">Ore {{ p[3] }}</div>
                             </td>
-                            <td>
-                                {% if p.nome_2 %}
-                                    {{ p.nome_2 }}<br><small style="color: #6b7280;">{{ p.codice_fiscale_2 }}</small>
-                                {% else %}
-                                    -
+                            
+                            <!-- Trattamento -->
+                            <td class="p-3 font-medium text-gray-800">
+                                {{ p[4] }}
+                            </td>
+                            
+                            <!-- Partecipanti (Persona 1 e Persona 2) -->
+                            <td class="p-3">
+                                <!-- Persona 1 -->
+                                <div class="bg-[#fff9fb] p-2 rounded-xl border border-[#f9d1df] mb-1">
+                                    <span class="text-xs font-bold text-[#D81B60] uppercase">Persona 1:</span>
+                                    <span class="font-semibold text-gray-800">{{ p[1] }}</span>
+                                    <div class="text-xs font-mono text-gray-500">CF: {{ p[5] }}</div>
+                                </div>
+
+                                <!-- Persona 2 (se presente per lezioni di coppia) -->
+                                {% if p[7] %}
+                                <div class="bg-[#fdf4f8] p-2 rounded-xl border border-[#f9d1df]">
+                                    <span class="text-xs font-bold text-[#880E4F] uppercase">Persona 2:</span>
+                                    <span class="font-semibold text-gray-800">{{ p[7] }}</span>
+                                    <div class="text-xs font-mono text-gray-500">CF: {{ p[8] }}</div>
+                                </div>
                                 {% endif %}
                             </td>
-                            <td>
-                                <span class="badge {% if p.stato == 'presente' %}badge-presente{% else %}badge-confermata{% endif %}">
-                                    {{ p.stato }}
-                                </span>
-                            </td>
-                            <td>
-                                <div style="display: flex; gap: 6px;">
-                                    <form action="/admin/prenotazione/stato" method="POST">
-                                        <input type="hidden" name="id_prenotazione" value="{{ p.id }}">
-                                        <input type="hidden" name="nuovo_stato" value="{% if p.stato == 'presente' %}confermata{% else %}presente{% endif %}">
-                                        <button type="submit" class="btn btn-secondary" style="font-size: 11px; padding: 5px 8px;">
-                                            {% if p.stato == 'presente' %}Annulla Check-in{% else %}Segna Presente{% endif %}
-                                        </button>
-                                    </form>
-                                    <form action="/admin/prenotazione/elimina" method="POST" onsubmit="return confirm('Eliminare questa prenotazione?');">
-                                        <input type="hidden" name="id_prenotazione" value="{{ p.id }}">
-                                        <button type="submit" class="btn btn-danger" style="font-size: 11px; padding: 5px 8px;">Elimina</button>
-                                    </form>
+                            
+                            <!-- Stato Presenza -->
+                            <td class="p-3">
+                                <!-- Stato Persona 1 -->
+                                <div class="mb-1">
+                                    <span class="text-xs text-gray-500">P1:</span>
+                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full {{ 'bg-green-100 text-green-800' if p[6] == 'presente' else 'bg-yellow-100 text-yellow-800' }}">
+                                        {{ p[6] }}
+                                    </span>
                                 </div>
+                                <!-- Stato Persona 2 -->
+                                {% if p[7] %}
+                                <div>
+                                    <span class="text-xs text-gray-500">P2:</span>
+                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full {{ 'bg-green-100 text-green-800' if p[9] == 'presente' else 'bg-yellow-100 text-yellow-800' }}">
+                                        {{ p[9] }}
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </td>
+                            
+                            <!-- Azioni Admin -->
+                            <td class="p-3 text-center space-y-1">
+                                <form action="/admin/prenotazione/elimina" method="POST" onsubmit="return confirm('Confermi l\'eliminazione della prenotazione?');">
+                                    <input type="hidden" name="id_prenotazione" value="{{ p[0] }}">
+                                    <button type="submit" class="bg-red-50 hover:bg-red-100 text-red-600 text-xs px-2.5 py-1 rounded-xl border border-red-200 transition">
+                                        Elimina
+                                    </button>
+                                </form>
                             </td>
                         </tr>
-                        {% else %}
+                        {% endfor %}
+
+                        {% if not prenotazioni %}
                         <tr>
-                            <td colspan="6" style="text-align: center; color: #6b7280; padding: 20px;">Nessuna prenotazione per questa data.</td>
+                            <td colspan="6" class="p-6 text-center text-gray-500">Nessuna prenotazione trovata per la data selezionata.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SEZIONE 2: BLOCCA CALENDARIO -->
+        <div class="bg-white rounded-2xl shadow-xl border border-[#f9d1df] p-6">
+            <h2 class="text-lg font-bold text-[#880E4F] mb-4">🚫 Blocca Giorni o Orari</h2>
+            
+            <form action="/admin/blocca" method="POST" class="flex flex-wrap items-end gap-4 mb-6">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Data</label>
+                    <input type="date" name="data" required class="p-2 border border-[#f2c2d5] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Ora (Opzionale: vuoto = intera giornata)</label>
+                    <input type="text" name="ora" placeholder="Es. 10:00" class="p-2 border border-[#f2c2d5] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+                </div>
+                <button type="submit" class="bg-gradient-to-r from-[#D81B60] to-[#AD1457] hover:opacity-95 text-white font-medium px-4 py-2 rounded-xl text-sm transition shadow-sm">
+                    Inserisci Blocco
+                </button>
+            </form>
+
+            <h3 class="text-sm font-semibold text-gray-700 mb-2">Blocchi Attivi:</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-[#fff0f5] border-b border-[#f9d1df] text-xs font-semibold text-[#880E4F] uppercase">
+                            <th class="p-2">ID</th>
+                            <th class="p-2">Data</th>
+                            <th class="p-2">Ora</th>
+                            <th class="p-2 text-center">Azione</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#f9d1df] text-sm">
+                        {% for b in blocchi %}
+                        <tr>
+                            <td class="p-2">#{{ b[0] }}</td>
+                            <td class="p-2">{{ b[1] }}</td>
+                            <td class="p-2">{{ b[2] if b[2] else 'Intera Giornata' }}</td>
+                            <td class="p-2 text-center">
+                                <form action="/admin/sblocca" method="POST">
+                                    <input type="hidden" name="id_blocco" value="{{ b[0] }}">
+                                    <button type="submit" class="text-xs text-red-600 hover:underline">Sblocca</button>
+                                </form>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -123,80 +201,47 @@
             </div>
         </div>
 
-        <!-- SEZIONE BLOCCO ORARI / GIORNATE -->
-        <div class="section-box">
-            <h2>Blocca Giornata o Orario Specifico</h2>
-            <form action="/admin/blocca" method="POST" class="form-row">
-                <div class="form-group">
-                    <label for="blocco_data">Data</label>
-                    <input type="date" name="data" id="blocco_data" required>
-                </div>
-                <div class="form-group">
-                    <label for="blocco_ora">Ora (Lascia vuoto per bloccare l'intero giorno)</label>
-                    <input type="time" name="ora" id="blocco_ora">
-                </div>
-                <div style="align-self: flex-end;">
-                    <button type="submit" class="btn">Imposta Blocco</button>
-                </div>
-            </form>
-
-            <h3 style="font-size: 14px; margin-top: 16px; margin-bottom: 8px; color: #831843;">Blocchi Attivi:</h3>
-            <ul>
-                {% for b in blocchi %}
-                <li style="font-size: 13px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 8px 12px; border-radius: 6px; border: 1px solid #fbcfe8;">
-                    <span>Data: <strong>{{ b.data }}</strong> {% if b.ora %} - Ora: <strong>{{ b.ora }}</strong>{% else %} - <em>(Intera Giornata)</em>{% endif %}</span>
-                    <form action="/admin/sblocca" method="POST" style="margin:0;">
-                        <input type="hidden" name="id_blocco" value="{{ b.id }}">
-                        <button type="submit" class="btn btn-danger" style="font-size: 11px; padding: 3px 8px;">Rimuovi</button>
-                    </form>
-                </li>
-                {% else %}
-                <p style="font-size: 13px; color: #6b7280;">Nessun blocco attivo.</p>
-                {% endfor %}
-            </ul>
-        </div>
-
-        <!-- SEZIONE UTENTI REGISTRATI -->
-        <div class="section-box">
-            <h2>Gestione Utenti Registrati</h2>
-            <div style="overflow-x: auto;">
-                <table>
+        <!-- SEZIONE 3: GESTIONE UTENTI -->
+        <div class="bg-white rounded-2xl shadow-xl border border-[#f9d1df] p-6">
+            <h2 class="text-lg font-bold text-[#880E4F] mb-4">👥 Utenti Registrati</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr>
-                            <th>Nome e Cognome</th>
-                            <th>Codice Fiscale</th>
-                            <th>Data Registrazione</th>
-                            <th>Stato</th>
-                            <th>Azioni</th>
+                        <tr class="bg-[#fff0f5] border-b border-[#f9d1df] text-xs font-semibold text-[#880E4F] uppercase">
+                            <th class="p-3">Nome & Cognome</th>
+                            <th class="p-3">Codice Fiscale</th>
+                            <th class="p-3">Data Registrazione</th>
+                            <th class="p-3">Stato Account</th>
+                            <th class="p-3 text-center">Azioni</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-[#f9d1df] text-sm">
                         {% for u in utenti %}
-                        <tr>
-                            <td><strong>{{ u.nome }} {{ u.cognome }}</strong></td>
-                            <td>{{ u.codice_fiscale }}</td>
-                            <td>{{ u.data_registrazione }}</td>
-                            <td>
-                                {% if u.bannato %}
-                                    <span class="badge badge-bannato">Disabilitato</span>
+                        <tr class="hover:bg-[#fff9fb]">
+                            <td class="p-3 font-medium text-gray-800">{{ u[1] }} {{ u[2] }}</td>
+                            <td class="p-3 font-mono text-gray-600">{{ u[3] }}</td>
+                            <td class="p-3 text-gray-500">{{ u[4] }}</td>
+                            <td class="p-3">
+                                {% if u[5] %}
+                                    <span class="px-2 py-1 text-xs font-semibold bg-red-100 text-red-800 rounded-full">Bannato</span>
                                 {% else %}
-                                    <span class="badge badge-presente">Attivo</span>
+                                    <span class="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Attivo</span>
                                 {% endif %}
                             </td>
-                            <td>
-                                <div style="display: flex; gap: 6px;">
-                                    <form action="/admin/utente/banna" method="POST">
-                                        <input type="hidden" name="id_utente" value="{{ u.id }}">
-                                        <input type="hidden" name="stato_ban" value="{{ u.bannato }}">
-                                        <button type="submit" class="btn {% if u.bannato %}btn-secondary{% else %}btn-danger{% endif %}" style="font-size: 11px; padding: 5px 8px;">
-                                            {% if u.bannato %}Riattiva{% else %}Disabilita{% endif %}
-                                        </button>
-                                    </form>
-                                    <form action="/admin/utente/elimina" method="POST" onsubmit="return confirm('Eliminare questo utente e tutte le sue prenotazioni?');">
-                                        <input type="hidden" name="id_utente" value="{{ u.id }}">
-                                        <button type="submit" class="btn btn-danger" style="font-size: 11px; padding: 5px 8px;">Elimina</button>
-                                    </form>
-                                </div>
+                            <td class="p-3 text-center flex justify-center space-x-2">
+                                <form action="/admin/utente/banna" method="POST">
+                                    <input type="hidden" name="id_utente" value="{{ u[0] }}">
+                                    <input type="hidden" name="stato_ban" value="{{ u[5] }}">
+                                    <button type="submit" class="text-xs px-2 py-1 rounded-xl border {{ 'bg-gray-100 text-gray-700 border-gray-200' if u[5] else 'bg-yellow-50 text-yellow-700 border-yellow-200' }}">
+                                        {{ 'Sblocca' if u[5] else 'Banna' }}
+                                    </button>
+                                </form>
+                                <form action="/admin/utente/elimina" method="POST" onsubmit="return confirm('Sei sicuro di voler eliminare questo utente?');">
+                                    <input type="hidden" name="id_utente" value="{{ u[0] }}">
+                                    <button type="submit" class="text-xs px-2 py-1 rounded-xl bg-red-50 text-red-600 border border-red-200">
+                                        Elimina
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}
