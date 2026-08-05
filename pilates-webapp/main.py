@@ -263,51 +263,61 @@ def get_orari_disponibili(data: str):
         return JSONResponse({"orari": []})
 
     with engine.begin() as conn:
+        # Verifica se l'intera giornata è bloccata
         giorno_bloccato = conn.execute(text("SELECT id FROM blocchi WHERE data = :d AND ora IS NULL"), {"d": data}).fetchone()
         if giorno_bloccato:
             return JSONResponse({"orari": []})
 
+        # Estrae orari bloccati specifici per quel giorno
         orari_bloccati = [r[0] for r in conn.execute(text("SELECT ora FROM blocchi WHERE data = :d AND ora IS NOT NULL"), {"d": data}).fetchall()]
-        prenotati = [r[0] for r in conn.execute(text("SELECT ora FROM prenotazioni WHERE data = :d"), {"d": data}).fetchall()]
+        
+        # Estrae le prenotazioni esistenti per calcolare quanti posti sono occupati
+        # Controlliamo il trattamento per capire se occupano 1 o 2 posti
+        prenotazioni_giorno = conn.execute(
+            text("SELECT ora, trattamento, COALESCE(stato, 'confermata') FROM prenotazioni WHERE data = :d"), 
+            {"d": data}
+        ).fetchall()
+
+    # Calcoliamo i posti occupati per ogni ora (Max 2 posti per slot)
+    posti_occupati_per_ora = {}
+    for ora, trattamento, stato in prenotazioni_giorno:
+        if stato.lower() == 'cancellata': # Se gestisci le cancellazioni
+            continue
+        
+        # Di default occupano 1 posto (singolo). Se è coppia, occupa 2 posti.
+        peso = 2 if "coppia" in trattamento.lower() else 1
+        
+        posti_occupati_per_ora[ora] = posti_occupati_per_ora.get(ora, 0) + peso
 
     orari_teorici = logic.get_orari_per_data(dt)
     if not orari_teorici:
         return JSONResponse({"orari": []})
 
-    orari_liberi = [o for o in orari_teorici if o not in prenotati and o not in orari_bloccati]
+    now_local = logic.get_current_time_local()
+    oggi_str = now_local.strftime("%Y-%m-%d")
+    ora_corrente = now_local.time()
+
+    orari_liberi = []
+    for o in orari_teorici:
+        # 1. Salta se l'orario è già passato (solo se la data è oggi)
+        if data == oggi_str:
+            try:
+                ora_obj = datetime.strptime(o, "%H:%M").time()
+                if ora_obj <= ora_corrente:
+                    continue
+            except ValueError:
+                pass
+
+        # 2. Salta se l'orario è bloccato dall'admin
+        if o in orari_bloccati:
+            continue
+
+        # 3. Verifica capienza (massimo 2 posti disponibili per slot)
+        posti_occupati = posti_occupati_per_ora.get(o, 0)
+        if posti_occupati < 2:
+            orari_liberi.append(o)
+
     return JSONResponse({"orari": orari_liberi})
-
-# --- DASHBOARD ADMIN ---
-@app.get("/admin", response_class=HTMLResponse)
-def admin_dashboard(request: Request, data: str = None):
-    user = request.session.get("user")
-    if not user or user.get("cf") != ADMIN_CF:
-        return RedirectResponse(url="/", status_code=303)
-
-    # Se non viene passata una data, usiamo quella odierna di default
-    if not data:
-        data = logic.get_current_time_local().strftime("%Y-%m-%d")
-
-    with engine.begin() as conn:
-        # Filtriamo le prenotazioni in base alla data selezionata
-        prenotazioni = conn.execute(text("""
-            SELECT id, nome, data, ora, trattamento, codice_fiscale, COALESCE(stato, 'confermata'),
-                   nome_2, codice_fiscale_2, COALESCE(stato_2, 'confermata') 
-            FROM prenotazioni 
-            WHERE data = :d
-            ORDER BY ora ASC
-        """), {"d": data}).fetchall()
-        
-        utenti = conn.execute(text("SELECT id, nome, cognome, codice_fiscale, data_registrazione, COALESCE(bannato, false) FROM utenti ORDER BY nome ASC")).fetchall()
-        blocchi = conn.execute(text("SELECT id, data, ora FROM blocchi ORDER BY data DESC")).fetchall()
-
-    return templates.TemplateResponse(request=request, name="admin.html", context={
-        "user": user, 
-        "prenotazioni": prenotazioni, 
-        "utenti": utenti, 
-        "blocchi": blocchi,
-        "data_selezionata": data
-    })
 
 # --- AZIONI ADMIN ---
 @app.post("/admin/prenotazione/elimina")
