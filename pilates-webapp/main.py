@@ -14,8 +14,10 @@ app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "su
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# CODICE FISCALE DELL'AMMINISTRATORE
+# CODICE FISCALE E CREDENZIALI DELL'AMMINISTRATORE
 ADMIN_CF = os.getenv("ADMIN_CF", "BRNFRC04E27C351V")
+ADMIN_USER = os.getenv("ADMIN_USER", "admin")
+ADMIN_PWD = os.getenv("ADMIN_PWD", "admin123")
 
 @app.on_event("startup")
 def startup():
@@ -32,11 +34,13 @@ def startup():
             except Exception:
                 pass
 
-# --- PAGINA PRINCIPALE / LOGIN ---
+# --- PAGINA PRINCIPALE / LOGIN CLIENTE ---
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     user = request.session.get("user")
     if user:
+        if user.get("cf") == ADMIN_CF:
+            return RedirectResponse(url="/admin", status_code=303)
         return RedirectResponse(url="/prenota", status_code=303)
     return templates.TemplateResponse(request=request, name="login.html", context={"error": None})
 
@@ -54,9 +58,38 @@ def login(request: Request, nome: str = Form(...), cognome: str = Form(...), pas
             
             if logic.verifica_password(password, res[4], res[5]):
                 request.session["user"] = {"id": str(res[0]), "nome": str(res[1]), "cognome": str(res[2]), "cf": str(res[3])}
+                if str(res[3]).upper() == ADMIN_CF.upper():
+                    return RedirectResponse(url="/admin", status_code=303)
                 return RedirectResponse(url="/prenota", status_code=303)
             
     return templates.TemplateResponse(request=request, name="login.html", context={"error": "Credenziali non valide o utente non trovato."})
+
+# --- ROTTA UNIFICATA PER LOGIN ADMIN (TENDINA SCORREVOLE) ---
+@app.api_route("/admin/login", methods=["GET", "POST"], response_class=HTMLResponse)
+def admin_login(request: Request, username: str = Form(None), password: str = Form(None)):
+    # 1. Accesso via GET (es. se si scrive l'URL diretto nel browser)
+    if request.method == "GET":
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "open_admin": True
+        })
+
+    # 2. Invio credenziali via POST dal form della tendina
+    if username and password and username.strip() == ADMIN_USER and password.strip() == ADMIN_PWD:
+        request.session["user"] = {
+            "id": "0",
+            "nome": "Amministratore",
+            "cognome": "Studio",
+            "cf": ADMIN_CF
+        }
+        return RedirectResponse(url="/admin", status_code=303)
+
+    # Credenziali errate: ricarica la pagina con l'errore dentro la tendina aperta
+    return templates.TemplateResponse("login.html", {
+        "request": request,
+        "admin_error": "Username o Password Admin non validi.",
+        "open_admin": True
+    })
 
 # --- PAGINA REGISTRAZIONE ---
 @app.get("/registrati", response_class=HTMLResponse)
@@ -125,7 +158,6 @@ def effettua_prenotazione(
     nome_completo = f"{user['nome']} {user['cognome']}"
     data_creazione = logic.get_current_time_local().strftime("%Y-%m-%d %H:%M:%S")
 
-    # Gestione Dati Persona 2 per Lezione di Coppia
     nome_completo_2 = None
     cf_2_clean = None
 
@@ -137,7 +169,6 @@ def effettua_prenotazione(
                 "error": "Per la lezione di coppia è necessario inserire tutti i dati della seconda persona."
             })
         
-        # VALIDAZIONE DEL CODICE FISCALE DELLA SECONDA PERSONA
         valido, msg = logic.valida_codice_fiscale(nome_2.strip(), cognome_2.strip(), cf_2.strip())
         if not valido:
             return templates.TemplateResponse("prenota.html", {
@@ -221,15 +252,6 @@ def admin_dashboard(request: Request):
         "user": user, "prenotazioni": prenotazioni, "utenti": utenti, "blocchi": blocchi
     })
 
-# --- ROTTA GET PER /admin/login (se si digita l'URL nel browser) ---
-@app.get("/admin/login", response_class=HTMLResponse)
-def login_admin_get(request: Request):
-    # Apre la pagina di login con la tendina admin già spalancata
-    return templates.TemplateResponse("login.html", {
-        "request": request,
-        "open_admin": True
-    })
-
 # --- AZIONI ADMIN ---
 @app.post("/admin/prenotazione/elimina")
 def elimina_prenotazione(request: Request, id_prenotazione: int = Form(...)):
@@ -281,10 +303,8 @@ def elimina_utente(request: Request, id_utente: int = Form(...)):
     return RedirectResponse(url="/admin", status_code=303)
 
 # --- FUNZIONE CHECK-IN CON SUPPORTO PER ENTRAMBI I PARTECIPANTI ---
-# --- FUNZIONE CHECK-IN CON SUPPORTO PER ENTRAMBI I PARTECIPANTI ---
 def esegui_checkin_utente(cf: str):
     now = logic.get_current_time_local()
-    # Rimuoviamo il fuso orario per confrontare le date in modo uniforme
     now_naive = now.replace(tzinfo=None)
     data_oggi = now_naive.strftime("%Y-%m-%d")
     cf_upper = cf.strip().upper()
@@ -305,10 +325,8 @@ def esegui_checkin_utente(cf: str):
                 ora_pulita = str(p_ora).strip()[:5]
                 dt_appuntamento = datetime.strptime(f"{data_oggi} {ora_pulita}", "%Y-%m-%d %H:%M")
                 
-                # Differenza temporale in minuti
                 diff_minuti = (now_naive - dt_appuntamento).total_seconds() / 60
 
-                # Finestra estesa a 35 minuti per comprendere anche i secondi scattati dopo le 16:30
                 if -35 <= diff_minuti <= 35:
                     if cf1 and cf_upper == cf1.strip().upper():
                         if p_stato == 'presente':
