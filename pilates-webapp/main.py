@@ -14,7 +14,7 @@ app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "su
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# CODICE FISCALE E CREDENZIALI DELL'AMMINISTRATORE
+# CREDENZIALI E CODICE FISCALE AMMINISTRATORE
 ADMIN_CF = os.getenv("ADMIN_CF", "BRNFRC04E27C351V")
 ADMIN_USER = os.getenv("ADMIN_USER", "admin")
 ADMIN_PWD = os.getenv("ADMIN_PWD", "admin123")
@@ -22,19 +22,22 @@ ADMIN_PWD = os.getenv("ADMIN_PWD", "admin123")
 @app.on_event("startup")
 def startup():
     init_db()
-    # Migrazione automatica colonne per prenotazioni di coppia
-    with engine.begin() as conn:
-        for q in [
-            "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS nome_2 TEXT",
-            "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS codice_fiscale_2 TEXT",
-            "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS stato_2 TEXT DEFAULT 'confermata'"
-        ]:
+    # Migrazione automatica per aggiungere colonne mancanti senza mandare in crash il DB
+    queries = [
+        "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS nome_2 TEXT",
+        "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS codice_fiscale_2 TEXT",
+        "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS stato_2 TEXT DEFAULT 'confermata'",
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS bannato BOOLEAN DEFAULT false"
+    ]
+    with engine.connect() as conn:
+        for q in queries:
             try:
                 conn.execute(text(q))
+                conn.commit()
             except Exception:
                 pass
 
-# --- PAGINA PRINCIPALE / LOGIN CLIENTE ---
+# --- LOGIN CLIENTE ---
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     user = request.session.get("user")
@@ -46,35 +49,38 @@ def index(request: Request):
 
 @app.post("/login")
 def login(request: Request, nome: str = Form(...), cognome: str = Form(...), password: str = Form(...)):
-    with engine.begin() as conn:
-        res = conn.execute(
-            text("SELECT id, nome, cognome, codice_fiscale, password_salt, password_hash, COALESCE(bannato, false) FROM utenti WHERE UPPER(nome) = :n AND UPPER(cognome) = :c"),
-            {"n": nome.strip().upper(), "c": cognome.strip().upper()}
-        ).fetchone()
-        
-        if res:
-            if res[6]:  # Utente Bannato
-                return templates.TemplateResponse(request=request, name="login.html", context={"error": "Account disabilitato. Contatta l'amministrazione."})
+    try:
+        with engine.begin() as conn:
+            res = conn.execute(
+                text("SELECT id, nome, cognome, codice_fiscale, password_salt, password_hash, COALESCE(bannato, false) FROM utenti WHERE UPPER(nome) = :n AND UPPER(cognome) = :c"),
+                {"n": nome.strip().upper(), "c": cognome.strip().upper()}
+            ).fetchone()
             
-            if logic.verifica_password(password, res[4], res[5]):
-                request.session["user"] = {"id": str(res[0]), "nome": str(res[1]), "cognome": str(res[2]), "cf": str(res[3])}
-                if str(res[3]).upper() == ADMIN_CF.upper():
-                    return RedirectResponse(url="/admin", status_code=303)
-                return RedirectResponse(url="/prenota", status_code=303)
-            
+            if res:
+                # Controlla se l'utente è bannato
+                if res[6]:
+                    return templates.TemplateResponse(request=request, name="login.html", context={"error": "Account disabilitato. Contatta l'amministrazione."})
+                
+                salt, pwd_hash = res[4], res[5]
+                if salt and pwd_hash and logic.verifica_password(password, salt, pwd_hash):
+                    request.session["user"] = {"id": str(res[0]), "nome": str(res[1]), "cognome": str(res[2]), "cf": str(res[3])}
+                    if str(res[3]).upper() == ADMIN_CF.upper():
+                        return RedirectResponse(url="/admin", status_code=303)
+                    return RedirectResponse(url="/prenota", status_code=303)
+
+    except Exception as e:
+        print(f"Errore durante il login: {e}")
+        return templates.TemplateResponse(request=request, name="login.html", context={"error": f"Errore di sistema: {e}"})
+
     return templates.TemplateResponse(request=request, name="login.html", context={"error": "Credenziali non valide o utente non trovato."})
 
-# --- ROTTA UNIFICATA PER LOGIN ADMIN (TENDINA SCORREVOLE) ---
-@app.api_route("/admin/login", methods=["GET", "POST"], response_class=HTMLResponse)
-def admin_login(request: Request, username: str = Form(None), password: str = Form(None)):
-    # 1. Accesso via GET (es. se si scrive l'URL diretto nel browser)
-    if request.method == "GET":
-        return templates.TemplateResponse("login.html", {
-            "request": request,
-            "open_admin": True
-        })
+# --- LOGIN ADMIN ---
+@app.get("/admin/login", response_class=HTMLResponse)
+def admin_login_get(request: Request):
+    return templates.TemplateResponse(request=request, name="login.html", context={"open_admin": True})
 
-    # 2. Invio credenziali via POST dal form della tendina
+@app.post("/admin/login", response_class=HTMLResponse)
+def admin_login_post(request: Request, username: str = Form(""), password: str = Form("")):
     if username and password and username.strip() == ADMIN_USER and password.strip() == ADMIN_PWD:
         request.session["user"] = {
             "id": "0",
@@ -84,14 +90,12 @@ def admin_login(request: Request, username: str = Form(None), password: str = Fo
         }
         return RedirectResponse(url="/admin", status_code=303)
 
-    # Credenziali errate: ricarica la pagina con l'errore dentro la tendina aperta
-    return templates.TemplateResponse("login.html", {
-        "request": request,
+    return templates.TemplateResponse(request=request, name="login.html", context={
         "admin_error": "Username o Password Admin non validi.",
         "open_admin": True
     })
 
-# --- PAGINA REGISTRAZIONE ---
+# --- REGISTRAZIONE ---
 @app.get("/registrati", response_class=HTMLResponse)
 def pagina_registrazione(request: Request):
     user = request.session.get("user")
@@ -121,11 +125,12 @@ def registrati(
     try:
         with engine.begin() as conn:
             conn.execute(
-                text("INSERT INTO utenti (nome, cognome, codice_fiscale, password_salt, password_hash, data_registrazione) VALUES (:n, :c, :cf, :s, :h, :d)"),
+                text("INSERT INTO utenti (nome, cognome, codice_fiscale, password_salt, password_hash, data_registrazione, bannato) VALUES (:n, :c, :cf, :s, :h, :d, false)"),
                 {"n": nome.strip().title(), "c": cognome.strip().title(), "cf": cf.strip().upper(), "s": salt, "h": pwd_hash, "d": data_reg}
             )
         return templates.TemplateResponse(request=request, name="login.html", context={"success": "Registrazione completata! Ora puoi effettuare il login."})
-    except Exception:
+    except Exception as e:
+        print(f"Errore registrazione: {e}")
         return templates.TemplateResponse(request=request, name="register.html", context={"error": "Codice Fiscale già registrato."})
 
 @app.get("/logout")
@@ -133,7 +138,7 @@ def logout(request: Request):
     request.session.clear()
     return RedirectResponse(url="/", status_code=303)
 
-# --- PAGINA PRENOTAZIONE ---
+# --- PRENOTAZIONI ---
 @app.get("/prenota", response_class=HTMLResponse)
 def prenota_page(request: Request):
     user = request.session.get("user")
@@ -163,16 +168,14 @@ def effettua_prenotazione(
 
     if "coppia" in trattamento.lower():
         if not nome_2 or not cognome_2 or not cf_2:
-            return templates.TemplateResponse("prenota.html", {
-                "request": request, 
+            return templates.TemplateResponse(request=request, name="prenota.html", context={
                 "user": user, 
                 "error": "Per la lezione di coppia è necessario inserire tutti i dati della seconda persona."
             })
         
         valido, msg = logic.valida_codice_fiscale(nome_2.strip(), cognome_2.strip(), cf_2.strip())
         if not valido:
-            return templates.TemplateResponse("prenota.html", {
-                "request": request, 
+            return templates.TemplateResponse(request=request, name="prenota.html", context={
                 "user": user, 
                 "error": f"Dati 2° partecipante errati: {msg}"
             })
@@ -183,8 +186,8 @@ def effettua_prenotazione(
     with engine.begin() as conn:
         occupati = [r[0] for r in conn.execute(text("SELECT ora FROM prenotazioni WHERE data = :d"), {"d": data}).fetchall()]
         if ora in occupati:
-            return templates.TemplateResponse("prenota.html", {
-                "request": request, "user": user, "error": "Spiacenti, questo orario è stato appena prenotato da qualcun altro!"
+            return templates.TemplateResponse(request=request, name="prenota.html", context={
+                "user": user, "error": "Spiacenti, questo orario è stato appena prenotato da qualcun altro!"
             })
 
         conn.execute(
@@ -231,7 +234,7 @@ def get_orari_disponibili(data: str):
     orari_liberi = [o for o in orari_teorici if o not in prenotati and o not in orari_bloccati]
     return JSONResponse({"orari": orari_liberi})
 
-# --- AREA ADMIN DASHBOARD ---
+# --- DASHBOARD ADMIN ---
 @app.get("/admin", response_class=HTMLResponse)
 def admin_dashboard(request: Request):
     user = request.session.get("user")
@@ -302,7 +305,7 @@ def elimina_utente(request: Request, id_utente: int = Form(...)):
             conn.execute(text("DELETE FROM utenti WHERE id = :id"), {"id": id_utente})
     return RedirectResponse(url="/admin", status_code=303)
 
-# --- FUNZIONE CHECK-IN CON SUPPORTO PER ENTRAMBI I PARTECIPANTI ---
+# --- CHECK-IN ---
 def esegui_checkin_utente(cf: str):
     now = logic.get_current_time_local()
     now_naive = now.replace(tzinfo=None)
