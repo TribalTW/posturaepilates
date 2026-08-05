@@ -36,6 +36,23 @@ def startup():
             except Exception:
                 pass
 
+# Funzione ausiliaria per verificare se l'utente ha effettivamente usufruito (check-in 'presente') della prova
+def utente_ha_usato_prova(cf: str) -> bool:
+    with engine.begin() as conn:
+        count = conn.execute(
+            text("""
+                SELECT COUNT(*) FROM prenotazioni 
+                WHERE (
+                    (UPPER(codice_fiscale) = :cf AND LOWER(stato) = 'presente') 
+                    OR 
+                    (UPPER(codice_fiscale_2) = :cf AND LOWER(stato_2) = 'presente')
+                ) 
+                AND LOWER(trattamento) LIKE '%prova%'
+            """),
+            {"cf": cf.strip().upper()}
+        ).scalar()
+        return count > 0
+
 # --- LOGIN CLIENTE ---
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
@@ -150,13 +167,7 @@ def prenota_page(request: Request):
     if not user:
         return RedirectResponse(url="/", status_code=303)
 
-    # Verifica se l'utente ha già effettuato/prenotato una Seduta di prova
-    with engine.begin() as conn:
-        count = conn.execute(
-            text("SELECT COUNT(*) FROM prenotazioni WHERE UPPER(codice_fiscale) = :cf AND LOWER(trattamento) LIKE '%prova%'"),
-            {"cf": user['cf'].upper()}
-        ).scalar()
-        ha_usato_prova = (count > 0)
+    ha_usato_prova = utente_ha_usato_prova(user['cf'])
 
     return templates.TemplateResponse(request=request, name="prenota.html", context={
         "user": user, 
@@ -177,14 +188,9 @@ def effettua_prenotazione(
     if not user:
         return RedirectResponse(url="/", status_code=303)
 
-    with engine.begin() as conn:
-        count = conn.execute(
-            text("SELECT COUNT(*) FROM prenotazioni WHERE UPPER(codice_fiscale) = :cf AND LOWER(trattamento) LIKE '%prova%'"),
-            {"cf": user['cf'].upper()}
-        ).scalar()
-        ha_usato_prova = (count > 0)
+    ha_usato_prova = utente_ha_usato_prova(user['cf'])
 
-    # Blocco nel caso l'utente tenti di prenotare nuovamente una Seduta di Prova
+    # Blocco nel caso l'utente tenti di prenotare se ha GIÀ completato il check-in in passato per una Prova
     if "prova" in trattamento.lower() and ha_usato_prova:
         return templates.TemplateResponse(request=request, name="prenota.html", context={
             "user": user, 
@@ -239,12 +245,9 @@ def effettua_prenotazione(
             }
         )
 
-    # Aggiorna lo stato di ha_usato_prova se ha appena prenotato la prova
-    ha_usato_prova_post = True if "prova" in trattamento.lower() else ha_usato_prova
-
     return templates.TemplateResponse(request=request, name="prenota.html", context={
         "user": user,
-        "ha_usato_prova": ha_usato_prova_post,
+        "ha_usato_prova": ha_usato_prova,
         "success": f"Prenotazione confermata per il {data} alle ore {ora}!",
         "ultimo_trattamento": trattamento,
         "ultima_data": data,
