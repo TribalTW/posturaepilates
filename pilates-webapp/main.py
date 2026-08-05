@@ -225,8 +225,36 @@ def effettua_prenotazione(
         nome_completo_2 = f"{nome_2.strip().title()} {cognome_2.strip().title()}"
         cf_2_clean = cf_2.strip().upper()
 
-    # Calcolo posti occupati in tempo reale (Capienza massima = 2 lettini)
+    # --- CONTROLLO: Un utente non può prenotarsi due volte nello stesso giorno e ora ---
     with engine.begin() as conn:
+        user_cf = user['cf'].strip().upper()
+        gia_prenotato = conn.execute(
+            text("""
+                SELECT COUNT(*) FROM prenotazioni 
+                WHERE data = :d AND ora = :o 
+                AND (
+                    UPPER(codice_fiscale) = :cf 
+                    OR UPPER(codice_fiscale_2) = :cf
+                    OR (:cf_2 IS NOT NULL AND (UPPER(codice_fiscale) = :cf_2 OR UPPER(codice_fiscale_2) = :cf_2))
+                )
+                AND LOWER(COALESCE(stato, 'confermata')) != 'cancellata'
+            """),
+            {
+                "d": data, 
+                "o": ora, 
+                "cf": user_cf,
+                "cf_2": cf_2_clean if is_coppia else None
+            }
+        ).scalar()
+
+        if gia_prenotato > 0:
+            return templates.TemplateResponse(request=request, name="prenota.html", context={
+                "user": user, 
+                "ha_usato_prova": ha_usato_prova,
+                "error": "Risulti già prenotato (o inserito come secondo partecipante) in questo giorno e orario!"
+            })
+
+        # Calcolo posti occupati in tempo reale (Capienza massima = 2 lettini)
         prenotazioni_esistenti = conn.execute(
             text("SELECT trattamento, COALESCE(stato, 'confermata') FROM prenotazioni WHERE data = :d AND ora = :o"), 
             {"d": data, "o": ora}
