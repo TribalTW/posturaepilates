@@ -3,111 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Postura & Pilates - Prenota Appuntamento</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-[#fff9fb] min-h-screen flex items-center justify-center p-4">
-    <div class="max-w-lg w-full bg-white border border-[#f9d1df] p-6 rounded-2xl shadow-xl">
+    <title>Prenota Lezione</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: #f1f5f9; min-height: 100vh; padding: 20px; display: flex; justify-content: center; align-items: flex-start; }
+        .container { background: #ffffff; width: 100%; max-width: 500px; padding: 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-top: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; }
+        .user-info { font-size: 14px; font-weight: 600; color: #1e293b; }
+        .logout-btn { font-size: 13px; color: #ef4444; text-decoration: none; font-weight: 500; }
+        h1 { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 20px; }
         
-        <!-- INTESTAZIONE UTENTE E LOGOUT -->
-        <div class="flex justify-between items-center mb-6 border-b border-[#f9d1df] pb-4">
-            <div>
-                <h1 class="text-xl font-bold text-[#880E4F]">Postura & Pilates</h1>
-                <p class="text-xs text-gray-500">Benvenuto/a, <span class="font-semibold text-gray-700">{{ user.nome }} {{ user.cognome }}</span></p>
-            </div>
-            <a href="/logout" class="text-xs text-red-600 hover:text-red-800 font-semibold border border-red-200 bg-red-50 px-3 py-1.5 rounded-lg transition">
-                Esci
-            </a>
+        .alert-success { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 16px; }
+        .alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 16px; }
+
+        .form-group { margin-bottom: 16px; text-align: left; }
+        label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; }
+        select, input[type="date"], input[type="text"] {
+            width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 15px; background: #f8fafc; outline: none; transition: all 0.2s;
+        }
+        select:focus, input:focus { border-color: #2563eb; background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+        /* Box Campi Secondo Partecipante */
+        .box-coppia {
+            background: #eff6ff; border: 1.5px solid #bfdbfe; padding: 16px; border-radius: 12px; margin-bottom: 16px; display: none;
+        }
+        .box-coppia h3 { font-size: 14px; color: #1e40af; margin-bottom: 12px; font-weight: 700; }
+
+        .btn-submit { width: 100%; padding: 12px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 8px; }
+        .btn-submit:hover { background: #1d4ed8; }
+        .btn-ics { display: inline-block; width: 100%; text-align: center; padding: 10px; background: #10b981; color: white; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 10px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="user-info">👋 Benvenuto, {{ user.nome }} {{ user.cognome }}</div>
+            <a href="/logout" class="logout-btn">Esci</a>
         </div>
 
-        <!-- NOTIFICHE DI ERRORE -->
-        {% if error %}
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl mb-4 text-xs text-center font-medium">
-                {{ error }}
-            </div>
-        {% endif %}
+        <h1>Prenota una Lezione</h1>
 
-        <!-- NOTIFICHE DI SUCCESSO CON DOWNLOAD CALENDARIO -->
         {% if success %}
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl mb-4 text-xs text-center font-medium">
-                <p class="mb-2">{{ success }}</p>
-                {% if ultimo_trattamento and ultima_data and ultima_ora %}
-                    <a href="/download-ics?trattamento={{ ultimo_trattamento }}&data={{ ultima_data }}&ora={{ ultima_ora }}" 
-                       class="inline-block bg-green-600 text-white font-bold py-1.5 px-3 rounded-lg shadow text-xs hover:bg-green-700 transition mt-1">
-                        📅 Aggiungi al Calendario (.ics)
-                    </a>
-                {% endif %}
+            <div class="alert-success">
+                ✅ {{ success }}
+            </div>
+            {% if ultimo_trattamento and ultima_data and ultima_ora %}
+                <a href="/download-ics?trattamento={{ ultimo_trattamento }}&data={{ ultima_data }}&ora={{ ultima_ora }}" class="btn-ics">
+                    📅 Aggiungi al tuo Calendario (.ics)
+                </a>
+            {% endif %}
+        {% endif %}
+
+        {% if error %}
+            <div class="alert-error">
+                ⚠️ {{ error }}
             </div>
         {% endif %}
 
-        <!-- FORM PRENOTAZIONE -->
-        <form action="/prenota" method="POST" class="space-y-4">
-            <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1">Seleziona Trattamento</label>
-                <select name="trattamento" required class="w-full p-2.5 border border-[#f2c2d5] rounded-xl outline-none focus:border-[#D81B60] bg-white text-xs">
-                    <option value="" disabled selected>-- Scegli un trattamento --</option>
-                    <option value="Pilates Individuale">Pilates Individuale</option>
-                    <option value="Ginnastica Posturale">Ginnastica Posturale</option>
-                    <option value="Valutazione Posturale Iniziale">Valutazione Posturale Iniziale</option>
+        <form action="/prenota" method="POST">
+            <!-- SELEZIONE TRATTAMENTO / TIPO LEZIONE -->
+            <div class="form-group">
+                <label for="trattamento">Tipologia Lezione</label>
+                <select name="trattamento" id="trattamento" onchange="toggleCampiCoppia()" required>
+                    <option value="Lezione Singola">Lezione Singola</option>
+                    <option value="Lezione di Coppia">Lezione di Coppia</option>
                 </select>
             </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1">Data Appuntamento</label>
-                <input type="date" name="data" id="data_input" required class="w-full p-2.5 border border-[#f2c2d5] rounded-xl outline-none focus:border-[#D81B60] text-xs">
+            <!-- CAMPI DINAMICI PER LA SECONDA PERSONA (LEZIONE DI COPPIA) -->
+            <div id="box_coppia" class="box-coppia">
+                <h3>👥 Dati Secondo Partecipante</h3>
+                <div class="form-group">
+                    <label for="nome_2">Nome</label>
+                    <input type="text" name="nome_2" id="nome_2" placeholder="Nome partner">
+                </div>
+                <div class="form-group">
+                    <label for="cognome_2">Cognome</label>
+                    <input type="text" name="cognome_2" id="cognome_2" placeholder="Cognome partner">
+                </div>
+                <div class="form-group">
+                    <label for="cf_2">Codice Fiscale</label>
+                    <input type="text" name="cf_2" id="cf_2" placeholder="Codice Fiscale partner" style="text-transform: uppercase;">
+                </div>
             </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1">Orari Disponibili</label>
-                <select name="ora" id="ora_select" required disabled class="w-full p-2.5 border border-[#f2c2d5] rounded-xl outline-none focus:border-[#D81B60] bg-white text-xs">
-                    <option value="">Seleziona prima una data</option>
+            <!-- SELEZIONE DATA -->
+            <div class="form-group">
+                <label for="data">Data Lezione</label>
+                <input type="date" name="data" id="data" onchange="caricaOrariDisponibili()" required>
+            </div>
+
+            <!-- SELEZIONE ORARIO -->
+            <div class="form-group">
+                <label for="ora">Orario Disponibile</label>
+                <select name="ora" id="ora" required>
+                    <option value="">Seleziona prima una data...</option>
                 </select>
             </div>
 
-            <button type="submit" class="w-full bg-gradient-to-r from-[#D81B60] to-[#AD1457] text-white font-bold py-3 rounded-xl shadow-md hover:opacity-95 transition text-xs">
-                Conferma Prenotazione
-            </button>
+            <button type="submit" class="btn-submit">Conferma Prenotazione</button>
         </form>
-
     </div>
 
-    <!-- SCRIPT PER CARICARE GLI ORARI DINAMICAMENTE DALL'API FASTAPI -->
     <script>
-        const dataInput = document.getElementById('data_input');
-        const oraSelect = document.getElementById('ora_select');
-
-        // Imposta la data minima selezionabile ad oggi
+        // Imposta la data minima ad oggi
         const today = new Date().toISOString().split('T')[0];
-        dataInput.setAttribute('min', today);
+        document.getElementById('data').setAttribute('min', today);
 
-        dataInput.addEventListener('change', async function() {
-            const selectedData = this.value;
-            if (!selectedData) return;
+        // Mostra/Nasconde i campi del 2° partecipante
+        function toggleCampiCoppia() {
+            const trattamento = document.getElementById("trattamento").value;
+            const box = document.getElementById("box_coppia");
+            const nome2 = document.getElementById("nome_2");
+            const cognome2 = document.getElementById("cognome_2");
+            const cf2 = document.getElementById("cf_2");
 
-            oraSelect.disabled = true;
-            oraSelect.innerHTML = '<option value="">Caricamento orari in corso...</option>';
+            if (trattamento.toLowerCase().includes("coppia")) {
+                box.style.display = "block";
+                nome2.required = true;
+                cognome2.required = true;
+                cf2.required = true;
+            } else {
+                box.style.display = "none";
+                nome2.required = false;
+                cognome2.required = false;
+                cf2.required = false;
+                nome2.value = "";
+                cognome2.value = "";
+                cf2.value = "";
+            }
+        }
+
+        // Carica gli orari disponibili tramite API FastAPI
+        async function caricaOrariDisponibili() {
+            const dataVal = document.getElementById('data').value;
+            const selectOra = document.getElementById('ora');
+            selectOra.innerHTML = '<option value="">Caricamento orari...</option>';
+
+            if (!dataVal) return;
 
             try {
-                const response = await fetch(`/api/orari?data=${selectedData}`);
+                const response = await fetch(`/api/orari?data=${dataVal}`);
                 const data = await response.json();
 
-                oraSelect.innerHTML = '';
+                selectOra.innerHTML = '';
+
                 if (data.orari && data.orari.length > 0) {
-                    oraSelect.disabled = false;
-                    data.orari.forEach(ora => {
-                        const option = document.createElement('option');
-                        option.value = ora;
-                        option.textContent = ora;
-                        oraSelect.appendChild(option);
+                    data.orari.forEach(o => {
+                        const opt = document.createElement('option');
+                        opt.value = o;
+                        opt.textContent = o;
+                        selectOra.appendChild(opt);
                     });
                 } else {
-                    oraSelect.innerHTML = '<option value="">Nessun orario disponibile per questa data</option>';
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'Nessun orario disponibile';
+                    selectOra.appendChild(opt);
                 }
-            } catch (error) {
-                console.error('Errore durante il recupero degli orari:', error);
-                oraSelect.innerHTML = '<option value="">Errore nel caricamento orari</option>';
+            } catch (err) {
+                selectOra.innerHTML = '<option value="">Errore nel caricamento orari</option>';
             }
-        });
+        }
     </script>
 </body>
 </html>
