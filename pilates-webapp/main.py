@@ -15,14 +15,13 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # CREDENZIALI E CODICE FISCALE AMMINISTRATORE
-ADMIN_CF = os.getenv("ADMIN_CF", "")
+ADMIN_CF = os.getenv("ADMIN_CF", "BRNFRC04E27C351V")
 ADMIN_USER = os.getenv("ADMIN_USER", "admin")
 ADMIN_PWD = os.getenv("ADMIN_PWD", "admin123")
 
 @app.on_event("startup")
 def startup():
     init_db()
-    # Migrazione automatica per aggiungere colonne mancanti senza mandare in crash il DB
     queries = [
         "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS nome_2 TEXT",
         "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS codice_fiscale_2 TEXT",
@@ -57,7 +56,6 @@ def login(request: Request, nome: str = Form(...), cognome: str = Form(...), pas
             ).fetchone()
             
             if res:
-                # Controlla se l'utente è bannato
                 if res[6]:
                     return templates.TemplateResponse(request=request, name="login.html", context={"error": "Account disabilitato. Contatta l'amministrazione.", "success": None})
                 
@@ -74,7 +72,7 @@ def login(request: Request, nome: str = Form(...), cognome: str = Form(...), pas
 
     return templates.TemplateResponse(request=request, name="login.html", context={"error": "Credenziali non valide o utente non trovato.", "success": None})
 
-# --- LOGIN ADMIN (LA TENDINA) ---
+# --- LOGIN ADMIN ---
 @app.get("/admin/login", response_class=HTMLResponse)
 def admin_login_get(request: Request):
     return templates.TemplateResponse(request=request, name="login.html", context={
@@ -95,7 +93,6 @@ def admin_login_post(request: Request, username: str = Form(""), password: str =
         }
         return RedirectResponse(url="/admin", status_code=303)
 
-    # Se le credenziali Admin sono errate, restituisce la pagina mantenendo la tendina aperta
     return templates.TemplateResponse(request=request, name="login.html", context={
         "error": None,
         "success": None,
@@ -152,7 +149,19 @@ def prenota_page(request: Request):
     user = request.session.get("user")
     if not user:
         return RedirectResponse(url="/", status_code=303)
-    return templates.TemplateResponse(request=request, name="prenota.html", context={"user": user})
+
+    # Verifica se l'utente ha già effettuato/prenotato una Seduta di prova
+    with engine.begin() as conn:
+        count = conn.execute(
+            text("SELECT COUNT(*) FROM prenotazioni WHERE UPPER(codice_fiscale) = :cf AND LOWER(trattamento) LIKE '%prova%'"),
+            {"cf": user['cf'].upper()}
+        ).scalar()
+        ha_usato_prova = (count > 0)
+
+    return templates.TemplateResponse(request=request, name="prenota.html", context={
+        "user": user, 
+        "ha_usato_prova": ha_usato_prova
+    })
 
 @app.post("/prenota")
 def effettua_prenotazione(
@@ -168,6 +177,21 @@ def effettua_prenotazione(
     if not user:
         return RedirectResponse(url="/", status_code=303)
 
+    with engine.begin() as conn:
+        count = conn.execute(
+            text("SELECT COUNT(*) FROM prenotazioni WHERE UPPER(codice_fiscale) = :cf AND LOWER(trattamento) LIKE '%prova%'"),
+            {"cf": user['cf'].upper()}
+        ).scalar()
+        ha_usato_prova = (count > 0)
+
+    # Blocco nel caso l'utente tenti di prenotare nuovamente una Seduta di Prova
+    if "prova" in trattamento.lower() and ha_usato_prova:
+        return templates.TemplateResponse(request=request, name="prenota.html", context={
+            "user": user, 
+            "ha_usato_prova": True,
+            "error": "Hai già usufruito della Seduta di Prova (limite massimo: 1 a persona)."
+        })
+
     nome_completo = f"{user['nome']} {user['cognome']}"
     data_creazione = logic.get_current_time_local().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -178,6 +202,7 @@ def effettua_prenotazione(
         if not nome_2 or not cognome_2 or not cf_2:
             return templates.TemplateResponse(request=request, name="prenota.html", context={
                 "user": user, 
+                "ha_usato_prova": ha_usato_prova,
                 "error": "Per la lezione di coppia è necessario inserire tutti i dati della seconda persona."
             })
         
@@ -185,6 +210,7 @@ def effettua_prenotazione(
         if not valido:
             return templates.TemplateResponse(request=request, name="prenota.html", context={
                 "user": user, 
+                "ha_usato_prova": ha_usato_prova,
                 "error": f"Dati 2° partecipante errati: {msg}"
             })
 
@@ -195,7 +221,9 @@ def effettua_prenotazione(
         occupati = [r[0] for r in conn.execute(text("SELECT ora FROM prenotazioni WHERE data = :d"), {"d": data}).fetchall()]
         if ora in occupati:
             return templates.TemplateResponse(request=request, name="prenota.html", context={
-                "user": user, "error": "Spiacenti, questo orario è stato appena prenotato da qualcun altro!"
+                "user": user, 
+                "ha_usato_prova": ha_usato_prova,
+                "error": "Spiacenti, questo orario è stato appena prenotato da qualcun altro!"
             })
 
         conn.execute(
@@ -211,8 +239,12 @@ def effettua_prenotazione(
             }
         )
 
+    # Aggiorna lo stato di ha_usato_prova se ha appena prenotato la prova
+    ha_usato_prova_post = True if "prova" in trattamento.lower() else ha_usato_prova
+
     return templates.TemplateResponse(request=request, name="prenota.html", context={
         "user": user,
+        "ha_usato_prova": ha_usato_prova_post,
         "success": f"Prenotazione confermata per il {data} alle ore {ora}!",
         "ultimo_trattamento": trattamento,
         "ultima_data": data,
