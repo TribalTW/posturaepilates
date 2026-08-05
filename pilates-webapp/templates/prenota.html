@@ -63,11 +63,14 @@
         <form action="/prenota" method="POST">
             <!-- SELEZIONE TRATTAMENTO / TIPO LEZIONE -->
             <div class="form-group">
-                <label for="trattamento">Tipologia Lezione</label>
-                <select name="trattamento" id="trattamento" onchange="toggleCampiCoppia()" required>
-                    <option value="Valutazione Posturale">Valutazione Posturale</option>
-                    <option value="Pilates Individuale">Pilates Individuale</option>
-                    <option value="Pilates di Coppia">Pilates di Coppia</option>
+                <label for="trattamento">Seleziona Trattamento:</label>
+                <select name="trattamento" id="trattamento" class="form-select" required>
+                    <option value="" disabled selected>-- Seleziona un trattamento --</option>
+                    {% if not ha_usato_prova %}
+                        <option value="Seduta di prova">Seduta di prova</option>
+                    {% endif %}
+                    <option value="Lezione Singola">Lezione Singola</option>
+                    <option value="Lezione di Coppia">Lezione di Coppia</option>
                 </select>
             </div>
 
