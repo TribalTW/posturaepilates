@@ -15,7 +15,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # CODICE FISCALE DELL'AMMINISTRATORE (Modifica con il tuo Codice Fiscale reale)
-ADMIN_CF = os.getenv("ADMIN_CF", "IL_TUO_CODICE_FISCALE_ADMIN")
+ADMIN_CF = os.getenv("ADMIN_CF", "BRNFRC04E27C351V")
 
 @app.on_event("startup")
 def startup():
