@@ -132,8 +132,20 @@ def effettua_prenotazione(
     if "coppia" in trattamento.lower():
         if not nome_2 or not cognome_2 or not cf_2:
             return templates.TemplateResponse("prenota.html", {
-                "request": request, "user": user, "error": "Per la lezione di coppia è necessario inserire tutti i dati della seconda persona."
+                "request": request, 
+                "user": user, 
+                "error": "Per la lezione di coppia è necessario inserire tutti i dati della seconda persona."
             })
+        
+        # VALIDAZIONE DEL CODICE FISCALE DELLA SECONDA PERSONA
+        valido, msg = logic.valida_codice_fiscale(nome_2.strip(), cognome_2.strip(), cf_2.strip())
+        if not valido:
+            return templates.TemplateResponse("prenota.html", {
+                "request": request, 
+                "user": user, 
+                "error": f"Dati 2° partecipante errati: {msg}"
+            })
+
         nome_completo_2 = f"{nome_2.strip().title()} {cognome_2.strip().title()}"
         cf_2_clean = cf_2.strip().upper()
 
