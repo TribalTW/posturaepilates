@@ -31,6 +31,7 @@
                             <th class="p-3">Data e Ora</th>
                             <th class="p-3">Trattamento</th>
                             <th class="p-3">Partecipanti (Nome / CF)</th>
+                            <th class="p-3 text-center">QR Code Presenze</th>
                             <th class="p-3">Stato Presenza</th>
                             <th class="p-3 text-center">Azioni</th>
                         </tr>
@@ -61,7 +62,7 @@
                                     <div class="text-xs font-mono text-gray-500">CF: {{ p[5] }}</div>
                                 </div>
 
-                                <!-- Persona 2 (se presente) -->
+                                <!-- Persona 2 (se presente per lezioni di coppia) -->
                                 {% if p[7] %}
                                 <div class="bg-purple-50 p-2 rounded border border-purple-200">
                                     <span class="text-xs font-bold text-purple-600 uppercase">Persona 2:</span>
@@ -69,6 +70,20 @@
                                     <div class="text-xs font-mono text-gray-500">CF: {{ p[8] }}</div>
                                 </div>
                                 {% endif %}
+                            </td>
+
+                            <!-- QR Code Check-in / Presenze -->
+                            <td class="p-3 text-center">
+                                <div class="flex flex-col items-center justify-center space-y-1">
+                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ request.base_url }}checkin/{{ p[0] }}" 
+                                         alt="QR Code Prenotazione #{{ p[0] }}" 
+                                         class="w-16 h-16 border rounded bg-white p-1 shadow-sm hover:scale-105 transition cursor-pointer"
+                                         title="Clicca per ingrandire"
+                                         onclick="window.open('https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{ request.base_url }}checkin/{{ p[0] }}', '_blank')">
+                                    <a href="/checkin/{{ p[0] }}" target="_blank" class="text-xs text-blue-600 hover:underline font-medium">
+                                        🔗 Link Check-in
+                                    </a>
+                                </div>
                             </td>
                             
                             <!-- Stato Presenza -->
@@ -105,7 +120,7 @@
 
                         {% if not prenotazioni %}
                         <tr>
-                            <td colspan="6" class="p-4 text-center text-gray-500">Nessuna prenotazione presente.</td>
+                            <td colspan="7" class="p-4 text-center text-gray-500">Nessuna prenotazione presente.</td>
                         </tr>
                         {% endif %}
                     </tbody>
