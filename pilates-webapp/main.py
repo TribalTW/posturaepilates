@@ -45,7 +45,7 @@ def index(request: Request):
         if user.get("cf") == ADMIN_CF:
             return RedirectResponse(url="/admin", status_code=303)
         return RedirectResponse(url="/prenota", status_code=303)
-    return templates.TemplateResponse(request=request, name="login.html", context={"error": None})
+    return templates.TemplateResponse(request=request, name="login.html", context={"error": None, "success": None})
 
 @app.post("/login")
 def login(request: Request, nome: str = Form(...), cognome: str = Form(...), password: str = Form(...)):
@@ -59,7 +59,7 @@ def login(request: Request, nome: str = Form(...), cognome: str = Form(...), pas
             if res:
                 # Controlla se l'utente è bannato
                 if res[6]:
-                    return templates.TemplateResponse(request=request, name="login.html", context={"error": "Account disabilitato. Contatta l'amministrazione."})
+                    return templates.TemplateResponse(request=request, name="login.html", context={"error": "Account disabilitato. Contatta l'amministrazione.", "success": None})
                 
                 salt, pwd_hash = res[4], res[5]
                 if salt and pwd_hash and logic.verifica_password(password, salt, pwd_hash):
@@ -70,14 +70,19 @@ def login(request: Request, nome: str = Form(...), cognome: str = Form(...), pas
 
     except Exception as e:
         print(f"Errore durante il login: {e}")
-        return templates.TemplateResponse(request=request, name="login.html", context={"error": f"Errore di sistema: {e}"})
+        return templates.TemplateResponse(request=request, name="login.html", context={"error": f"Errore di sistema: {e}", "success": None})
 
-    return templates.TemplateResponse(request=request, name="login.html", context={"error": "Credenziali non valide o utente non trovato."})
+    return templates.TemplateResponse(request=request, name="login.html", context={"error": "Credenziali non valide o utente non trovato.", "success": None})
 
-# --- LOGIN ADMIN ---
+# --- LOGIN ADMIN (LA TENDINA) ---
 @app.get("/admin/login", response_class=HTMLResponse)
 def admin_login_get(request: Request):
-    return templates.TemplateResponse(request=request, name="login.html", context={"open_admin": True})
+    return templates.TemplateResponse(request=request, name="login.html", context={
+        "open_admin": True,
+        "error": None,
+        "success": None,
+        "admin_error": None
+    })
 
 @app.post("/admin/login", response_class=HTMLResponse)
 def admin_login_post(request: Request, username: str = Form(""), password: str = Form("")):
@@ -90,7 +95,10 @@ def admin_login_post(request: Request, username: str = Form(""), password: str =
         }
         return RedirectResponse(url="/admin", status_code=303)
 
+    # Se le credenziali Admin sono errate, restituisce la pagina mantenendo la tendina aperta
     return templates.TemplateResponse(request=request, name="login.html", context={
+        "error": None,
+        "success": None,
         "admin_error": "Username o Password Admin non validi.",
         "open_admin": True
     })
@@ -128,7 +136,7 @@ def registrati(
                 text("INSERT INTO utenti (nome, cognome, codice_fiscale, password_salt, password_hash, data_registrazione, bannato) VALUES (:n, :c, :cf, :s, :h, :d, false)"),
                 {"n": nome.strip().title(), "c": cognome.strip().title(), "cf": cf.strip().upper(), "s": salt, "h": pwd_hash, "d": data_reg}
             )
-        return templates.TemplateResponse(request=request, name="login.html", context={"success": "Registrazione completata! Ora puoi effettuare il login."})
+        return templates.TemplateResponse(request=request, name="login.html", context={"success": "Registrazione completata! Ora puoi effettuare il login.", "error": None})
     except Exception as e:
         print(f"Errore registrazione: {e}")
         return templates.TemplateResponse(request=request, name="register.html", context={"error": "Codice Fiscale già registrato."})
