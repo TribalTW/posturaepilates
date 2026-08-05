@@ -3,39 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prenota Lezione</title>
+    <title>Postura e Pilates - Prenota Lezione</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: #f1f5f9; min-height: 100vh; padding: 20px; display: flex; justify-content: center; align-items: flex-start; }
-        .container { background: #ffffff; width: 100%; max-width: 500px; padding: 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-top: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; }
-        .user-info { font-size: 14px; font-weight: 600; color: #1e293b; }
-        .logout-btn { font-size: 13px; color: #ef4444; text-decoration: none; font-weight: 500; }
-        h1 { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 20px; }
+        body { background: #fdf2f8; min-height: 100vh; padding: 20px; display: flex; justify-content: center; align-items: flex-start; }
+        .container { background: #ffffff; width: 100%; max-width: 500px; padding: 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(225, 29, 72, 0.08); margin-top: 20px; }
         
-        .alert-success { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 16px; }
-        .alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 16px; }
+        /* Intestazione Brand & Logo */
+        .brand-header { text-align: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f3e8ff; }
+        .brand-logo { max-width: 120px; height: auto; margin-bottom: 8px; display: inline-block; } /* Spazio riservato al logo */
+        .brand-title { font-size: 18px; font-weight: 700; color: #831843; letter-spacing: 0.5px; text-transform: uppercase; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #fff1f2; padding: 10px 14px; border-radius: 8px; }
+        .user-info { font-size: 14px; font-weight: 600; color: #881337; }
+        .logout-btn { font-size: 13px; color: #e11d48; text-decoration: none; font-weight: 500; }
+        .logout-btn:hover { text-decoration: underline; }
+
+        h1 { font-size: 18px; font-weight: 700; color: #4c0519; margin-bottom: 20px; text-align: center; }
+        
+        .alert-success { background: #fdf2f8; border: 1px solid #fbcfe8; color: #831843; padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 16px; }
+        .alert-error { background: #fff1f2; border: 1px solid #fecdd3; color: #9f1239; padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 16px; }
 
         .form-group { margin-bottom: 16px; text-align: left; }
-        label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; }
+        label { display: block; font-size: 13px; font-weight: 600; color: #9d174d; margin-bottom: 6px; }
         select, input[type="date"], input[type="text"] {
-            width: 100%; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 15px; background: #f8fafc; outline: none; transition: all 0.2s;
+            width: 100%; padding: 10px 12px; border: 1.5px solid #fbcfe8; border-radius: 8px; font-size: 15px; background: #fff1f2; outline: none; transition: all 0.2s; color: #4c0519;
         }
-        select:focus, input:focus { border-color: #2563eb; background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        select:focus, input:focus { border-color: #e11d48; background: #fff; box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.12); }
 
         /* Box Campi Secondo Partecipante */
         .box-coppia {
-            background: #eff6ff; border: 1.5px solid #bfdbfe; padding: 16px; border-radius: 12px; margin-bottom: 16px; display: none;
+            background: #fff1f2; border: 1.5px solid #fbcfe8; padding: 16px; border-radius: 12px; margin-bottom: 16px; display: none;
         }
-        .box-coppia h3 { font-size: 14px; color: #1e40af; margin-bottom: 12px; font-weight: 700; }
+        .box-coppia h3 { font-size: 14px; color: #9f1239; margin-bottom: 12px; font-weight: 700; }
 
-        .btn-submit { width: 100%; padding: 12px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 8px; }
-        .btn-submit:hover { background: #1d4ed8; }
-        .btn-ics { display: inline-block; width: 100%; text-align: center; padding: 10px; background: #10b981; color: white; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 10px; font-size: 14px; }
+        .btn-submit { width: 100%; padding: 12px; background: #e11d48; color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 8px; }
+        .btn-submit:hover { background: #be123c; }
+        .btn-ics { display: inline-block; width: 100%; text-align: center; padding: 10px; background: #fb7185; color: white; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 10px; font-size: 14px; }
+        .btn-ics:hover { background: #f43f5e; }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- SEZIONE BRAND / LOGO -->
+        <div class="brand-header">
+            <!-- Sostituisci il percorso src quando avrai il logo -->
+            <!-- <img src="/static/logo.png" alt="Postura e Pilates Logo" class="brand-logo"> -->
+            <div class="brand-title">Postura e Pilates</div>
+        </div>
+
         <div class="header">
             <div class="user-info">👋 Benvenuto, {{ user.nome }} {{ user.cognome }}</div>
             <a href="/logout" class="logout-btn">Esci</a>
@@ -64,7 +80,6 @@
             <!-- SELEZIONE TRATTAMENTO / TIPO LEZIONE -->
             <div class="form-group">
                 <label for="trattamento">Seleziona Trattamento:</label>
-                <!-- AGGIUNTO: onchange per attivare la funzione e ricaricare gli orari -->
                 <select name="trattamento" id="trattamento" onchange="gestisciCambioTrattamento()" required class="form-control">
                     <option value="" disabled selected>Seleziona un trattamento</option>
                     <option value="Seduta di Prova">Seduta di Prova</option>
@@ -110,11 +125,9 @@
     </div>
 
     <script>
-        // Imposta la data minima ad oggi
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('data').setAttribute('min', today);
 
-        // Funzione combinata quando cambia il trattamento
         function gestisciCambioTrattamento() {
             const trattamento = document.getElementById("trattamento").value;
             const box = document.getElementById("box_coppia");
@@ -137,13 +150,11 @@
                 cf2.value = "";
             }
 
-            // Ricarica gli orari perché la disponibilità cambia (Coppia = 2 lettini, Altri = 1 lettino)
             if (document.getElementById('data').value) {
                 caricaOrariDisponibili();
             }
         }
 
-        // Carica gli orari disponibili tramite API FastAPI passando anche il trattamento
         async function caricaOrariDisponibili() {
             const dataVal = document.getElementById('data').value;
             const trattamentoVal = document.getElementById('trattamento').value;
