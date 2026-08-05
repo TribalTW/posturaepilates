@@ -221,6 +221,15 @@ def admin_dashboard(request: Request):
         "user": user, "prenotazioni": prenotazioni, "utenti": utenti, "blocchi": blocchi
     })
 
+# --- ROTTA GET PER /admin/login (se si digita l'URL nel browser) ---
+@app.get("/admin/login", response_class=HTMLResponse)
+def login_admin_get(request: Request):
+    # Apre la pagina di login con la tendina admin già spalancata
+    return templates.TemplateResponse("login.html", {
+        "request": request,
+        "open_admin": True
+    })
+
 # --- AZIONI ADMIN ---
 @app.post("/admin/prenotazione/elimina")
 def elimina_prenotazione(request: Request, id_prenotazione: int = Form(...)):
