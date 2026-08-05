@@ -279,23 +279,34 @@ def get_orari_disponibili(data: str):
 
 # --- DASHBOARD ADMIN ---
 @app.get("/admin", response_class=HTMLResponse)
-def admin_dashboard(request: Request):
+def admin_dashboard(request: Request, data: str = None):
     user = request.session.get("user")
     if not user or user.get("cf") != ADMIN_CF:
         return RedirectResponse(url="/", status_code=303)
 
+    # Se non viene passata una data, usiamo quella odierna di default
+    if not data:
+        data = logic.get_current_time_local().strftime("%Y-%m-%d")
+
     with engine.begin() as conn:
+        # Filtriamo le prenotazioni in base alla data selezionata
         prenotazioni = conn.execute(text("""
             SELECT id, nome, data, ora, trattamento, codice_fiscale, COALESCE(stato, 'confermata'),
                    nome_2, codice_fiscale_2, COALESCE(stato_2, 'confermata') 
             FROM prenotazioni 
-            ORDER BY data DESC, ora ASC
-        """)).fetchall()
+            WHERE data = :d
+            ORDER BY ora ASC
+        """), {"d": data}).fetchall()
+        
         utenti = conn.execute(text("SELECT id, nome, cognome, codice_fiscale, data_registrazione, COALESCE(bannato, false) FROM utenti ORDER BY nome ASC")).fetchall()
         blocchi = conn.execute(text("SELECT id, data, ora FROM blocchi ORDER BY data DESC")).fetchall()
 
     return templates.TemplateResponse(request=request, name="admin.html", context={
-        "user": user, "prenotazioni": prenotazioni, "utenti": utenti, "blocchi": blocchi
+        "user": user, 
+        "prenotazioni": prenotazioni, 
+        "utenti": utenti, 
+        "blocchi": blocchi,
+        "data_selezionata": data
     })
 
 # --- AZIONI ADMIN ---
