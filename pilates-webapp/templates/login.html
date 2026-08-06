@@ -68,13 +68,11 @@
         <div class="md:col-span-8 p-8 md:p-12 flex flex-col items-center justify-center bg-white relative">
             
             <!-- Illustrazione SVG Line-Art (Cobra Stretch / Pilates) -->
-            <div class="mb-4 text-[#880E4F]">
-                <svg class="w-48 h-32 mx-auto" viewBox="0 0 240 160" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <!-- Semplice silhouette elegante in line art stile minimal -->
-                    <path d="M40 130 C 60 130, 80 125, 100 115 C 120 105, 140 90, 150 70 C 155 60, 150 45, 140 40 C 130 35, 125 45, 130 55 C 135 65, 145 75, 155 85 C 170 95, 180 90, 190 75 C 195 65, 190 50, 175 40 C 160 30, 150 20, 155 10 C 160 5, 175 5, 185 15 C 195 25, 205 40, 205 60 C 205 85, 190 105, 165 115 C 140 125, 90 135, 40 135 Z" />
-                    <!-- Base tappetino / linea di terra -->
-                    <line x1="20" y1="135" x2="220" y2="135" stroke-dasharray="4 4" stroke-opacity="0.5"/>
-                </svg>
+            <!-- Logo dello Studio -->
+            <div class="mb-6 flex justify-center">
+                <img src="{{ url_for('static', path='logo.png') }}" 
+                     alt="Logo Postura & Pilates" 
+                     class="h-20 md:h-24 w-auto object-contain">
             </div>
 
             <!-- Testata Brand -->
