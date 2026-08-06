@@ -55,8 +55,11 @@ def get_orari_per_data(d):
     return ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"]
 
 def get_current_time_local():
-    try: return datetime.now(ZoneInfo("Europe/Rome"))
-    except Exception: return datetime.now()
+    try: 
+        # Restituisce l'ora di Roma ma senza tzinfo, evitando conflitti col DB
+        return datetime.now(ZoneInfo("Europe/Rome")).replace(tzinfo=None)
+    except Exception: 
+        return datetime.now()
 
 def get_orari_disponibili_filtrati(data_str: str, orari_teorici: list) -> list:
     """
