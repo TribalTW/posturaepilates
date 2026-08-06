@@ -99,6 +99,9 @@
                                     <span class="text-xs font-bold text-[#D81B60] uppercase">Persona 1:</span>
                                     <span class="font-semibold text-gray-800">{{ p[1] }}</span>
                                     <div class="text-xs font-mono text-gray-500">CF: {{ p[5] }}</div>
+                                    {% if p[10] %}
+                                    <div class="text-xs text-gray-600 mt-0.5">📧 {{ p[10] }}</div>
+                                    {% endif %}
                                 </div>
 
                                 <!-- Persona 2 (se presente per lezioni di coppia) -->
