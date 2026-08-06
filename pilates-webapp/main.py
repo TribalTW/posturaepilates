@@ -1,5 +1,6 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
+import random
 from fastapi import FastAPI, Request, Form, Response
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -27,7 +28,9 @@ def startup():
         "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS codice_fiscale_2 TEXT",
         "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS stato_2 TEXT DEFAULT 'confermata'",
         "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS bannato BOOLEAN DEFAULT false",
-        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS email TEXT"
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS email TEXT",
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS reset_code VARCHAR(6)",
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS reset_expires_at TIMESTAMP"
     ]
     with engine.connect() as conn:
         for q in queries:
@@ -95,7 +98,6 @@ def login(
 
         user_id, db_nome, db_cognome, db_cf, salt, pwd_hash = res
 
-        # CORRETTO DA verify_password A verifica_password
         if not logic.verifica_password(password, salt, pwd_hash):
             return templates.TemplateResponse(request=request, name="login.html", context={"error": "Password errata.", "admin_error": None})
 
@@ -113,39 +115,83 @@ def login(
         print(f"Errore login: {e}")
         return templates.TemplateResponse(request=request, name="login.html", context={"error": f"Errore durante il login: {str(e)}", "admin_error": None})
 
-        user_id, db_nome, db_cognome, db_cf, salt, pwd_hash = res
+# --- RECUPERO PASSWORD ---
+@app.get("/recupero-password", response_class=HTMLResponse)
+def recupero_password_get(request: Request):
+    return templates.TemplateResponse(request=request, name="recupero_password.html", context={"error": None, "success": None})
 
-        # Verifica della password tramite logic.verify_password
-        if not logic.verify_password(password, salt, pwd_hash):
-            return templates.TemplateResponse(request=request, name="login.html", context={"error": "Password errata.", "admin_error": None})
+@app.post("/recupero-password", response_class=HTMLResponse)
+def recupero_password_post(request: Request, email: str = Form(...)):
+    email_clean = email.strip().lower()
+    
+    with engine.begin() as conn:
+        res = conn.execute(
+            text("SELECT id FROM utenti WHERE LOWER(email) = :e"),
+            {"e": email_clean}
+        ).fetchone()
 
-        # Imposta la sessione utente
-        request.session["user"] = {
-            "id": str(user_id),
-            "nome": db_nome,
-            "cognome": db_cognome,
-            "cf": db_cf
-        }
+        if not res:
+            return templates.TemplateResponse(request=request, name="recupero_password.html", context={"error": "Email non trovata nel sistema.", "success": None})
 
-        return RedirectResponse(url="/prenota", status_code=303)
+        # Genera codice casuale di 6 cifre e scadenza a 15 minuti
+        codice = f"{random.randint(0, 999999):06d}"
+        scadenza = logic.get_current_time_local() + timedelta(minutes=15)
 
-    except Exception as e:
-        print(f"Errore login: {e}")
-        return templates.TemplateResponse(request=request, name="login.html", context={"error": f"Errore durante il login: {str(e)}", "admin_error": None})
+        conn.execute(
+            text("UPDATE utenti SET reset_code = :c, reset_expires_at = :s WHERE LOWER(email) = :e"),
+            {"c": codice, "s": scadenza, "e": email_clean}
+        )
 
-        # Imposta la sessione utente
-        request.session["user"] = {
-            "id": str(user_id),
-            "nome": db_nome,
-            "cognome": db_cognome,
-            "cf": db_cf
-        }
+    # Invia l'email
+    inviata = logic.invia_email_recupero(email_clean, codice)
+    if not inviata:
+        return templates.TemplateResponse(request=request, name="recupero_password.html", context={"error": "Errore durante l'invio dell'email. Riprova più tardi.", "success": None})
 
-        return RedirectResponse(url="/prenota", status_code=303)
+    request.session["reset_email"] = email_clean
+    return RedirectResponse(url="/verifica-codice", status_code=303)
 
-    except Exception as e:
-        print(f"Errore login: {e}")
-        return templates.TemplateResponse(request=request, name="login.html", context={"error": "Errore durante il login.", "admin_error": None})
+@app.get("/verifica-codice", response_class=HTMLResponse)
+def verifica_codice_get(request: Request):
+    if "reset_email" not in request.session:
+        return RedirectResponse(url="/recupero-password", status_code=303)
+    return templates.TemplateResponse(request=request, name="verifica_codice.html", context={"error": None})
+
+@app.post("/verifica-codice", response_class=HTMLResponse)
+def verifica_codice_post(request: Request, codice: str = Form(...), nuova_password: str = Form(...)):
+    email_clean = request.session.get("reset_email")
+    if not email_clean:
+        return RedirectResponse(url="/recupero-password", status_code=303)
+
+    now = logic.get_current_time_local()
+
+    with engine.begin() as conn:
+        res = conn.execute(
+            text("SELECT reset_code, reset_expires_at FROM utenti WHERE LOWER(email) = :e"),
+            {"e": email_clean}
+        ).fetchone()
+
+        if not res or res[0] != codice.strip():
+            return templates.TemplateResponse(request=request, name="verifica_codice.html", context={"error": "Codice non valido."})
+        
+        if res[1]:
+            scadenza = res[1]
+            if isinstance(scadenza, datetime) and scadenza.tzinfo is None:
+                now_comparison = now.replace(tzinfo=None)
+            else:
+                now_comparison = now
+
+            if scadenza < now_comparison:
+                return templates.TemplateResponse(request=request, name="verifica_codice.html", context={"error": "Codice scaduto. Richiedine uno nuovo."})
+
+        salt, pwd_hash = logic.hash_password(nuova_password)
+
+        conn.execute(
+            text("UPDATE utenti SET password_salt = :s, password_hash = :h, reset_code = NULL, reset_expires_at = NULL WHERE LOWER(email) = :e"),
+            {"s": salt, "h": pwd_hash, "e": email_clean}
+        )
+
+    request.session.pop("reset_email", None)
+    return RedirectResponse(url="/login?success=password_aggiornata", status_code=303)
 
 # --- LOGIN ADMIN ---
 @app.get("/admin/login", response_class=HTMLResponse)
@@ -462,7 +508,6 @@ def admin_panel(request: Request, data: str = None):
         data = logic.get_current_time_local().strftime("%Y-%m-%d")
 
     with engine.begin() as conn:
-        # AGGIORNATA LA QUERY CON LA JOIN PER PRENDERE L'EMAIL
         prenotazioni = conn.execute(
             text("""
                 SELECT p.id, p.nome, p.data, p.ora, p.trattamento, p.codice_fiscale, p.stato, 
@@ -599,7 +644,6 @@ def checkin_qr_post(
             {"n": nome.strip().upper(), "c": cognome.strip().upper()}
         ).fetchone()
 
-        # CORRETTO DA verify_password A verifica_password
         if not res or not logic.verifica_password(password, res[4], res[5]):
             return templates.TemplateResponse(request=request, name="login.html", context={"error": "Credenziali non valide o utente non trovato.", "admin_error": None})
 
