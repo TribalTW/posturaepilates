@@ -267,9 +267,9 @@ def prenota_page(request: Request):
 @app.post("/prenota")
 def effettua_prenotazione(
     request: Request, 
-    trattamento: str = Form(...), 
-    data: str = Form(...), 
-    ora: str = Form(...),
+    trattamento: str = Form(None), 
+    data: str = Form(None), 
+    ora: str = Form(None),
     nome_2: str = Form(None),
     cognome_2: str = Form(None),
     cf_2: str = Form(None)
@@ -279,6 +279,14 @@ def effettua_prenotazione(
         return RedirectResponse(url="/", status_code=303)
 
     ha_usato_prova = utente_ha_usato_prova(user['cf'])
+
+    # Controllo se mancano campi obbligatori
+    if not trattamento or not data or not ora:
+        return templates.TemplateResponse(request=request, name="prenota.html", context={
+            "user": user, 
+            "ha_usato_prova": ha_usato_prova,
+            "error": "Seleziona un trattamento, una data e un orario validi prima di procedere."
+        })
 
     if "prova" in trattamento.lower() and ha_usato_prova:
         return templates.TemplateResponse(request=request, name="prenota.html", context={
