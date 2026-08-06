@@ -80,13 +80,13 @@ def login(
     cognome: str = Form(...),
     password: str = Form(...)
 ):
-    nome_clean = nome.strip().title()
-    cognome_clean = cognome.strip().title()
+    nome_clean = nome.strip().upper()
+    cognome_clean = cognome.strip().upper()
 
     try:
         with engine.connect() as conn:
             res = conn.execute(
-                text("SELECT id, nome, cognome, codice_fiscale, password_salt, password_hash FROM utenti WHERE nome = :n AND cognome = :c"),
+                text("SELECT id, nome, cognome, codice_fiscale, password_salt, password_hash FROM utenti WHERE UPPER(nome) = :n AND UPPER(cognome) = :c"),
                 {"n": nome_clean, "c": cognome_clean}
             ).fetchone()
 
@@ -98,6 +98,20 @@ def login(
         # Verifica della password tramite logic.verify_password
         if not logic.verify_password(password, salt, pwd_hash):
             return templates.TemplateResponse(request=request, name="login.html", context={"error": "Password errata.", "admin_error": None})
+
+        # Imposta la sessione utente
+        request.session["user"] = {
+            "id": str(user_id),
+            "nome": db_nome,
+            "cognome": db_cognome,
+            "cf": db_cf
+        }
+
+        return RedirectResponse(url="/prenota", status_code=303)
+
+    except Exception as e:
+        print(f"Errore login: {e}")
+        return templates.TemplateResponse(request=request, name="login.html", context={"error": f"Errore durante il login: {str(e)}", "admin_error": None})
 
         # Imposta la sessione utente
         request.session["user"] = {
