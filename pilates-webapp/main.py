@@ -27,7 +27,7 @@ def startup():
         "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS codice_fiscale_2 TEXT",
         "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS stato_2 TEXT DEFAULT 'confermata'",
         "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS bannato BOOLEAN DEFAULT false",
-        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS email TEXT"  # <-- AGGIUNTO PER L'EMAIL
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS email TEXT"
     ]
     with engine.connect() as conn:
         for q in queries:
@@ -62,7 +62,7 @@ def index(request: Request):
         if user.get("cf") == ADMIN_CF:
             return RedirectResponse(url="/admin", status_code=303)
         return RedirectResponse(url="/prenota", status_code=303)
-    return templates.TemplateResponse(request=request, name="login.html", context={"error": None, "success": None})
+    return templates.TemplateResponse(request=request, name="login.html", context={"error": None, "success": None, "admin_error": None})
 
 @app.get("/login", response_class=HTMLResponse)
 def login_get(request: Request):
@@ -71,7 +71,7 @@ def login_get(request: Request):
         if user.get("cf") == ADMIN_CF:
             return RedirectResponse(url="/admin", status_code=303)
         return RedirectResponse(url="/prenota", status_code=303)
-    return templates.TemplateResponse(request=request, name="login.html", context={"error": None, "success": None})
+    return templates.TemplateResponse(request=request, name="login.html", context={"error": None, "success": None, "admin_error": None})
 
 @app.post("/login")
 def login(
@@ -91,13 +91,13 @@ def login(
             ).fetchone()
 
         if not res:
-            return templates.TemplateResponse(request=request, name="login.html", context={"error": "Utente non trovato. Controlla nome e cognome."})
+            return templates.TemplateResponse(request=request, name="login.html", context={"error": "Utente non trovato. Controlla nome e cognome.", "admin_error": None})
 
         user_id, db_nome, db_cognome, db_cf, salt, pwd_hash = res
 
-        # Verifica della password (assicurati che il metodo in logic corrisponda al tuo)
+        # Verifica della password tramite logic.verify_password
         if not logic.verify_password(password, salt, pwd_hash):
-            return templates.TemplateResponse(request=request, name="login.html", context={"error": "Password errata."})
+            return templates.TemplateResponse(request=request, name="login.html", context={"error": "Password errata.", "admin_error": None})
 
         # Imposta la sessione utente
         request.session["user"] = {
@@ -111,7 +111,7 @@ def login(
 
     except Exception as e:
         print(f"Errore login: {e}")
-        return templates.TemplateResponse(request=request, name="login.html", context={"error": "Errore durante il login."})
+        return templates.TemplateResponse(request=request, name="login.html", context={"error": "Errore durante il login.", "admin_error": None})
 
 # --- LOGIN ADMIN ---
 @app.get("/admin/login", response_class=HTMLResponse)
@@ -154,7 +154,7 @@ def registrati(
     request: Request, 
     nome: str = Form(...), 
     cognome: str = Form(...), 
-    codice_fiscale: str = Form(...),  # <-- Aggiornato per corrispondere all'HTML
+    codice_fiscale: str = Form(...), 
     email: str = Form(...), 
     password: str = Form(...), 
     conferma_password: str = Form(...)
@@ -173,7 +173,6 @@ def registrati(
 
     try:
         with engine.begin() as conn:
-            # Inserimento dell'utente nel database
             conn.execute(
                 text("INSERT INTO utenti (nome, cognome, codice_fiscale, password_salt, password_hash, data_registrazione, bannato, email) VALUES (:n, :c, :cf, :s, :h, :d, false, :e)"),
                 {
@@ -187,7 +186,6 @@ def registrati(
                 }
             )
             
-            # Recupera l'id generato per l'utente appena registrato
             res_user = conn.execute(
                 text("SELECT id FROM utenti WHERE codice_fiscale = :cf"),
                 {"cf": cf_clean}
@@ -195,7 +193,6 @@ def registrati(
             
             user_id = str(res_user[0]) if res_user else "0"
 
-        # Effettua il login automatico impostando la sessione
         request.session["user"] = {
             "id": user_id, 
             "nome": nome.strip().title(), 
@@ -203,7 +200,6 @@ def registrati(
             "cf": cf_clean
         }
         
-        # Reindirizza l'utente direttamente alla pagina di prenotazione
         return RedirectResponse(url="/prenota", status_code=303)
 
     except Exception as e:
@@ -567,8 +563,8 @@ def checkin_qr_post(
             {"n": nome.strip().upper(), "c": cognome.strip().upper()}
         ).fetchone()
 
-        if not res or not logic.verifica_password(password, res[4], res[5]):
-            return templates.TemplateResponse(request=request, name="login.html", context={"error": "Credenziali non valide o utente non trovato."})
+        if not res or not logic.verify_password(password, res[4], res[5]):
+            return templates.TemplateResponse(request=request, name="login.html", context={"error": "Credenziali non valide o utente non trovato.", "admin_error": None})
 
         if res[6]:
             return templates.TemplateResponse(request=request, name="checkin_login.html", context={"error": "Account disabilitato. Contatta l'amministrazione."})
