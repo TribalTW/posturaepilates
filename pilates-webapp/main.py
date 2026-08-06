@@ -26,7 +26,8 @@ def startup():
         "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS nome_2 TEXT",
         "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS codice_fiscale_2 TEXT",
         "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS stato_2 TEXT DEFAULT 'confermata'",
-        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS bannato BOOLEAN DEFAULT false"
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS bannato BOOLEAN DEFAULT false",
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS email TEXT"  # <-- AGGIUNTO PER L'EMAIL
     ]
     with engine.connect() as conn:
         for q in queries:
@@ -140,6 +141,7 @@ def registrati(
     nome: str = Form(...), 
     cognome: str = Form(...), 
     cf: str = Form(...), 
+    email: str = Form(...),  # <-- AGGIUNTO PARAMETRO EMAIL
     password: str = Form(...), 
     conferma_password: str = Form(...)
 ):
@@ -156,13 +158,21 @@ def registrati(
     try:
         with engine.begin() as conn:
             conn.execute(
-                text("INSERT INTO utenti (nome, cognome, codice_fiscale, password_salt, password_hash, data_registrazione, bannato) VALUES (:n, :c, :cf, :s, :h, :d, false)"),
-                {"n": nome.strip().title(), "c": cognome.strip().title(), "cf": cf.strip().upper(), "s": salt, "h": pwd_hash, "d": data_reg}
+                text("INSERT INTO utenti (nome, cognome, codice_fiscale, password_salt, password_hash, data_registrazione, bannato, email) VALUES (:n, :c, :cf, :s, :h, :d, false, :e)"),
+                {
+                    "n": nome.strip().title(), 
+                    "c": cognome.strip().title(), 
+                    "cf": cf.strip().upper(), 
+                    "s": salt, 
+                    "h": pwd_hash, 
+                    "d": data_reg, 
+                    "e": email.strip().lower()  # <-- SALVATAGGIO EMAIL
+                }
             )
         return templates.TemplateResponse(request=request, name="login.html", context={"success": "Registrazione completata! Ora puoi effettuare il login.", "error": None})
     except Exception as e:
         print(f"Errore registrazione: {e}")
-        return templates.TemplateResponse(request=request, name="register.html", context={"error": "Codice Fiscale già registrato."})
+        return templates.TemplateResponse(request=request, name="register.html", context={"error": "Codice Fiscale già registrato o email già in uso."})
 
 @app.get("/logout")
 def logout(request: Request):
@@ -398,7 +408,7 @@ def admin_panel(request: Request, data: str = None):
         ).fetchall()
 
         blocchi = conn.execute(text("SELECT id, data, ora FROM blocchi ORDER BY data ASC")).fetchall()
-        utenti = conn.execute(text("SELECT id, nome, cognome, codice_fiscale, data_registrazione, COALESCE(bannato, false) FROM utenti")).fetchall()
+        utenti = conn.execute(text("SELECT id, nome, cognome, codice_fiscale, data_registrazione, COALESCE(bannato, false), email FROM utenti")).fetchall()
 
     return templates.TemplateResponse(request=request, name="admin.html", context={
         "prenotazioni": prenotazioni,
