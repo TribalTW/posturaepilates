@@ -141,7 +141,7 @@ def registrati(
     nome: str = Form(...), 
     cognome: str = Form(...), 
     cf: str = Form(...), 
-    email: str = Form(...),  # <-- AGGIUNTO PARAMETRO EMAIL
+    email: str = Form(...), 
     password: str = Form(...), 
     conferma_password: str = Form(...)
 ):
@@ -157,6 +157,7 @@ def registrati(
 
     try:
         with engine.begin() as conn:
+            # Inserimento dell'utente nel database
             conn.execute(
                 text("INSERT INTO utenti (nome, cognome, codice_fiscale, password_salt, password_hash, data_registrazione, bannato, email) VALUES (:n, :c, :cf, :s, :h, :d, false, :e)"),
                 {
@@ -166,10 +167,29 @@ def registrati(
                     "s": salt, 
                     "h": pwd_hash, 
                     "d": data_reg, 
-                    "e": email.strip().lower()  # <-- SALVATAGGIO EMAIL
+                    "e": email.strip().lower()
                 }
             )
-        return templates.TemplateResponse(request=request, name="login.html", context={"success": "Registrazione completata! Ora puoi effettuare il login.", "error": None})
+            
+            # Recupera l'id generato per l'utente appena registrato
+            res_user = conn.execute(
+                text("SELECT id FROM utenti WHERE codice_fiscale = :cf"),
+                {"cf": cf.strip().upper()}
+            ).fetchone()
+            
+            user_id = str(res_user[0]) if res_user else "0"
+
+        # Effettua il login automatico impostando la sessione
+        request.session["user"] = {
+            "id": user_id, 
+            "nome": nome.strip().title(), 
+            "cognome": cognome.strip().title(), 
+            "cf": cf.strip().upper()
+        }
+        
+        # Reindirizza l'utente direttamente alla pagina di prenotazione
+        return RedirectResponse(url="/prenota", status_code=303)
+
     except Exception as e:
         print(f"Errore registrazione: {e}")
         return templates.TemplateResponse(request=request, name="register.html", context={"error": "Codice Fiscale già registrato o email già in uso."})
