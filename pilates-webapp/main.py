@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 import random
 from fastapi import FastAPI, Request, Form, Response
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -115,85 +115,41 @@ def login(
         print(f"Errore login: {e}")
         return templates.TemplateResponse(request=request, name="login.html", context={"error": f"Errore durante il login: {str(e)}", "admin_error": None})
 
-# --- RECUPERO PASSWORD ---
+# --- RECUPERO / RESET PASSWORD (DIRETTO TRAMITE DATI) ---
 @app.get("/recupero-password", response_class=HTMLResponse)
 def recupero_password_get(request: Request):
     return templates.TemplateResponse(request=request, name="recupero_password.html", context={"error": None, "success": None})
 
 @app.post("/recupero-password", response_class=HTMLResponse)
-def recupero_password_post(request: Request, email: str = Form(...)):
-    email_clean = email.strip().lower()
-    
+def recupero_password_post(
+    request: Request, 
+    nome: str = Form(...), 
+    cognome: str = Form(...), 
+    codice_fiscale: str = Form(...),
+    nuova_password: str = Form(...)
+):
+    nome_clean = nome.strip().upper()
+    cognome_clean = cognome.strip().upper()
+    cf_clean = codice_fiscale.strip().upper()
+
     with engine.begin() as conn:
         res = conn.execute(
-            text("SELECT id FROM utenti WHERE LOWER(email) = :e"),
-            {"e": email_clean}
+            text("SELECT id FROM utenti WHERE UPPER(nome) = :n AND UPPER(cognome) = :c AND UPPER(codice_fiscale) = :cf"),
+            {"n": nome_clean, "c": cognome_clean, "cf": cf_clean}
         ).fetchone()
 
         if not res:
-            return templates.TemplateResponse(request=request, name="recupero_password.html", context={"error": "Email non trovata nel sistema.", "success": None})
-
-        # Genera codice e scadenza a 15 minuti basata su UTC pulito (immune ai fusi orari del server)
-        codice = f"{random.randint(0, 999999):06d}"
-        scadenza = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=15)
-
-        conn.execute(
-            text("UPDATE utenti SET reset_code = :c, reset_expires_at = :s WHERE LOWER(email) = :e"),
-            {"c": codice, "s": scadenza, "e": email_clean}
-        )
-
-    # Invia l'email
-    inviata = logic.invia_email_recupero(email_clean, codice)
-    if not inviata:
-        return templates.TemplateResponse(request=request, name="recupero_password.html", context={"error": "Errore durante l'invio dell'email. Riprova più tardi.", "success": None})
-
-    request.session["reset_email"] = email_clean
-    return RedirectResponse(url="/verifica-codice", status_code=303)
-
-@app.get("/verifica-codice", response_class=HTMLResponse)
-def verifica_codice_get(request: Request):
-    if "reset_email" not in request.session:
-        return RedirectResponse(url="/recupero-password", status_code=303)
-    return templates.TemplateResponse(request=request, name="verifica_codice.html", context={"error": None})
-
-@app.post("/verifica-codice", response_class=HTMLResponse)
-def verifica_codice_post(request: Request, codice: str = Form(...), nuova_password: str = Form(...)):
-    email_clean = request.session.get("reset_email")
-    if not email_clean:
-        return RedirectResponse(url="/recupero-password", status_code=303)
-
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
-
-    with engine.begin() as conn:
-        res = conn.execute(
-            text("SELECT reset_code, reset_expires_at FROM utenti WHERE LOWER(email) = :e"),
-            {"e": email_clean}
-        ).fetchone()
-
-        if not res or res[0] != codice.strip():
-            return templates.TemplateResponse(request=request, name="verifica_codice.html", context={"error": "Codice non valido."})
-        
-        if res[1]:
-            scadenza = res[1]
-            if isinstance(scadenza, datetime):
-                scadenza_naive = scadenza.replace(tzinfo=None)
-            else:
-                try:
-                    scadenza_naive = datetime.fromisoformat(str(scadenza)).replace(tzinfo=None)
-                except Exception:
-                    scadenza_naive = now + timedelta(minutes=1)
-
-            if scadenza_naive < now:
-                return templates.TemplateResponse(request=request, name="verifica_codice.html", context={"error": "⚠️ Codice scaduto. Richiedine uno nuovo."})
+            return templates.TemplateResponse(request=request, name="recupero_password.html", context={
+                "error": "I dati inseriti non corrispondono a nessun utente registrato nel sistema.", 
+                "success": None
+            })
 
         salt, pwd_hash = logic.hash_password(nuova_password)
-
         conn.execute(
-            text("UPDATE utenti SET password_salt = :s, password_hash = :h, reset_code = NULL, reset_expires_at = NULL WHERE LOWER(email) = :e"),
-            {"s": salt, "h": pwd_hash, "e": email_clean}
+            text("UPDATE utenti SET password_salt = :s, password_hash = :h WHERE UPPER(codice_fiscale) = :cf"),
+            {"s": salt, "h": pwd_hash, "cf": cf_clean}
         )
 
-    request.session.pop("reset_email", None)
     return RedirectResponse(url="/login?success=password_aggiornata", status_code=303)
 
 # --- LOGIN ADMIN ---
