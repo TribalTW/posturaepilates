@@ -95,6 +95,26 @@ def login(
 
         user_id, db_nome, db_cognome, db_cf, salt, pwd_hash = res
 
+        # CORRETTO DA verify_password A verifica_password
+        if not logic.verifica_password(password, salt, pwd_hash):
+            return templates.TemplateResponse(request=request, name="login.html", context={"error": "Password errata.", "admin_error": None})
+
+        # Imposta la sessione utente
+        request.session["user"] = {
+            "id": str(user_id),
+            "nome": db_nome,
+            "cognome": db_cognome,
+            "cf": db_cf
+        }
+
+        return RedirectResponse(url="/prenota", status_code=303)
+
+    except Exception as e:
+        print(f"Errore login: {e}")
+        return templates.TemplateResponse(request=request, name="login.html", context={"error": f"Errore durante il login: {str(e)}", "admin_error": None})
+
+        user_id, db_nome, db_cognome, db_cf, salt, pwd_hash = res
+
         # Verifica della password tramite logic.verify_password
         if not logic.verify_password(password, salt, pwd_hash):
             return templates.TemplateResponse(request=request, name="login.html", context={"error": "Password errata.", "admin_error": None})
