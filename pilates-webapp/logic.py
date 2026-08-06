@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timezone
 import zoneinfo
 import re
+import random
 
 # --- GESTIONE PASSWORD (HASHING SICURO) ---
 def hash_password(password: str) -> tuple[str, str]:
@@ -37,7 +38,6 @@ def valida_codice_fiscale(nome: str, cognome: str, cf: str) -> tuple[bool, str]:
 
 # --- GESTIONE ORARI E ORARIO LOCALE ---
 def get_current_time_local() -> datetime:
-    # Fuso orario di Roma/Italia
     try:
         tz = zoneinfo.ZoneInfo("Europe/Rome")
     except Exception:
@@ -45,15 +45,14 @@ def get_current_time_local() -> datetime:
     return datetime.now(tz)
 
 def get_orari_per_data(dt: datetime) -> list[str]:
-    # 0 = Lunedì, 5 = Sabato, 6 = Domenica
     giorno = dt.weekday()
     
     if giorno in [0, 2, 4]:  # Lunedì, Mercoledì, Venerdì
         return ["09:00", "10:00", "11:00", "16:00", "17:00", "18:00", "19:00"]
     elif giorno in [1, 3]:   # Martedì, Giovedì
         return ["10:00", "11:00", "17:00", "18:00", "19:00"]
-    elif giorno == 5:        # Sabato
-        return ["09:00", "10:00", "11:00"]
+    elif giorno == 5:        # Sabato (dalle 08:00 alle 13:00)
+        return ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00"]
     else:                    # Domenica (chiuso)
         return []
 
@@ -65,16 +64,13 @@ def get_orari_disponibili_filtrati(data_str: str, orari_teorici: list[str]) -> l
 
     oggi = get_current_time_local().date()
     
-    # Se la data è futura, tutti gli orari sono validi
     if data_appuntamento > oggi:
         return orari_teorici
     
-    # Se la data è oggi, filtra gli orari già passati
     if data_appuntamento == oggi:
         ora_attuale = get_current_time_local().strftime("%H:%M")
         return [o for o in orari_teorici if o > ora_attuale]
     
-    # Se la data è nel passato, nessun orario disponibile
     return []
 
 # --- GENERAZIONE FILE ICS (CALENDARIO) ---
