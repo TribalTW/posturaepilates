@@ -74,30 +74,44 @@ def login_get(request: Request):
     return templates.TemplateResponse(request=request, name="login.html", context={"error": None, "success": None})
 
 @app.post("/login")
-def login(request: Request, nome: str = Form(...), cognome: str = Form(...), password: str = Form(...)):
+def login(
+    request: Request,
+    nome: str = Form(...),
+    cognome: str = Form(...),
+    password: str = Form(...)
+):
+    nome_clean = nome.strip().title()
+    cognome_clean = cognome.strip().title()
+
     try:
-        with engine.begin() as conn:
+        with engine.connect() as conn:
             res = conn.execute(
-                text("SELECT id, nome, cognome, codice_fiscale, password_salt, password_hash, COALESCE(bannato, false) FROM utenti WHERE UPPER(nome) = :n AND UPPER(cognome) = :c"),
-                {"n": nome.strip().upper(), "c": cognome.strip().upper()}
+                text("SELECT id, nome, cognome, codice_fiscale, password_salt, password_hash FROM utenti WHERE nome = :n AND cognome = :c"),
+                {"n": nome_clean, "c": cognome_clean}
             ).fetchone()
-            
-            if res:
-                if res[6]:
-                    return templates.TemplateResponse(request=request, name="login.html", context={"error": "Account disabilitato. Contatta l'amministrazione.", "success": None})
-                
-                salt, pwd_hash = res[4], res[5]
-                if salt and pwd_hash and logic.verifica_password(password, salt, pwd_hash):
-                    request.session["user"] = {"id": str(res[0]), "nome": str(res[1]), "cognome": str(res[2]), "cf": str(res[3])}
-                    if str(res[3]).upper() == ADMIN_CF.upper():
-                        return RedirectResponse(url="/admin", status_code=303)
-                    return RedirectResponse(url="/prenota", status_code=303)
+
+        if not res:
+            return templates.TemplateResponse(request=request, name="login.html", context={"error": "Utente non trovato. Controlla nome e cognome."})
+
+        user_id, db_nome, db_cognome, db_cf, salt, pwd_hash = res
+
+        # Verifica della password (assicurati che il metodo in logic corrisponda al tuo)
+        if not logic.verify_password(password, salt, pwd_hash):
+            return templates.TemplateResponse(request=request, name="login.html", context={"error": "Password errata."})
+
+        # Imposta la sessione utente
+        request.session["user"] = {
+            "id": str(user_id),
+            "nome": db_nome,
+            "cognome": db_cognome,
+            "cf": db_cf
+        }
+
+        return RedirectResponse(url="/prenota", status_code=303)
 
     except Exception as e:
-        print(f"Errore durante il login: {e}")
-        return templates.TemplateResponse(request=request, name="login.html", context={"error": f"Errore di sistema: {e}", "success": None})
-
-    return templates.TemplateResponse(request=request, name="login.html", context={"error": "Credenziali non valide o utente non trovato.", "success": None})
+        print(f"Errore login: {e}")
+        return templates.TemplateResponse(request=request, name="login.html", context={"error": "Errore durante il login."})
 
 # --- LOGIN ADMIN ---
 @app.get("/admin/login", response_class=HTMLResponse)
