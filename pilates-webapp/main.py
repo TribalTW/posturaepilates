@@ -597,11 +597,12 @@ def checkin_qr_post(
             {"n": nome.strip().upper(), "c": cognome.strip().upper()}
         ).fetchone()
 
-        if not res or not logic.verify_password(password, res[4], res[5]):
+        # CORRETTO DA verify_password A verifica_password
+        if not res or not logic.verifica_password(password, res[4], res[5]):
             return templates.TemplateResponse(request=request, name="login.html", context={"error": "Credenziali non valide o utente non trovato.", "admin_error": None})
 
         if res[6]:
-            return templates.TemplateResponse(request=request, name="checkin_login.html", context={"error": "Account disabilitato. Contatta l'amministrazione."})
+            return templates.TemplateResponse(request=request, name="checkin_result.html", context={"error": "Account disabilitato. Contatta l'amministrazione."})
 
         user = {"id": str(res[0]), "nome": str(res[1]), "cognome": str(res[2]), "cf": str(res[3])}
         request.session["user"] = user
