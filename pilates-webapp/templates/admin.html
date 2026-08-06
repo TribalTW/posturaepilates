@@ -5,14 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Postura & Pilates - Pannello Amministrazione</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-serif-title { font-family: 'Playfair Display', serif; }
+    </style>
 </head>
 <body class="bg-[#fff9fb] min-h-screen p-4 md:p-8">
     <div class="max-w-7xl mx-auto space-y-8">
         
         <!-- Intestazione Brand & Header Amministratore -->
-        <div class="bg-white border border-[#f9d1df] p-6 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="bg-white border border-[#f9d1df] p-6 md:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="text-center md:text-left">
-                <h1 class="text-2xl font-bold text-[#880E4F]">Postura & Pilates</h1>
+                <h1 class="text-2xl font-serif-title font-bold text-pink-900 tracking-tight">Postura & Pilates</h1>
                 <p class="text-xs text-gray-500 mt-1">⚙️ Pannello Amministrazione: Gestione Prenotazioni, Utenti e Calendario</p>
             </div>
             <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-xl text-xs transition shadow-sm">
@@ -21,10 +26,10 @@
         </div>
 
         <!-- SEZIONE 0: BOX QR CODE FISSO RECEPTION -->
-        <div class="bg-[#fff0f5] border border-[#f9d1df] rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md">
+        <div class="bg-[#fff0f5] border border-[#f9d1df] rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md">
             <div class="space-y-2 text-center md:text-left">
                 <span class="bg-[#fce7f3] text-[#880E4F] text-xs font-semibold px-2.5 py-0.5 rounded-full uppercase">Ingresso Studio</span>
-                <h2 class="text-xl font-bold text-[#880E4F]">📱 QR Code Fisso Reception</h2>
+                <h2 class="text-xl font-serif-title font-bold text-pink-900">📱 QR Code Fisso Reception</h2>
                 <p class="text-sm text-gray-700 max-w-xl">
                     Questo è il QR Code unico per il check-in. Stampalo o mostralo su un tablet/iPad all'ingresso dello studio. 
                     I clienti lo inquadreranno con il telefono per confermare la loro presenza.
@@ -40,7 +45,7 @@
                     </a>
                 </div>
             </div>
-            <div class="bg-white p-3 rounded-xl border border-[#f9d1df] shadow-sm flex flex-col items-center shrink-0">
+            <div class="bg-white p-3 rounded-2xl border border-[#f9d1df] shadow-sm flex flex-col items-center shrink-0">
                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ request.base_url }}checkin" 
                      alt="QR Code Fisso Reception" 
                      class="w-32 h-32 rounded-lg">
@@ -49,9 +54,9 @@
         </div>
 
         <!-- SEZIONE 1: TABELLA PRENOTAZIONI -->
-        <div class="bg-white rounded-2xl shadow-xl border border-[#f9d1df] p-6">
+        <div class="bg-white rounded-3xl shadow-xl border border-[#f9d1df] p-6 md:p-8">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                <h2 class="text-lg font-bold text-[#880E4F]">📅 Elenco Prenotazioni</h2>
+                <h2 class="text-lg font-serif-title font-bold text-pink-900">📅 Elenco Prenotazioni</h2>
                 
                 <!-- Filtro per Data -->
                 <form method="GET" action="/admin" class="flex items-center gap-2 bg-[#fff9fb] p-2 rounded-xl border border-[#f9d1df]">
@@ -157,8 +162,8 @@
         </div>
 
         <!-- SEZIONE 2: BLOCCA CALENDARIO -->
-        <div class="bg-white rounded-2xl shadow-xl border border-[#f9d1df] p-6">
-            <h2 class="text-lg font-bold text-[#880E4F] mb-4">🚫 Blocca Giorni o Orari</h2>
+        <div class="bg-white rounded-3xl shadow-xl border border-[#f9d1df] p-6 md:p-8">
+            <h2 class="text-lg font-serif-title font-bold text-pink-900 mb-4">🚫 Blocca Giorni o Orari</h2>
             
             <form action="/admin/blocca" method="POST" class="flex flex-wrap items-end gap-4 mb-6">
                 <div>
@@ -205,8 +210,8 @@
         </div>
 
         <!-- SEZIONE 3: GESTIONE UTENTI -->
-        <div class="bg-white rounded-2xl shadow-xl border border-[#f9d1df] p-6">
-            <h2 class="text-lg font-bold text-[#880E4F] mb-4">👥 Utenti Registrati</h2>
+        <div class="bg-white rounded-3xl shadow-xl border border-[#f9d1df] p-6 md:p-8">
+            <h2 class="text-lg font-serif-title font-bold text-pink-900 mb-4">👥 Utenti Registrati</h2>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
