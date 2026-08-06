@@ -462,13 +462,15 @@ def admin_panel(request: Request, data: str = None):
         data = logic.get_current_time_local().strftime("%Y-%m-%d")
 
     with engine.begin() as conn:
+        # AGGIORNATA LA QUERY CON LA JOIN PER PRENDERE L'EMAIL
         prenotazioni = conn.execute(
             text("""
-                SELECT id, nome, data, ora, trattamento, codice_fiscale, stato, 
-                       nome_2, codice_fiscale_2, stato_2 
-                FROM prenotazioni 
-                WHERE data = :d 
-                ORDER BY ora ASC
+                SELECT p.id, p.nome, p.data, p.ora, p.trattamento, p.codice_fiscale, p.stato, 
+                       p.nome_2, p.codice_fiscale_2, p.stato_2, u.email 
+                FROM prenotazioni p
+                LEFT JOIN utenti u ON UPPER(p.codice_fiscale) = UPPER(u.codice_fiscale)
+                WHERE p.data = :d 
+                ORDER BY p.ora ASC
             """),
             {"d": data}
         ).fetchall()
@@ -482,7 +484,7 @@ def admin_panel(request: Request, data: str = None):
         "utenti": utenti,
         "data_selezionata": data
     })
-
+    
 @app.post("/admin/prenotazione/elimina")
 def elimina_prenotazione(request: Request, id_prenotazione: int = Form(...)):
     user = request.session.get("user")
