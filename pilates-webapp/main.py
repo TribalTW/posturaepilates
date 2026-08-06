@@ -140,7 +140,7 @@ def registrati(
     request: Request, 
     nome: str = Form(...), 
     cognome: str = Form(...), 
-    cf: str = Form(...), 
+    codice_fiscale: str = Form(...),  # <-- Aggiornato per corrispondere all'HTML
     email: str = Form(...), 
     password: str = Form(...), 
     conferma_password: str = Form(...)
@@ -148,12 +148,14 @@ def registrati(
     if password != conferma_password:
         return templates.TemplateResponse(request=request, name="register.html", context={"error": "Le password non coincidono."})
     
-    valido, msg = logic.valida_codice_fiscale(nome, cognome, cf)
+    valido, msg = logic.valida_codice_fiscale(nome, cognome, codice_fiscale)
     if not valido:
         return templates.TemplateResponse(request=request, name="register.html", context={"error": msg})
 
     salt, pwd_hash = logic.hash_password(password)
     data_reg = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    cf_clean = codice_fiscale.strip().upper()
 
     try:
         with engine.begin() as conn:
@@ -163,7 +165,7 @@ def registrati(
                 {
                     "n": nome.strip().title(), 
                     "c": cognome.strip().title(), 
-                    "cf": cf.strip().upper(), 
+                    "cf": cf_clean, 
                     "s": salt, 
                     "h": pwd_hash, 
                     "d": data_reg, 
@@ -174,7 +176,7 @@ def registrati(
             # Recupera l'id generato per l'utente appena registrato
             res_user = conn.execute(
                 text("SELECT id FROM utenti WHERE codice_fiscale = :cf"),
-                {"cf": cf.strip().upper()}
+                {"cf": cf_clean}
             ).fetchone()
             
             user_id = str(res_user[0]) if res_user else "0"
@@ -184,7 +186,7 @@ def registrati(
             "id": user_id, 
             "nome": nome.strip().title(), 
             "cognome": cognome.strip().title(), 
-            "cf": cf.strip().upper()
+            "cf": cf_clean
         }
         
         # Reindirizza l'utente direttamente alla pagina di prenotazione
