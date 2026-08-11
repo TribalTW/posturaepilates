@@ -15,10 +15,13 @@ app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "su
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# CREDENZIALI E CODICE FISCALE AMMINISTRATORE
-ADMIN_CF = os.getenv("ADMIN_CF", "")
-ADMIN_USER = os.getenv("ADMIN_USER", "admin")
-ADMIN_PWD = os.getenv("ADMIN_PWD", "admin123")
+# CREDENZIALI E CODICE FISCALE AMMINISTRATORE (Lette tassativamente da ambiente)
+ADMIN_CF = os.getenv("ADMIN_CF")
+ADMIN_USER = os.getenv("ADMIN_USER")
+ADMIN_PWD = os.getenv("ADMIN_PWD")
+
+if not ADMIN_USER or not ADMIN_PWD:
+    raise ValueError("Attenzione: Le credenziali ADMIN_USER e ADMIN_PWD devono essere configurate nelle variabili d'ambiente (.env).")
 
 @app.on_event("startup")
 def startup():
@@ -101,7 +104,6 @@ def login(
         if not logic.verifica_password(password, salt, pwd_hash):
             return templates.TemplateResponse(request=request, name="login.html", context={"error": "Password errata.", "admin_error": None})
 
-        # Imposta la sessione utente
         request.session["user"] = {
             "id": str(user_id),
             "nome": db_nome,
@@ -115,7 +117,7 @@ def login(
         print(f"Errore login: {e}")
         return templates.TemplateResponse(request=request, name="login.html", context={"error": f"Errore durante il login: {str(e)}", "admin_error": None})
 
-# --- RECUPERO / RESET PASSWORD (DIRETTO TRAMITE DATI) ---
+# --- RECUPERO / RESET PASSWORD ---
 @app.get("/recupero-password", response_class=HTMLResponse)
 def recupero_password_get(request: Request):
     return templates.TemplateResponse(request=request, name="recupero_password.html", context={"error": None, "success": None})
@@ -169,7 +171,7 @@ def admin_login_post(request: Request, username: str = Form(""), password: str =
             "id": "0",
             "nome": "Amministratore",
             "cognome": "Studio",
-            "cf": ADMIN_CF
+            "cf": ADMIN_CF or "ADMIN_CF_PLACEHOLDER"
         }
         return RedirectResponse(url="/admin", status_code=303)
 
@@ -207,7 +209,6 @@ def registrati(
 
     salt, pwd_hash = logic.hash_password(password)
     data_reg = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
     cf_clean = codice_fiscale.strip().upper()
 
     try:
@@ -280,7 +281,6 @@ def effettua_prenotazione(
 
     ha_usato_prova = utente_ha_usato_prova(user['cf'])
 
-    # Controllo se mancano campi obbligatori
     if not trattamento or not data or not ora:
         return templates.TemplateResponse(request=request, name="prenota.html", context={
             "user": user, 
@@ -300,7 +300,6 @@ def effettua_prenotazione(
 
     nome_completo_2 = None
     cf_2_clean = None
-
     is_coppia = "coppia" in trattamento.lower()
 
     if is_coppia:
