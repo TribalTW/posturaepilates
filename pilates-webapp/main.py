@@ -452,9 +452,9 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
     if giorno_settimana == 6:  # Domenica
         return JSONResponse({"orari": []})
     elif giorno_settimana == 5: # Sabato: 8-13
-        orari_teorici = [f"{h:02d}:00" for h in range(8, 13)]
+        orari_teorici = [f"{h:02d}:00" for h in range(8, 14)]
     else: # Lun-Ven: 8-19
-        orari_teorici = [f"{h:02d}:00" for h in range(8, 19)]
+        orari_teorici = [f"{h:02d}:00" for h in range(8, 20)]
 
     user = request.session.get("user")
     user_cf = user['cf'].strip().upper() if user and 'cf' in user else None
