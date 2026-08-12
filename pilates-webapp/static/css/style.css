@@ -1,4 +1,69 @@
-/* File CSS principale per la WebApp Pilates */
-body {
+/* 1. Global Reset e Base */
+* {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    line-height: 1.6;
+    padding: 20px;
+}
+
+/* 2. Stile per i Modal (Popup) */
+.modal {
+    display: none; /* Nascosto di default */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Sfondo scuro semitrasparente */
+    overflow: auto;
+}
+
+.modal-content {
+    background-color: #ffffff;
+    margin: 10% auto;
+    padding: 25px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    text-align: center;
+}
+
+/* Contenitore scrollabile per le regole lunghe */
+.rules-text {
+    text-align: left;
+    font-size: 0.95em;
+    margin: 15px 0;
+    max-height: 300px; /* Limita l'altezza */
+    overflow-y: auto;  /* Se le regole sono tante, si scorre */
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+/* Bottone per accettare */
+.modal-btn {
+    background-color: #28a745;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 100%;
+    margin-top: 15px;
+    transition: background 0.3s;
+}
+
+.modal-btn:hover {
+    background-color: #218838;
 }
