@@ -92,14 +92,18 @@ def login(
     try:
         with engine.connect() as conn:
             res = conn.execute(
-                text("SELECT id, nome, cognome, codice_fiscale, password_salt, password_hash FROM utenti WHERE UPPER(nome) = :n AND UPPER(cognome) = :c"),
+                text("SELECT id, nome, cognome, codice_fiscale, password_salt, password_hash, COALESCE(bannato, false) FROM utenti WHERE UPPER(nome) = :n AND UPPER(cognome) = :c"),
                 {"n": nome_clean, "c": cognome_clean}
             ).fetchone()
 
         if not res:
             return templates.TemplateResponse(request=request, name="login.html", context={"error": "Utente non trovato. Controlla nome e cognome.", "admin_error": None})
 
-        user_id, db_nome, db_cognome, db_cf, salt, pwd_hash = res
+        user_id, db_nome, db_cognome, db_cf, salt, pwd_hash, bannato = res
+
+        # CONTROLLO BAN
+        if bannato:
+            return templates.TemplateResponse(request=request, name="login.html", context={"error": "Account sospeso. Contatta l'amministrazione.", "admin_error": None})
 
         if not logic.verifica_password(password, salt, pwd_hash):
             return templates.TemplateResponse(request=request, name="login.html", context={"error": "Password errata.", "admin_error": None})
@@ -258,6 +262,17 @@ def prenota_page(request: Request):
     if not user:
         return RedirectResponse(url="/", status_code=303)
 
+    # Controllo se l'utente loggato è stato bannato nel frattempo
+    with engine.begin() as conn:
+        bannato = conn.execute(
+            text("SELECT COALESCE(bannato, false) FROM utenti WHERE codice_fiscale = :cf"),
+            {"cf": user['cf']}
+        ).scalar()
+    
+    if bannato:
+        request.session.clear()
+        return RedirectResponse(url="/?error=account_sospeso", status_code=303)
+
     ha_usato_prova = utente_ha_usato_prova(user['cf'])
 
     return templates.TemplateResponse(request=request, name="prenota.html", context={
@@ -279,7 +294,20 @@ def effettua_prenotazione(
     if not user:
         return RedirectResponse(url="/", status_code=303)
 
-    ha_usato_prova = utente_ha_usato_prova(user['cf'])
+    user_cf = user['cf'].strip().upper()
+
+    # CONTROLLO BAN PRIMA DI PRENOTARE
+    with engine.begin() as conn:
+        bannato = conn.execute(
+            text("SELECT COALESCE(bannato, false) FROM utenti WHERE codice_fiscale = :cf"),
+            {"cf": user_cf}
+        ).scalar()
+
+    if bannato:
+        request.session.clear()
+        return RedirectResponse(url="/?error=account_sospeso", status_code=303)
+
+    ha_usato_prova = utente_ha_usato_prova(user_cf)
 
     if not trattamento or not data or not ora:
         return templates.TemplateResponse(request=request, name="prenota.html", context={
@@ -322,7 +350,6 @@ def effettua_prenotazione(
         cf_2_clean = cf_2.strip().upper()
 
     with engine.begin() as conn:
-        user_cf = user['cf'].strip().upper()
         gia_prenotato = conn.execute(
             text("""
                 SELECT COUNT(*) FROM prenotazioni 
@@ -379,7 +406,7 @@ def effettua_prenotazione(
             """),
             {
                 "n": nome_completo, "d": data, "o": ora, "t": trattamento,
-                "dc": data_creazione, "cf": user['cf'],
+                "dc": data_creazione, "cf": user_cf,
                 "n2": nome_completo_2, "cf2": cf_2_clean
             }
         )
