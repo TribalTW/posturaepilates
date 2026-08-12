@@ -421,6 +421,7 @@ def effettua_prenotazione(
     })
 
 # --- API ORARI DISPONIBILI ---
+# --- API ORARI DISPONIBILI (Aggiornata e Corretta) ---
 @app.get("/api/orari")
 def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
     try:
@@ -428,16 +429,29 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
     except ValueError:
         return JSONResponse({"orari": []})
 
+    giorno_settimana = dt.weekday() # 0 = Lunedì, ..., 5 = Sabato, 6 = Domenica
+
+    # 1. Regole giorni di apertura/chiusura
+    if giorno_settimana == 6:  # Domenica (Chiuso)
+        return JSONResponse({"orari": []})
+    elif giorno_settimana == 5:  # Sabato (08:00 - 13:00)
+        start_hour, end_hour = 8, 13
+    else:  # Lunedì - Venerdì (08:00 - 19:00)
+        start_hour, end_hour = 8, 19
+
     user = request.session.get("user")
     user_cf = user['cf'].strip().upper() if user and 'cf' in user else None
 
     with engine.begin() as conn:
+        # Controlla se l'intero giorno è bloccato dall'admin
         giorno_bloccato = conn.execute(text("SELECT id FROM blocchi WHERE data = :d AND ora IS NULL"), {"d": data}).fetchone()
         if giorno_bloccato:
             return JSONResponse({"orari": []})
 
+        # Orari singoli bloccati dall'admin
         orari_bloccati = [r[0] for r in conn.execute(text("SELECT ora FROM blocchi WHERE data = :d AND ora IS NOT NULL"), {"d": data}).fetchall()]
         
+        # Prenotazioni esistenti per quel giorno
         prenotazioni_giorno = conn.execute(
             text("""
                 SELECT ora, trattamento, COALESCE(stato, 'confermata'), 
@@ -448,6 +462,7 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
             {"d": data}
         ).fetchall()
 
+    # 2. Calcola posti occupati e orari già prenotati dall'utente
     posti_occupati_per_ora = {}
     orari_utente_prenotato = set()
 
@@ -464,23 +479,24 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
         peso = 2 if "coppia" in str(t_esistente).lower() else 1
         posti_occupati_per_ora[ora] = posti_occupati_per_ora.get(ora, 0) + peso
 
-    orari_teorici = logic.get_orari_per_data(dt)
-    if not orari_teorici:
-        return JSONResponse({"orari": []})
-
-    orari_filtrati = logic.get_orari_disponibili_filtrati(data, orari_teorici)
+    # 3. Genera tutti gli orari teorici in base alle ore stabilite
+    orari_teorici = [f"{h:02d}:00" for h in range(start_hour, end_hour)]
+    
     richiede_due_posti = "coppia" in trattamento.lower()
-
     orari_liberi = []
-    for o in orari_filtrati:
+
+    for o in orari_teorici:
+        # Salta se l'orario è bloccato dall'admin
         if o in orari_bloccati:
             continue
 
+        # Salta se l'utente ha già una prenotazione in quell'ora
         if user_cf and o in orari_utente_prenotato:
             continue
 
         posti_occupati = posti_occupati_per_ora.get(o, 0)
         
+        # Logica capienza (max 2 posti per slot)
         if richiede_due_posti:
             if posti_occupati == 0:
                 orari_liberi.append(o)
@@ -489,39 +505,6 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
                 orari_liberi.append(o)
 
     return JSONResponse({"orari": orari_liberi})
-
-# --- AZIONI ADMIN ---
-@app.get("/admin", response_class=HTMLResponse)
-def admin_panel(request: Request, data: str = None):
-    user = request.session.get("user")
-    if not user or user.get("cf") != ADMIN_CF:
-        return RedirectResponse(url="/admin/login", status_code=303)
-
-    if not data:
-        data = logic.get_current_time_local().strftime("%Y-%m-%d")
-
-    with engine.begin() as conn:
-        prenotazioni = conn.execute(
-            text("""
-                SELECT p.id, p.nome, p.data, p.ora, p.trattamento, p.codice_fiscale, p.stato, 
-                       p.nome_2, p.codice_fiscale_2, p.stato_2, u.email 
-                FROM prenotazioni p
-                LEFT JOIN utenti u ON UPPER(p.codice_fiscale) = UPPER(u.codice_fiscale)
-                WHERE p.data = :d 
-                ORDER BY p.ora ASC
-            """),
-            {"d": data}
-        ).fetchall()
-
-        blocchi = conn.execute(text("SELECT id, data, ora FROM blocchi ORDER BY data ASC")).fetchall()
-        utenti = conn.execute(text("SELECT id, nome, cognome, codice_fiscale, data_registrazione, COALESCE(bannato, false), email FROM utenti")).fetchall()
-
-    return templates.TemplateResponse(request=request, name="admin.html", context={
-        "prenotazioni": prenotazioni,
-        "blocchi": blocchi,
-        "utenti": utenti,
-        "data_selezionata": data
-    })
     
 @app.post("/admin/prenotazione/elimina")
 def elimina_prenotazione(request: Request, id_prenotazione: int = Form(...)):
