@@ -172,7 +172,25 @@
 
     </div>
 
-    <!-- Script di gestione tendina e password -->
+    <!-- ========================================== -->
+    <!-- MODAL PRIVACY INFORMATIVA (PRIMO INGRESSO) -->
+    <!-- ========================================== -->
+    <div id="privacyModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 hidden">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-[#f9d1df] text-center">
+            <div class="mb-3 text-3xl">🛡️</div>
+            <h3 class="font-serif-title text-xl font-bold text-pink-900 mb-3">Informativa sulla Privacy</h3>
+            <p class="text-xs md:text-sm text-gray-600 mb-6 leading-relaxed text-left bg-[#faf6f8] p-4 rounded-2xl border border-[#f2c2d5] max-h-48 overflow-y-auto">
+                I tuoi dati personali (nome, cognome e password) vengono trattati nel rispetto del GDPR esclusivamente per la gestione delle prenotazioni e dei servizi offerti dallo studio <strong>Postura & Pilates</strong> di Dott.ssa Roberta Sinagra.<br><br>
+                Continuando nella navigazione e accedendo al sito, dichiari di aver preso visione dell'informativa e accetti i termini di servizio.
+            </p>
+            <button type="button" onclick="accettaPrivacy()" 
+                    class="w-full py-3 bg-gradient-to-r from-[#D81B60] to-[#AD1457] hover:opacity-95 text-white font-bold rounded-xl text-xs transition shadow-md cursor-pointer">
+                Accetto e procedi
+            </button>
+        </div>
+    </div>
+
+    <!-- Script di gestione tendina, password e privacy modal -->
     <script>
         function togglePassword() {
             const pwdInput = document.getElementById('userPassword');
@@ -191,17 +209,26 @@
             }
         }
 
-        // Se c'è un errore di login admin, apre automaticamente il box a tendina su mobile
-        {% if admin_error %}
+        // Mostra il modal privacy al primo accesso
         document.addEventListener("DOMContentLoaded", () => {
+            if (!localStorage.getItem('privacy_accettata')) {
+                document.getElementById('privacyModal').classList.remove('hidden');
+            }
+
+            // Se c'è un errore di login admin, apre automaticamente il box a tendina su mobile
+            const adminError = document.querySelector('.bg-red-500\\/10');
             const form = document.getElementById('mobileAdminForm');
             const arrow = document.getElementById('adminArrow');
-            if (form && window.innerWidth < 768) {
+            if (adminError && form && window.innerWidth < 768) {
                 form.classList.remove('hidden');
                 if (arrow) arrow.textContent = '▲';
             }
         });
-        {% endif %}
+
+        function accettaPrivacy() {
+            localStorage.setItem('privacy_accettata', 'true');
+            document.getElementById('privacyModal').classList.add('hidden');
+        }
     </script>
 </body>
 </html>
