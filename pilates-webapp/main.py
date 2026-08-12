@@ -421,7 +421,7 @@ def effettua_prenotazione(
     })
 
 # --- API ORARI DISPONIBILI ---
-# --- API ORARI DISPONIBILI (Aggiornata con i nuovi orari) ---
+# --- API ORARI DISPONIBILI (Corretta con orari inclusivi fino a 19:00 e 13:00) ---
 @app.get("/api/orari")
 def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
     try:
@@ -431,13 +431,15 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
 
     giorno_settimana = dt.weekday() # 0 = Lunedì, ..., 5 = Sabato, 6 = Domenica
 
-    # 1. Nuove regole orari di apertura
+    # 1. Regole orari di apertura
     if giorno_settimana == 6:  # Domenica (Chiuso)
         return JSONResponse({"orari": []})
-    elif giorno_settimana == 5:  # Sabato (08:00 - 12:00)
-        start_hour, end_hour = 8, 12
-    else:  # Lunedì - Venerdì (08:00 - 18:00)
-        start_hour, end_hour = 8, 18
+    elif giorno_settimana == 5:  # Sabato (08:00 - 13:00)
+        # range(8, 14) genera: 8, 9, 10, 11, 12, 13
+        start_hour, end_hour = 8, 14
+    else:  # Lunedì - Venerdì (08:00 - 19:00)
+        # range(8, 20) genera: 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+        start_hour, end_hour = 8, 20
 
     user = request.session.get("user")
     user_cf = user['cf'].strip().upper() if user and 'cf' in user else None
@@ -479,7 +481,7 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
         peso = 2 if "coppia" in str(t_esistente).lower() else 1
         posti_occupati_per_ora[ora] = posti_occupati_per_ora.get(ora, 0) + peso
 
-    # 3. Genera tutti gli orari teorici in base ai nuovi limiti
+    # 3. Genera tutti gli orari teorici
     orari_teorici = [f"{h:02d}:00" for h in range(start_hour, end_hour)]
     
     richiede_due_posti = "coppia" in trattamento.lower()
