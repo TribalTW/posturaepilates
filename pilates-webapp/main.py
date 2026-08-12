@@ -101,9 +101,8 @@ def login(
 
         user_id, db_nome, db_cognome, db_cf, salt, pwd_hash, bannato = res
 
-        # CONTROLLO BAN
         if bannato:
-            return templates.TemplateResponse(request=request, name="login.html", context={"error": "Account sospeso. Contatta l'amministrazione.", "admin_error": None})
+            return templates.TemplateResponse(request=request, name="login.html", context={"error": "Il tuo account è stato bannato. Contatta l'amministrazione.", "admin_error": None})
 
         if not logic.verifica_password(password, salt, pwd_hash):
             return templates.TemplateResponse(request=request, name="login.html", context={"error": "Password errata.", "admin_error": None})
@@ -186,38 +185,6 @@ def admin_login_post(request: Request, username: str = Form(""), password: str =
         "open_admin": True
     })
 
-# --- PANNELLO ADMIN ---
-@app.get("/admin", response_class=HTMLResponse)
-def admin_dashboard(request: Request):
-    user = request.session.get("user")
-    if not user or user.get("cf") != ADMIN_CF:
-        return RedirectResponse(url="/admin/login", status_code=303)
-
-    with engine.begin() as conn:
-        prenotazioni = conn.execute(
-            text("""
-                SELECT id, nome, data, ora, trattamento, COALESCE(stato, 'confermata'), 
-                       data_creazione, codice_fiscale, nome_2, codice_fiscale_2, COALESCE(stato_2, 'confermata') 
-                FROM prenotazioni 
-                ORDER BY data DESC, ora DESC
-            """)
-        ).fetchall()
-        
-        blocchi = conn.execute(
-            text("SELECT id, data, ora FROM blocchi ORDER BY data DESC")
-        ).fetchall()
-        
-        utenti = conn.execute(
-            text("SELECT id, nome, cognome, codice_fiscale, email, data_registrazione, COALESCE(bannato, false) FROM utenti ORDER BY data_registrazione DESC")
-        ).fetchall()
-
-    return templates.TemplateResponse(request=request, name="admin.html", context={
-        "user": user,
-        "prenotazioni": prenotazioni,
-        "blocchi": blocchi,
-        "utenti": utenti
-    })
-
 # --- REGISTRAZIONE ---
 @app.get("/registrati", response_class=HTMLResponse)
 def pagina_registrazione(request: Request):
@@ -294,16 +261,6 @@ def prenota_page(request: Request):
     if not user:
         return RedirectResponse(url="/", status_code=303)
 
-    with engine.begin() as conn:
-        bannato = conn.execute(
-            text("SELECT COALESCE(bannato, false) FROM utenti WHERE codice_fiscale = :cf"),
-            {"cf": user['cf']}
-        ).scalar()
-    
-    if bannato:
-        request.session.clear()
-        return RedirectResponse(url="/?error=account_sospeso", status_code=303)
-
     ha_usato_prova = utente_ha_usato_prova(user['cf'])
 
     return templates.TemplateResponse(request=request, name="prenota.html", context={
@@ -325,19 +282,19 @@ def effettua_prenotazione(
     if not user:
         return RedirectResponse(url="/", status_code=303)
 
-    user_cf = user['cf'].strip().upper()
+    ha_usato_prova = utente_ha_usato_prova(user['cf'])
 
     with engine.begin() as conn:
-        bannato = conn.execute(
-            text("SELECT COALESCE(bannato, false) FROM utenti WHERE codice_fiscale = :cf"),
-            {"cf": user_cf}
+        is_bannato = conn.execute(
+            text("SELECT COALESCE(bannato, false) FROM utenti WHERE UPPER(codice_fiscale) = :cf"),
+            {"cf": user['cf'].strip().upper()}
         ).scalar()
-
-    if bannato:
-        request.session.clear()
-        return RedirectResponse(url="/?error=account_sospeso", status_code=303)
-
-    ha_usato_prova = utente_ha_usato_prova(user_cf)
+        if is_bannato:
+            return templates.TemplateResponse(request=request, name="prenota.html", context={
+                "user": user,
+                "ha_usato_prova": ha_usato_prova,
+                "error": "Il tuo account risulta bannato. Impossibile effettuare prenotazioni."
+            })
 
     if not trattamento or not data or not ora:
         return templates.TemplateResponse(request=request, name="prenota.html", context={
@@ -345,6 +302,35 @@ def effettua_prenotazione(
             "ha_usato_prova": ha_usato_prova,
             "error": "Seleziona un trattamento, una data e un orario validi prima di procedere."
         })
+
+    # Controllo orari consentiti (8-19 lun-ven, 8-13 sab, chiuso dom)
+    try:
+        dt_app = datetime.strptime(data, "%Y-%m-%d")
+        giorno_settimana = dt_app.weekday()  # 0=Lun, ..., 5=Sab, 6=Dom
+        ora_num = int(ora.split(":")[0])
+
+        if giorno_settimana == 6:
+            return templates.TemplateResponse(request=request, name="prenota.html", context={
+                "user": user,
+                "ha_usato_prova": ha_usato_prova,
+                "error": "La domenica lo studio è chiuso."
+            })
+        elif giorno_settimana == 5:
+            if not (8 <= ora_num < 13):
+                return templates.TemplateResponse(request=request, name="prenota.html", context={
+                    "user": user,
+                    "ha_usato_prova": ha_usato_prova,
+                    "error": "Il sabato è possibile prenotare solo dalle 08:00 alle 13:00."
+                })
+        else:
+            if not (8 <= ora_num < 19):
+                return templates.TemplateResponse(request=request, name="prenota.html", context={
+                    "user": user,
+                    "ha_usato_prova": ha_usato_prova,
+                    "error": "Gli orari consentiti vanno dalle 08:00 alle 19:00."
+                })
+    except Exception:
+        pass
 
     if "prova" in trattamento.lower() and ha_usato_prova:
         return templates.TemplateResponse(request=request, name="prenota.html", context={
@@ -380,6 +366,7 @@ def effettua_prenotazione(
         cf_2_clean = cf_2.strip().upper()
 
     with engine.begin() as conn:
+        user_cf = user['cf'].strip().upper()
         gia_prenotato = conn.execute(
             text("""
                 SELECT COUNT(*) FROM prenotazioni 
@@ -436,7 +423,7 @@ def effettua_prenotazione(
             """),
             {
                 "n": nome_completo, "d": data, "o": ora, "t": trattamento,
-                "dc": data_creazione, "cf": user_cf,
+                "dc": data_creazione, "cf": user['cf'],
                 "n2": nome_completo_2, "cf2": cf_2_clean
             }
         )
@@ -457,15 +444,6 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
         dt = datetime.strptime(data, "%Y-%m-%d")
     except ValueError:
         return JSONResponse({"orari": []})
-
-    giorno_settimana = dt.weekday() # 0 = Lunedì, ..., 5 = Sabato, 6 = Domenica
-
-    if giorno_settimana == 6:  # Domenica (Chiuso)
-        return JSONResponse({"orari": []})
-    elif giorno_settimana == 5:  # Sabato (08:00 - 13:00)
-        start_hour, end_hour = 8, 14
-    else:  # Lunedì - Venerdì (08:00 - 19:00)
-        start_hour, end_hour = 8, 20
 
     user = request.session.get("user")
     user_cf = user['cf'].strip().upper() if user and 'cf' in user else None
@@ -503,12 +481,15 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
         peso = 2 if "coppia" in str(t_esistente).lower() else 1
         posti_occupati_per_ora[ora] = posti_occupati_per_ora.get(ora, 0) + peso
 
-    orari_teorici = [f"{h:02d}:00" for h in range(start_hour, end_hour)]
-    
-    richiede_due_posti = "coppia" in trattamento.lower()
-    orari_liberi = []
+    orari_teorici = logic.get_orari_per_data(dt)
+    if not orari_teorici:
+        return JSONResponse({"orari": []})
 
-    for o in orari_teorici:
+    orari_filtrati = logic.get_orari_disponibili_filtrati(data, orari_teorici)
+    richiede_due_posti = "coppia" in trattamento.lower()
+
+    orari_liberi = []
+    for o in orari_filtrati:
         if o in orari_bloccati:
             continue
 
@@ -525,6 +506,39 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
                 orari_liberi.append(o)
 
     return JSONResponse({"orari": orari_liberi})
+
+# --- AZIONI ADMIN ---
+@app.get("/admin", response_class=HTMLResponse)
+def admin_panel(request: Request, data: str = None):
+    user = request.session.get("user")
+    if not user or user.get("cf") != ADMIN_CF:
+        return RedirectResponse(url="/admin/login", status_code=303)
+
+    if not data:
+        data = logic.get_current_time_local().strftime("%Y-%m-%d")
+
+    with engine.begin() as conn:
+        prenotazioni = conn.execute(
+            text("""
+                SELECT p.id, p.nome, p.data, p.ora, p.trattamento, p.codice_fiscale, p.stato, 
+                       p.nome_2, p.codice_fiscale_2, p.stato_2, u.email 
+                FROM prenotazioni p
+                LEFT JOIN utenti u ON UPPER(p.codice_fiscale) = UPPER(u.codice_fiscale)
+                WHERE p.data = :d 
+                ORDER BY p.ora ASC
+            """),
+            {"d": data}
+        ).fetchall()
+
+        blocchi = conn.execute(text("SELECT id, data, ora FROM blocchi ORDER BY data ASC")).fetchall()
+        utenti = conn.execute(text("SELECT id, nome, cognome, codice_fiscale, data_registrazione, COALESCE(bannato, false), email FROM utenti")).fetchall()
+
+    return templates.TemplateResponse(request=request, name="admin.html", context={
+        "prenotazioni": prenotazioni,
+        "blocchi": blocchi,
+        "utenti": utenti,
+        "data_selezionata": data
+    })
     
 @app.post("/admin/prenotazione/elimina")
 def elimina_prenotazione(request: Request, id_prenotazione: int = Form(...)):
