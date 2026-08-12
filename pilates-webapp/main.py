@@ -438,6 +438,7 @@ def effettua_prenotazione(
     })
 
 # --- API ORARI DISPONIBILI ---
+# --- API ORARI DISPONIBILI (RISCRITTA PER GARANTIRE SEQUENZA 8-19 E 8-13) ---
 @app.get("/api/orari")
 def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
     try:
@@ -445,10 +446,22 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
     except ValueError:
         return JSONResponse({"orari": []})
 
+    giorno_settimana = dt.weekday()  # 0=Lun, ..., 5=Sab, 6=Dom
+    
+    # 1. Definizione rigida degli orari teorici (Senza dipendere da logic.py)
+    if giorno_settimana == 6:  # Domenica
+        return JSONResponse({"orari": []})
+    elif giorno_settimana == 5: # Sabato: 8-13
+        orari_teorici = [f"{h:02d}:00" for h in range(8, 13)]
+    else: # Lun-Ven: 8-19
+        orari_teorici = [f"{h:02d}:00" for h in range(8, 19)]
+
     user = request.session.get("user")
     user_cf = user['cf'].strip().upper() if user and 'cf' in user else None
 
+    # 2. Controllo blocchi admin e prenotazioni esistenti
     with engine.begin() as conn:
+        # Blocchi amministrativi (giorno intero o ora specifica)
         giorno_bloccato = conn.execute(text("SELECT id FROM blocchi WHERE data = :d AND ora IS NULL"), {"d": data}).fetchone()
         if giorno_bloccato:
             return JSONResponse({"orari": []})
@@ -465,6 +478,7 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
             {"d": data}
         ).fetchall()
 
+    # 3. Calcolo posti occupati
     posti_occupati_per_ora = {}
     orari_utente_prenotato = set()
 
@@ -481,15 +495,11 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
         peso = 2 if "coppia" in str(t_esistente).lower() else 1
         posti_occupati_per_ora[ora] = posti_occupati_per_ora.get(ora, 0) + peso
 
-    orari_teorici = logic.get_orari_per_data(dt)
-    if not orari_teorici:
-        return JSONResponse({"orari": []})
-
-    orari_filtrati = logic.get_orari_disponibili_filtrati(data, orari_teorici)
+    # 4. Filtro finale (esclude orari bloccati, già prenotati, o pieni)
     richiede_due_posti = "coppia" in trattamento.lower()
-
     orari_liberi = []
-    for o in orari_filtrati:
+    
+    for o in orari_teorici: # Usiamo la lista orari_teorici creata sopra, che è sicura e continua
         if o in orari_bloccati:
             continue
 
