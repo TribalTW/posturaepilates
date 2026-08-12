@@ -316,14 +316,14 @@ def effettua_prenotazione(
                 "error": "La domenica lo studio è chiuso."
             })
         elif giorno_settimana == 5:
-            if not (8 <= ora_num < 13):
+            if not (8 <= ora_num <= 13):
                 return templates.TemplateResponse(request=request, name="prenota.html", context={
                     "user": user,
                     "ha_usato_prova": ha_usato_prova,
                     "error": "Il sabato è possibile prenotare solo dalle 08:00 alle 13:00."
                 })
         else:
-            if not (8 <= ora_num < 19):
+            if not (8 <= ora_num <= 19):
                 return templates.TemplateResponse(request=request, name="prenota.html", context={
                     "user": user,
                     "ha_usato_prova": ha_usato_prova,
