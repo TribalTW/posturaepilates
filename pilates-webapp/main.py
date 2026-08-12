@@ -186,6 +186,38 @@ def admin_login_post(request: Request, username: str = Form(""), password: str =
         "open_admin": True
     })
 
+# --- PANNELLO ADMIN ---
+@app.get("/admin", response_class=HTMLResponse)
+def admin_dashboard(request: Request):
+    user = request.session.get("user")
+    if not user or user.get("cf") != ADMIN_CF:
+        return RedirectResponse(url="/admin/login", status_code=303)
+
+    with engine.begin() as conn:
+        prenotazioni = conn.execute(
+            text("""
+                SELECT id, nome, data, ora, trattamento, COALESCE(stato, 'confermata'), 
+                       data_creazione, codice_fiscale, nome_2, codice_fiscale_2, COALESCE(stato_2, 'confermata') 
+                FROM prenotazioni 
+                ORDER BY data DESC, ora DESC
+            """)
+        ).fetchall()
+        
+        blocchi = conn.execute(
+            text("SELECT id, data, ora FROM blocchi ORDER BY data DESC")
+        ).fetchall()
+        
+        utenti = conn.execute(
+            text("SELECT id, nome, cognome, codice_fiscale, email, data_registrazione, COALESCE(bannato, false) FROM utenti ORDER BY data_registrazione DESC")
+        ).fetchall()
+
+    return templates.TemplateResponse(request=request, name="admin.html", context={
+        "user": user,
+        "prenotazioni": prenotazioni,
+        "blocchi": blocchi,
+        "utenti": utenti
+    })
+
 # --- REGISTRAZIONE ---
 @app.get("/registrati", response_class=HTMLResponse)
 def pagina_registrazione(request: Request):
@@ -262,7 +294,6 @@ def prenota_page(request: Request):
     if not user:
         return RedirectResponse(url="/", status_code=303)
 
-    # Controllo se l'utente loggato è stato bannato nel frattempo
     with engine.begin() as conn:
         bannato = conn.execute(
             text("SELECT COALESCE(bannato, false) FROM utenti WHERE codice_fiscale = :cf"),
@@ -296,7 +327,6 @@ def effettua_prenotazione(
 
     user_cf = user['cf'].strip().upper()
 
-    # CONTROLLO BAN PRIMA DI PRENOTARE
     with engine.begin() as conn:
         bannato = conn.execute(
             text("SELECT COALESCE(bannato, false) FROM utenti WHERE codice_fiscale = :cf"),
@@ -421,7 +451,6 @@ def effettua_prenotazione(
     })
 
 # --- API ORARI DISPONIBILI ---
-# --- API ORARI DISPONIBILI (Corretta con orari inclusivi fino a 19:00 e 13:00) ---
 @app.get("/api/orari")
 def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
     try:
@@ -431,29 +460,23 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
 
     giorno_settimana = dt.weekday() # 0 = Lunedì, ..., 5 = Sabato, 6 = Domenica
 
-    # 1. Regole orari di apertura
     if giorno_settimana == 6:  # Domenica (Chiuso)
         return JSONResponse({"orari": []})
     elif giorno_settimana == 5:  # Sabato (08:00 - 13:00)
-        # range(8, 14) genera: 8, 9, 10, 11, 12, 13
         start_hour, end_hour = 8, 14
     else:  # Lunedì - Venerdì (08:00 - 19:00)
-        # range(8, 20) genera: 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
         start_hour, end_hour = 8, 20
 
     user = request.session.get("user")
     user_cf = user['cf'].strip().upper() if user and 'cf' in user else None
 
     with engine.begin() as conn:
-        # Controlla se l'intero giorno è bloccato dall'admin
         giorno_bloccato = conn.execute(text("SELECT id FROM blocchi WHERE data = :d AND ora IS NULL"), {"d": data}).fetchone()
         if giorno_bloccato:
             return JSONResponse({"orari": []})
 
-        # Orari singoli bloccati dall'admin
         orari_bloccati = [r[0] for r in conn.execute(text("SELECT ora FROM blocchi WHERE data = :d AND ora IS NOT NULL"), {"d": data}).fetchall()]
         
-        # Prenotazioni esistenti per quel giorno
         prenotazioni_giorno = conn.execute(
             text("""
                 SELECT ora, trattamento, COALESCE(stato, 'confermata'), 
@@ -464,7 +487,6 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
             {"d": data}
         ).fetchall()
 
-    # 2. Calcola posti occupati e orari già prenotati dall'utente
     posti_occupati_per_ora = {}
     orari_utente_prenotato = set()
 
@@ -481,24 +503,20 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
         peso = 2 if "coppia" in str(t_esistente).lower() else 1
         posti_occupati_per_ora[ora] = posti_occupati_per_ora.get(ora, 0) + peso
 
-    # 3. Genera tutti gli orari teorici
     orari_teorici = [f"{h:02d}:00" for h in range(start_hour, end_hour)]
     
     richiede_due_posti = "coppia" in trattamento.lower()
     orari_liberi = []
 
     for o in orari_teorici:
-        # Salta se l'orario è bloccato dall'admin
         if o in orari_bloccati:
             continue
 
-        # Salta se l'utente ha già una prenotazione in quell'ora
         if user_cf and o in orari_utente_prenotato:
             continue
 
         posti_occupati = posti_occupati_per_ora.get(o, 0)
         
-        # Logica capienza (max 2 posti per slot)
         if richiede_due_posti:
             if posti_occupati == 0:
                 orari_liberi.append(o)
