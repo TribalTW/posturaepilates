@@ -7,6 +7,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy import text
+from pydantic import BaseModel
+from typing import Optional
 from db import engine, init_db
 import logic
 
@@ -23,6 +25,25 @@ ADMIN_PWD = os.getenv("ADMIN_PWD")
 if not ADMIN_USER or not ADMIN_PWD:
     raise ValueError("Attenzione: Le credenziali ADMIN_USER e ADMIN_PWD devono essere configurate nelle variabili d'ambiente (.env).")
 
+# --- MODELLI PYDANTIC PER IL GESTIONALE CLIENTI ---
+class ClienteCreate(BaseModel):
+    nome: str
+    email: Optional[str] = None
+    data_nascita: Optional[str] = None
+    tipo_abbonamento: Optional[str] = None
+    sedute_totali: Optional[int] = 0
+    sedute_residue: Optional[int] = 0
+    note: Optional[str] = None
+
+class ClienteUpdate(BaseModel):
+    nome: Optional[str] = None
+    email: Optional[str] = None
+    data_nascita: Optional[str] = None
+    tipo_abbonamento: Optional[str] = None
+    sedute_totali: Optional[int] = None
+    sedute_residue: Optional[int] = None
+    note: Optional[str] = None
+
 @app.on_event("startup")
 def startup():
     init_db()
@@ -34,7 +55,7 @@ def startup():
         "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS email TEXT",
         "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS reset_code VARCHAR(6)",
         "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS reset_expires_at TIMESTAMP",
-        # --- AGGIUNTA PASSO 1: Tabella Gestionale Clienti ---
+        # Tabella Gestionale Clienti
         """
         CREATE TABLE IF NOT EXISTS clienti_gestionale (
             id SERIAL PRIMARY KEY,
@@ -316,10 +337,9 @@ def effettua_prenotazione(
             "error": "Seleziona un trattamento, una data e un orario validi prima di procedere."
         })
 
-    # Controllo orari consentiti (8-19 lun-ven, 8-13 sab, chiuso dom)
     try:
         dt_app = datetime.strptime(data, "%Y-%m-%d")
-        giorno_settimana = dt_app.weekday()  # 0=Lun, ..., 5=Sab, 6=Dom
+        giorno_settimana = dt_app.weekday() 
         ora_num = int(ora.split(":")[0])
 
         if giorno_settimana == 6:
@@ -451,7 +471,6 @@ def effettua_prenotazione(
     })
 
 # --- API ORARI DISPONIBILI ---
-# --- API ORARI DISPONIBILI (RISCRITTA PER GARANTIRE SEQUENZA 8-19 E 8-13) ---
 @app.get("/api/orari")
 def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
     try:
@@ -459,22 +478,19 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
     except ValueError:
         return JSONResponse({"orari": []})
 
-    giorno_settimana = dt.weekday()  # 0=Lun, ..., 5=Sab, 6=Dom
+    giorno_settimana = dt.weekday() 
     
-    # 1. Definizione rigida degli orari teorici (Senza dipendere da logic.py)
-    if giorno_settimana == 6:  # Domenica
+    if giorno_settimana == 6: 
         return JSONResponse({"orari": []})
-    elif giorno_settimana == 5: # Sabato: 8-13
+    elif giorno_settimana == 5: 
         orari_teorici = [f"{h:02d}:00" for h in range(8, 14)]
-    else: # Lun-Ven: 8-19
+    else: 
         orari_teorici = [f"{h:02d}:00" for h in range(8, 20)]
 
     user = request.session.get("user")
     user_cf = user['cf'].strip().upper() if user and 'cf' in user else None
 
-    # 2. Controllo blocchi admin e prenotazioni esistenti
     with engine.begin() as conn:
-        # Blocchi amministrativi (giorno intero o ora specifica)
         giorno_bloccato = conn.execute(text("SELECT id FROM blocchi WHERE data = :d AND ora IS NULL"), {"d": data}).fetchone()
         if giorno_bloccato:
             return JSONResponse({"orari": []})
@@ -491,7 +507,6 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
             {"d": data}
         ).fetchall()
 
-    # 3. Calcolo posti occupati
     posti_occupati_per_ora = {}
     orari_utente_prenotato = set()
 
@@ -508,11 +523,10 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
         peso = 2 if "coppia" in str(t_esistente).lower() else 1
         posti_occupati_per_ora[ora] = posti_occupati_per_ora.get(ora, 0) + peso
 
-    # 4. Filtro finale (esclude orari bloccati, già prenotati, o pieni)
     richiede_due_posti = "coppia" in trattamento.lower()
     orari_liberi = []
     
-    for o in orari_teorici: # Usiamo la lista orari_teorici creata sopra, che è sicura e continua
+    for o in orari_teorici:
         if o in orari_bloccati:
             continue
 
@@ -529,6 +543,61 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
                 orari_liberi.append(o)
 
     return JSONResponse({"orari": orari_liberi})
+
+# --- API REST GESTIONALE CLIENTI (PER L'AREA ADMIN) ---
+@app.get("/api/clienti-gestionale")
+def get_clienti_gestionale():
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT * FROM clienti_gestionale ORDER BY id DESC"))
+        clienti = [dict(row._mapping) for row in result]
+        return clienti
+
+@app.post("/api/clienti-gestionale")
+def create_cliente_gestionale(cliente: ClienteCreate):
+    with engine.connect() as conn:
+        query = text("""
+            INSERT INTO clienti_gestionale (nome, email, data_nascita, tipo_abbonamento, sedute_totali, sedute_residue, note)
+            VALUES (:nome, :email, :data_nascita, :tipo_abbonamento, :sedute_totali, :sedute_residue, :note)
+            RETURNING id
+        """)
+        result = conn.execute(query, cliente.dict())
+        conn.commit()
+        new_id = result.fetchone()[0]
+        return {"success": True, "id": new_id, "message": "Cliente aggiunto con successo"}
+
+@app.put("/api/clienti-gestionale/{cliente_id}")
+def update_cliente_gestionale(cliente_id: int, cliente: ClienteUpdate):
+    with engine.connect() as conn:
+        update_data = {k: v for k, v in cliente.dict().items() if v is not None}
+        if not update_data:
+            return {"success": False, "message": "Nessun dato da aggiornare"}
+        
+        set_clauses = ", ".join([f"{k} = :{k}" for k in update_data.keys()])
+        update_data["cliente_id"] = cliente_id
+        
+        query = text(f"UPDATE clienti_gestionale SET {set_clauses} WHERE id = :cliente_id")
+        conn.execute(query, update_data)
+        conn.commit()
+        return {"success": True, "message": "Cliente aggiornato con successo"}
+
+@app.post("/api/clienti-gestionale/{cliente_id}/scala")
+def scala_seduta(cliente_id: int):
+    with engine.connect() as conn:
+        res = conn.execute(text("SELECT sedute_residue FROM clienti_gestionale WHERE id = :id"), {"id": cliente_id}).fetchone()
+        if not res:
+            return {"success": False, "message": "Cliente non trovato"}
+        
+        nuove_sedute = max(0, (res[0] or 0) - 1)
+        conn.execute(text("UPDATE clienti_gestionale SET sedute_residue = :s WHERE id = :id"), {"s": nuove_sedute, "id": cliente_id})
+        conn.commit()
+        return {"success": True, "sedute_residue": nuove_sedute, "message": "Seduta scalata con successo"}
+
+@app.delete("/api/clienti-gestionale/{cliente_id}")
+def delete_cliente_gestionale(cliente_id: int):
+    with engine.connect() as conn:
+        conn.execute(text("DELETE FROM clienti_gestionale WHERE id = :id"), {"id": cliente_id})
+        conn.commit()
+        return {"success": True, "message": "Cliente eliminato con successo"}
 
 # --- AZIONI ADMIN ---
 @app.get("/admin", response_class=HTMLResponse)
@@ -568,7 +637,7 @@ def elimina_prenotazione(request: Request, id_prenotazione: int = Form(...)):
     user = request.session.get("user")
     if user and user.get("cf") == ADMIN_CF:
         with engine.begin() as conn:
-            conn.execute(text("DELETE FROM prenotazioni WHERE id = :id"), {"id": id_prenotazione})
+            conn.execute(text("DELETE FROM prenotazioni WHERE id = :id"), {"id": id_pren_id if 'id_pren_id' in locals() else id_prenotazione}) # Safely handling id
     return RedirectResponse(url="/admin", status_code=303)
 
 @app.post("/admin/prenotazione/stato")
