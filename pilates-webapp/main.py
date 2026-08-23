@@ -33,7 +33,20 @@ def startup():
         "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS bannato BOOLEAN DEFAULT false",
         "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS email TEXT",
         "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS reset_code VARCHAR(6)",
-        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS reset_expires_at TIMESTAMP"
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS reset_expires_at TIMESTAMP",
+        # --- AGGIUNTA PASSO 1: Tabella Gestionale Clienti ---
+        """
+        CREATE TABLE IF NOT EXISTS clienti_gestionale (
+            id SERIAL PRIMARY KEY,
+            nome TEXT NOT NULL,
+            email TEXT,
+            data_nascita TEXT,
+            tipo_abbonamento TEXT,
+            sedute_totali INTEGER DEFAULT 0,
+            sedute_residue INTEGER DEFAULT 0,
+            note TEXT
+        )
+        """
     ]
     with engine.connect() as conn:
         for q in queries:
