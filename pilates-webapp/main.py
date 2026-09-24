@@ -1596,7 +1596,7 @@ def effettua_prenotazione(
         if (
             posti_occupati
             + posti_richiesti
-            > 2
+            > 3
         ):
 
             return errore(
@@ -1947,9 +1947,10 @@ def get_orari_disponibili(
                     + 1
                 )
 
-    richiede_due_posti = (
-        "coppia"
-        in trattamento.lower()
+        posti_richiesti = (
+        2
+        if "coppia" in trattamento.lower()
+        else 1
     )
 
     orari_liberi = []
@@ -1974,21 +1975,15 @@ def get_orari_disponibili(
             )
         )
 
-        if richiede_due_posti:
+        if (
+            posti_occupati
+            + posti_richiesti
+            <= 3
+        ):
 
-            if posti_occupati == 0:
-
-                orari_liberi.append(
-                    o
-                )
-
-        else:
-
-            if posti_occupati < 2:
-
-                orari_liberi.append(
-                    o
-                )
+            orari_liberi.append(
+                o
+            )
 
     return JSONResponse(
         {
