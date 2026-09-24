@@ -701,21 +701,17 @@
 <div id="modaleUtente"
      class="fixed inset-0 z-50 hidden">
 
-    <!-- SFONDO -->
-
     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"
          onclick="chiudiSchedaUtente()">
     </div>
 
-
-    <!-- CONTENITORE -->
 
     <div class="relative min-h-screen flex items-center justify-center p-4 md:p-8">
 
         <div class="relative bg-white w-full max-w-5xl max-h-[92vh] rounded-3xl shadow-2xl border border-[#f9d1df] overflow-hidden">
 
 
-            <!-- HEADER MODALE -->
+            <!-- HEADER -->
 
             <div class="bg-gradient-to-r from-[#D81B60] to-[#AD1457] px-6 py-5 text-white flex justify-between items-center">
 
@@ -748,9 +744,6 @@
 
             <div class="modal-scroll overflow-y-auto max-h-[calc(92vh-80px)] p-6 md:p-8">
 
-
-                <!-- LOADING -->
-
                 <div id="schedaLoading"
                      class="text-center py-12">
 
@@ -765,14 +758,10 @@
                 </div>
 
 
-                <!-- ERRORE -->
-
                 <div id="schedaErrore"
                      class="hidden bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl text-sm text-center">
                 </div>
 
-
-                <!-- FORM -->
 
                 <form id="formSchedaUtente"
                       class="hidden space-y-8"
@@ -963,7 +952,7 @@
                     <!-- RIEPILOGO SEDUTE -->
                     <!-- ================================================= -->
 
-                    <section>
+                    <section id="sezioneRiepilogoSedute">
 
                         <div class="flex items-center gap-3 mb-4">
 
@@ -973,11 +962,13 @@
 
                             <div>
 
-                                <h3 class="font-serif-title font-bold text-pink-900">
+                                <h3 id="titoloRiepilogoSedute"
+                                    class="font-serif-title font-bold text-pink-900">
                                     Riepilogo sedute
                                 </h3>
 
-                                <p class="text-[11px] text-gray-500">
+                                <p id="sottotitoloRiepilogoSedute"
+                                   class="text-[11px] text-gray-500">
                                     Situazione attuale dell'abbonamento.
                                 </p>
 
@@ -986,7 +977,8 @@
                         </div>
 
 
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                        <div id="boxRiepilogoSedute"
+                             class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
 
                             <div class="bg-[#fff9fb] border border-[#f9d1df] rounded-2xl p-4">
 
@@ -1032,19 +1024,53 @@
                         </div>
 
 
-                        <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                        <div id="boxFrequenzaMensile"
+                             class="hidden bg-[#fff9fb] border border-[#f9d1df] rounded-2xl p-4 mb-4">
 
-                            <div id="barraSedute"
-                                 class="h-full bg-gradient-to-r from-[#D81B60] to-[#AD1457] rounded-full transition-all duration-500"
-                                 style="width: 0%">
+                            <div class="flex items-center gap-3">
+
+                                <div class="w-10 h-10 rounded-xl bg-[#fff0f5] flex items-center justify-center">
+                                    📅
+                                </div>
+
+                                <div>
+
+                                    <div class="text-[10px] uppercase tracking-wide text-gray-500">
+                                        Frequenza massima
+                                    </div>
+
+                                    <div class="text-lg font-bold text-[#880E4F]">
+                                        2 prenotazioni a settimana
+                                    </div>
+
+                                    <div class="text-[11px] text-gray-500 mt-0.5">
+                                        Le prenotazioni cancellate non vengono conteggiate.
+                                    </div>
+
+                                </div>
+
                             </div>
 
                         </div>
 
 
-                        <div id="testoBarraSedute"
-                             class="text-[11px] text-gray-500 mt-2 text-right">
-                            0% utilizzato
+                        <div id="contenitoreBarraSedute">
+
+                            <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+
+                                <div id="barraSedute"
+                                     class="h-full bg-gradient-to-r from-[#D81B60] to-[#AD1457] rounded-full transition-all duration-500"
+                                     style="width: 0%">
+                                </div>
+
+                            </div>
+
+
+                            <div id="testoBarraSedute"
+                                 class="text-[11px] text-gray-500 mt-2 text-right">
+                                0% utilizzato
+                            </div>
+
                         </div>
 
                     </section>
@@ -1079,8 +1105,6 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                            <!-- TIPO ABBONAMENTO -->
-
                             <div class="md:col-span-2">
 
                                 <label class="block text-xs font-semibold text-gray-700 mb-1">
@@ -1112,8 +1136,6 @@
                             </div>
 
 
-                            <!-- DATA INIZIO -->
-
                             <div>
 
                                 <label class="block text-xs font-semibold text-gray-700 mb-1">
@@ -1128,8 +1150,6 @@
                             </div>
 
 
-                            <!-- DATA FINE -->
-
                             <div>
 
                                 <label class="block text-xs font-semibold text-gray-700 mb-1">
@@ -1138,14 +1158,20 @@
 
                                 <input id="campoFineAbbonamento"
                                        type="date"
-                                       class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+                                       readonly
+                                       class="w-full p-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 text-sm">
+
+                                <p id="notaDataFine"
+                                   class="text-[10px] text-gray-400 mt-1">
+                                    La data viene calcolata automaticamente.
+                                </p>
 
                             </div>
 
 
                             <!-- SEDUTE TOTALI -->
 
-                            <div>
+                            <div id="campoTotaliContainer">
 
                                 <label class="block text-xs font-semibold text-gray-700 mb-1">
                                     Sedute totali
@@ -1154,16 +1180,22 @@
                                 <input id="campoSeduteTotali"
                                        type="number"
                                        min="0"
-                                       placeholder="Es. 10"
+                                       max="10"
+                                       value="10"
+                                       readonly
                                        oninput="aggiornaRiepilogo()"
-                                       class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+                                       class="w-full p-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 text-sm">
+
+                                <p class="text-[10px] text-gray-400 mt-1">
+                                    Il pacchetto prevede sempre 10 sedute.
+                                </p>
 
                             </div>
 
 
                             <!-- SEDUTE RESIDUE -->
 
-                            <div>
+                            <div id="campoResidueContainer">
 
                                 <label class="block text-xs font-semibold text-gray-700 mb-1">
                                     Sedute residue
@@ -1172,16 +1204,19 @@
                                 <input id="campoSeduteResidue"
                                        type="number"
                                        min="0"
-                                       placeholder="Es. 7"
+                                       max="10"
+                                       placeholder="Es. 10"
                                        oninput="aggiornaRiepilogo()"
                                        class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+
+                                <p class="text-[10px] text-gray-400 mt-1">
+                                    Modificabile manualmente solo per il pacchetto a 10 sedute.
+                                </p>
 
                             </div>
 
                         </div>
 
-
-                        <!-- STATO ABBONAMENTO -->
 
                         <div id="statoAbbonamento"
                              class="mt-4 hidden px-4 py-3 rounded-2xl border text-xs">
@@ -1520,7 +1555,6 @@ async function apriSchedaUtente(utenteId) {
     const form = document.getElementById('formSchedaUtente');
 
     modale.classList.remove('hidden');
-
     document.body.classList.add('overflow-hidden');
 
     loading.classList.remove('hidden');
@@ -1552,7 +1586,6 @@ async function apriSchedaUtente(utenteId) {
         compilaScheda(dati);
 
         loading.classList.add('hidden');
-
         form.classList.remove('hidden');
 
     } catch (error) {
@@ -1630,42 +1663,37 @@ function compilaScheda(dati) {
     document.getElementById('campoFineAbbonamento').value =
         toDateInputValue(utente.data_fine_abbonamento);
 
-    document.getElementById('campoSeduteTotali').value =
-        utente.sedute_totali ?? 0;
 
-    document.getElementById('campoSeduteResidue').value =
-        utente.sedute_residue ?? 0;
+    const totaleInput =
+        document.getElementById('campoSeduteTotali');
+
+    const residueInput =
+        document.getElementById('campoSeduteResidue');
 
 
-    /*
-     * Se è un abbonamento da 10 sedute e il valore
-     * precedente non è coerente, riportiamo automaticamente
-     * il totale a 10.
-     */
     if (tipoAbbonamento === '10 sedute') {
 
-        document.getElementById('campoSeduteTotali').value =
-            10;
+        totaleInput.value = 10;
+
+        totaleInput.readOnly = true;
 
         const residue =
-            parseInt(
-                document.getElementById('campoSeduteResidue').value
-            );
+            parseInt(utente.sedute_residue);
 
-        if (Number.isNaN(residue) || residue > 10) {
+        residueInput.value =
+            Number.isNaN(residue)
+                ? 10
+                : Math.min(10, Math.max(0, residue));
 
-            document.getElementById('campoSeduteResidue').value =
-                10;
+    } else {
 
-        }
+        totaleInput.value = 0;
+        residueInput.value = 0;
 
     }
 
 
-    /*
-     * Calcolo della data di fine quando necessario.
-     */
-    gestisciDateAbbonamento();
+    gestisciTipoAbbonamento(false);
 
 
     document.getElementById('campoMetodoPagamento').value =
@@ -1720,7 +1748,6 @@ function compilaScheda(dati) {
 
 
     aggiornaRiepilogo();
-
     aggiornaStatoAbbonamento();
 
     renderStorico(
@@ -1760,12 +1787,6 @@ function normalizzaTipoAbbonamento(tipo) {
         return '10 sedute';
     }
 
-    /*
-     * Se nel database c'è un vecchio valore non previsto
-     * dal nuovo menu, non lo perdiamo automaticamente.
-     * Lo lasciamo vuoto per evitare di associare
-     * erroneamente una tipologia.
-     */
     return '';
 
 }
@@ -1775,7 +1796,7 @@ function normalizzaTipoAbbonamento(tipo) {
 /* GESTIONE TIPO ABBONAMENTO */
 /* ============================================================= */
 
-function gestisciTipoAbbonamento() {
+function gestisciTipoAbbonamento(aggiorna = true) {
 
     const tipo =
         document.getElementById('campoAbbonamento').value;
@@ -1786,51 +1807,95 @@ function gestisciTipoAbbonamento() {
     const residue =
         document.getElementById('campoSeduteResidue');
 
+    const totaleContainer =
+        document.getElementById('campoTotaliContainer');
+
+    const residueContainer =
+        document.getElementById('campoResidueContainer');
+
+    const boxRiepilogo =
+        document.getElementById('boxRiepilogoSedute');
+
+    const boxFrequenza =
+        document.getElementById('boxFrequenzaMensile');
+
+    const barra =
+        document.getElementById('contenitoreBarraSedute');
+
+    const notaFine =
+        document.getElementById('notaDataFine');
+
 
     if (tipo === '10 sedute') {
 
+        totaleContainer.classList.remove('hidden');
+        residueContainer.classList.remove('hidden');
+
+        boxRiepilogo.classList.remove('hidden');
+        boxFrequenza.classList.add('hidden');
+        barra.classList.remove('hidden');
+
         totale.value = 10;
+        totale.readOnly = true;
 
-        const residueAttuali =
-            parseInt(residue.value);
+        totale.classList.add(
+            'bg-gray-100',
+            'border-gray-200'
+        );
 
-        if (
-            Number.isNaN(residueAttuali) ||
-            residueAttuali > 10
-        ) {
+        totale.classList.remove(
+            'border-[#f2c2d5]'
+        );
 
-            residue.value = 10;
+        residue.readOnly = false;
 
-        }
+        notaFine.textContent =
+            'Per il pacchetto a 10 sedute non viene calcolata una scadenza automatica.';
 
-        /*
-         * Per il pacchetto a sedute non imponiamo
-         * automaticamente una data di fine.
-         * La validità viene determinata dal saldo.
-         */
-
-    }
-
-
-    if (
+    } else if (
         tipo === 'Mensile' ||
         tipo === 'Trimestrale'
     ) {
 
-        /*
-         * Non inventiamo il numero di sedute comprese
-         * nell'abbonamento: rimane quello impostato
-         * dall'admin.
-         */
+        totaleContainer.classList.add('hidden');
+        residueContainer.classList.add('hidden');
+
+        boxRiepilogo.classList.add('hidden');
+        boxFrequenza.classList.remove('hidden');
+        barra.classList.add('hidden');
+
+        totale.value = 0;
+        residue.value = 0;
+
+        notaFine.textContent =
+            'La data viene calcolata automaticamente in base alla tipologia.';
 
         gestisciDateAbbonamento();
+
+    } else {
+
+        totaleContainer.classList.add('hidden');
+        residueContainer.classList.add('hidden');
+
+        boxRiepilogo.classList.add('hidden');
+        boxFrequenza.classList.add('hidden');
+        barra.classList.add('hidden');
+
+        totale.value = 0;
+        residue.value = 0;
+
+        notaFine.textContent =
+            'La data viene calcolata automaticamente.';
 
     }
 
 
-    aggiornaRiepilogo();
+    if (aggiorna) {
 
-    aggiornaStatoAbbonamento();
+        aggiornaRiepilogo();
+        aggiornaStatoAbbonamento();
+
+    }
 
 }
 
@@ -1853,20 +1918,23 @@ function gestisciDateAbbonamento() {
 
     if (!inizio) {
 
+        fine.value = '';
+
+        aggiornaStatoAbbonamento();
+
         return;
 
     }
 
 
-    /*
-     * Per Mensile e Trimestrale la data di fine
-     * viene calcolata automaticamente.
-     */
-
     if (
         tipo !== 'Mensile' &&
         tipo !== 'Trimestrale'
     ) {
+
+        if (tipo === '10 sedute') {
+            fine.value = '';
+        }
 
         aggiornaStatoAbbonamento();
 
@@ -1880,6 +1948,8 @@ function gestisciDateAbbonamento() {
 
 
     if (!data) {
+
+        fine.value = '';
 
         return;
 
@@ -1904,10 +1974,6 @@ function gestisciDateAbbonamento() {
     }
 
 
-    /*
-     * Restituiamo YYYY-MM-DD senza problemi di timezone.
-     */
-
     fine.value =
         formatDateInput(data);
 
@@ -1927,15 +1993,12 @@ function creaDataLocale(valore) {
         return null;
     }
 
-
     const parti =
         String(valore).split('-');
-
 
     if (parti.length !== 3) {
         return null;
     }
-
 
     const anno =
         parseInt(parti[0]);
@@ -1946,17 +2009,13 @@ function creaDataLocale(valore) {
     const giorno =
         parseInt(parti[2]);
 
-
     if (
         Number.isNaN(anno) ||
         Number.isNaN(mese) ||
         Number.isNaN(giorno)
     ) {
-
         return null;
-
     }
-
 
     return new Date(
         anno,
@@ -1977,7 +2036,6 @@ function formatDateInput(data) {
         return '';
     }
 
-
     const anno =
         data.getFullYear();
 
@@ -1990,7 +2048,6 @@ function formatDateInput(data) {
         String(
             data.getDate()
         ).padStart(2, '0');
-
 
     return `${anno}-${mese}-${giorno}`;
 
@@ -2064,10 +2121,9 @@ function aggiornaStatoAbbonamento() {
         creaDataLocale(fine);
 
 
-    /*
-     * Pacchetto 10 sedute:
-     * il controllo principale è il numero di residue.
-     */
+    /* ========================================================= */
+    /* 10 SEDUTE */
+    /* ========================================================= */
 
     if (tipo === '10 sedute') {
 
@@ -2102,9 +2158,9 @@ function aggiornaStatoAbbonamento() {
     }
 
 
-    /*
-     * Mensile / Trimestrale.
-     */
+    /* ========================================================= */
+    /* MENSILE / TRIMESTRALE */
+    /* ========================================================= */
 
     if (!dataInizio) {
 
@@ -2139,32 +2195,7 @@ function aggiornaStatoAbbonamento() {
     }
 
 
-    if (dataFine) {
-
-        /*
-         * Consideriamo valido il giorno di fine compreso.
-         */
-
-        if (oggi > dataFine) {
-
-            contenitore.classList.add(
-                'bg-red-50',
-                'border-red-200',
-                'text-red-700'
-            );
-
-            contenitore.innerHTML =
-                '⛔ <strong>Abbonamento scaduto.</strong> ' +
-                'Il cliente non può utilizzare questo abbonamento.';
-
-            return;
-
-        }
-
-    }
-
-
-    if (residue <= 0) {
+    if (dataFine && oggi > dataFine) {
 
         contenitore.classList.add(
             'bg-red-50',
@@ -2173,8 +2204,8 @@ function aggiornaStatoAbbonamento() {
         );
 
         contenitore.innerHTML =
-            '⛔ <strong>Nessuna seduta residua.</strong> ' +
-            'Il cliente non può utilizzare altre sedute.';
+            '⛔ <strong>Abbonamento scaduto.</strong> ' +
+            'Il cliente non può utilizzare questo abbonamento.';
 
         return;
 
@@ -2186,6 +2217,12 @@ function aggiornaStatoAbbonamento() {
         'border-green-200',
         'text-green-700'
     );
+
+
+    const nomeTipo =
+        tipo === 'Mensile'
+            ? 'Mensile'
+            : 'Trimestrale';
 
 
     let testoFine =
@@ -2200,9 +2237,9 @@ function aggiornaStatoAbbonamento() {
 
 
     contenitore.innerHTML =
-        `✓ <strong>Abbonamento attivo.</strong> ` +
-        `${residue} sedut${residue === 1 ? 'a' : 'e'} residue.` +
-        testoFine;
+        `✓ <strong>Abbonamento ${nomeTipo} attivo.</strong>` +
+        `${testoFine} ` +
+        `Massimo 2 prenotazioni a settimana.`;
 
 }
 
@@ -2212,6 +2249,34 @@ function aggiornaStatoAbbonamento() {
 /* ============================================================= */
 
 function aggiornaRiepilogo() {
+
+    const tipo =
+        document.getElementById('campoAbbonamento').value;
+
+
+    if (
+        tipo !== '10 sedute'
+    ) {
+
+        document.getElementById('riepilogoTotali').textContent =
+            '—';
+
+        document.getElementById('riepilogoUtilizzate').textContent =
+            '—';
+
+        document.getElementById('riepilogoResidue').textContent =
+            '—';
+
+        document.getElementById('barraSedute').style.width =
+            '0%';
+
+        document.getElementById('testoBarraSedute').textContent =
+            'Non applicabile';
+
+        return;
+
+    }
+
 
     const totali =
         parseInt(
@@ -2456,9 +2521,7 @@ function creaCardPrenotazione(p) {
 
 
     /*
-     * Se la seduta è già stata scalata, il partecipante
-     * deve rimanere "presente" finché non viene annullata
-     * la scalatura.
+     * Una seduta già scalata deve restare presente.
      */
 
     if (p.seduta_scalata) {
@@ -2623,6 +2686,7 @@ function creaCardPrenotazione(p) {
 
         nonDisponibile.className =
             'text-[11px] text-gray-400 italic';
+
 
         if (
             String(p.stato).toLowerCase() !==
@@ -2993,81 +3057,59 @@ async function salvaSchedaUtente(event) {
         document.getElementById('campoAbbonamento').value;
 
 
-    const totali =
-        parseInt(
-            document.getElementById('campoSeduteTotali').value
-        );
+    let totali = 0;
+    let residue = 0;
 
 
-    const residue =
-        parseInt(
-            document.getElementById('campoSeduteResidue').value
-        );
+    /* ========================================================= */
+    /* VALIDAZIONE 10 SEDUTE */
+    /* ========================================================= */
+
+    if (tipoAbbonamento === '10 sedute') {
+
+        totali = 10;
+
+        residue =
+            parseInt(
+                document.getElementById('campoSeduteResidue').value
+            );
 
 
-    if (
-        Number.isNaN(totali) ||
-        totali < 0
+        if (
+            Number.isNaN(residue) ||
+            residue < 0 ||
+            residue > 10
+        ) {
+
+            messaggio.textContent =
+                '⚠️ Le sedute residue devono essere comprese tra 0 e 10.';
+
+            messaggio.className =
+                'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
+
+            messaggio.classList.remove('hidden');
+
+            return;
+
+        }
+
+    } else if (
+        tipoAbbonamento === 'Mensile' ||
+        tipoAbbonamento === 'Trimestrale'
     ) {
 
-        messaggio.textContent =
-            '⚠️ Inserisci un numero valido di sedute totali.';
+        /*
+         * Per gli abbonamenti a tempo il backend
+         * gestisce automaticamente sedute_totali/residue.
+         */
 
-        messaggio.className =
-            'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
+        totali = 0;
+        residue = 0;
 
-        messaggio.classList.remove('hidden');
-
-        return;
-
-    }
-
-
-    if (
-        Number.isNaN(residue) ||
-        residue < 0
-    ) {
+    } else {
 
         messaggio.textContent =
-            '⚠️ Inserisci un numero valido di sedute residue.';
-
-        messaggio.className =
-            'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
-
-        messaggio.classList.remove('hidden');
-
-        return;
-
-    }
-
-
-    if (residue > totali) {
-
-        messaggio.textContent =
-            '⚠️ Le sedute residue non possono essere superiori alle sedute totali.';
-
-        messaggio.className =
-            'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
-
-        messaggio.classList.remove('hidden');
-
-        return;
-
-    }
-
-
-    /*
-     * Il pacchetto 10 sedute deve avere esattamente
-     * 10 sedute totali.
-     */
-
-    if (
-        tipoAbbonamento === '10 sedute' &&
-        totali !== 10
-    ) {
-
-        messaggio.textContent =
-            '⚠️ L\'abbonamento "10 sedute" deve avere 10 sedute totali.';
+            '⚠️ Seleziona una tipologia di abbonamento.';
 
         messaggio.className =
             'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
@@ -3087,7 +3129,23 @@ async function salvaSchedaUtente(event) {
 
 
     if (
-        dataInizio &&
+        !dataInizio
+    ) {
+
+        messaggio.textContent =
+            '⚠️ Inserisci la data di inizio dell\'abbonamento.';
+
+        messaggio.className =
+            'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
+
+        messaggio.classList.remove('hidden');
+
+        return;
+
+    }
+
+
+    if (
         dataFine &&
         dataFine < dataInizio
     ) {
@@ -3126,7 +3184,7 @@ async function salvaSchedaUtente(event) {
             document.getElementById('campoNote').value.trim() || null,
 
         tipo_abbonamento:
-            tipoAbbonamento || null,
+            tipoAbbonamento,
 
         data_inizio_abbonamento:
             dataInizio,
@@ -3266,25 +3324,18 @@ function toDateInputValue(data) {
         return '';
     }
 
-
     const valore =
         String(data).trim();
-
 
     const matchData =
         valore.match(/^(\d{4}-\d{2}-\d{2})/);
 
-
     if (matchData) {
-
         return matchData[1];
-
     }
-
 
     const dataObj =
         new Date(valore);
-
 
     if (!Number.isNaN(dataObj.getTime())) {
 
@@ -3301,11 +3352,9 @@ function toDateInputValue(data) {
                 dataObj.getDate()
             ).padStart(2, '0');
 
-
         return `${anno}-${mese}-${giorno}`;
 
     }
-
 
     return '';
 
@@ -3322,23 +3371,19 @@ function formatData(data) {
         return '—';
     }
 
-
     const valore =
         String(data);
-
 
     const match =
         valore.match(
             /^(\d{4})-(\d{2})-(\d{2})/
         );
 
-
     if (match) {
 
         return `${match[3]}/${match[2]}/${match[1]}`;
 
     }
-
 
     return valore;
 
@@ -3354,11 +3399,9 @@ function chiudiSchedaUtente() {
     document.getElementById('modaleUtente')
         .classList.add('hidden');
 
-
     document.body.classList.remove(
         'overflow-hidden'
     );
-
 
     utenteAttualmenteAperto =
         null;
@@ -3381,10 +3424,8 @@ document.addEventListener(
             return;
         }
 
-
         const modale =
             document.getElementById('modaleUtente');
-
 
         if (
             !modale.classList.contains('hidden')
