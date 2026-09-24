@@ -1259,6 +1259,20 @@ def prenota_page(request: Request):
                 ]
             )
 
+            # Formato data: YYYY-MM-DD → DD/MM/YYYY
+            if data_fine_abbonamento:
+
+                try:
+
+                    data_fine_abbonamento = datetime.strptime(
+                        str(data_fine_abbonamento),
+                        "%Y-%m-%d"
+                    ).strftime("%d/%m/%Y")
+
+                except ValueError:
+
+                    pass
+
             sedute_residue = int(
                 abbonamento[
                     "sedute_residue"
