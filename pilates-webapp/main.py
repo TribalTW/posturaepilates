@@ -69,6 +69,19 @@ def startup():
         "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS email TEXT",
         "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS reset_code VARCHAR(6)",
         "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS reset_expires_at TIMESTAMP",
+
+        # NUOVI DATI GESTIONALI UTENTE
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS data_nascita TEXT",
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS luogo_nascita TEXT",
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS luogo_residenza TEXT",
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS telefono TEXT",
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS note TEXT",
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS tipo_abbonamento TEXT",
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS data_inizio_abbonamento TEXT",
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS sedute_totali INTEGER DEFAULT 0",
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS sedute_residue INTEGER DEFAULT 0",
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS pagamento_effettuato BOOLEAN DEFAULT false",
+        "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS metodo_pagamento TEXT",
         # Tabella Gestionale Clienti
         """
         CREATE TABLE IF NOT EXISTS clienti_gestionale (
@@ -636,6 +649,139 @@ def get_mie_prenotazioni(request: Request):
         })
 
     return JSONResponse({"prenotazioni": risultati})
+
+def verifica_admin(request: Request) -> bool:
+    user = request.session.get("user")
+    return bool(user and user.get("cf") == ADMIN_CF)
+
+
+@app.get("/api/utente/{utente_id}")
+def get_utente_gestionale(request: Request, utente_id: int):
+    if not verifica_admin(request):
+        return JSONResponse(
+            {"error": "Non autorizzato"},
+            status_code=403
+        )
+
+    with engine.connect() as conn:
+        result = conn.execute(
+            text("""
+                SELECT
+                    id,
+                    nome,
+                    cognome,
+                    codice_fiscale,
+                    email,
+                    data_registrazione,
+                    COALESCE(bannato, false),
+                    data_nascita,
+                    luogo_nascita,
+                    luogo_residenza,
+                    telefono,
+                    note,
+                    tipo_abbonamento,
+                    data_inizio_abbonamento,
+                    COALESCE(sedute_totali, 0),
+                    COALESCE(sedute_residue, 0),
+                    COALESCE(pagamento_effettuato, false),
+                    metodo_pagamento
+                FROM utenti
+                WHERE id = :id
+            """),
+            {"id": utente_id}
+        ).fetchone()
+
+    if not result:
+        return JSONResponse(
+            {"error": "Utente non trovato"},
+            status_code=404
+        )
+
+    return {
+        "id": result[0],
+        "nome": result[1],
+        "cognome": result[2],
+        "codice_fiscale": result[3],
+        "email": result[4],
+        "data_registrazione": result[5],
+        "bannato": result[6],
+        "data_nascita": result[7],
+        "luogo_nascita": result[8],
+        "luogo_residenza": result[9],
+        "telefono": result[10],
+        "note": result[11],
+        "tipo_abbonamento": result[12],
+        "data_inizio_abbonamento": result[13],
+        "sedute_totali": result[14],
+        "sedute_residue": result[15],
+        "pagamento_effettuato": result[16],
+        "metodo_pagamento": result[17]
+    }
+
+
+@app.put("/api/utente/{utente_id}")
+def aggiorna_utente_gestionale(
+    request: Request,
+    utente_id: int,
+    dati: UtenteGestionaleUpdate
+):
+    if not verifica_admin(request):
+        return JSONResponse(
+            {"error": "Non autorizzato"},
+            status_code=403
+        )
+
+    with engine.begin() as conn:
+        esiste = conn.execute(
+            text("SELECT id FROM utenti WHERE id = :id"),
+            {"id": utente_id}
+        ).fetchone()
+
+        if not esiste:
+            return JSONResponse(
+                {"error": "Utente non trovato"},
+                status_code=404
+            )
+
+        conn.execute(
+            text("""
+                UPDATE utenti
+                SET
+                    data_nascita = :data_nascita,
+                    luogo_nascita = :luogo_nascita,
+                    luogo_residenza = :luogo_residenza,
+                    telefono = :telefono,
+                    email = :email,
+                    note = :note,
+                    tipo_abbonamento = :tipo_abbonamento,
+                    data_inizio_abbonamento = :data_inizio_abbonamento,
+                    sedute_totali = :sedute_totali,
+                    sedute_residue = :sedute_residue,
+                    pagamento_effettuato = :pagamento_effettuato,
+                    metodo_pagamento = :metodo_pagamento
+                WHERE id = :id
+            """),
+            {
+                "id": utente_id,
+                "data_nascita": dati.data_nascita,
+                "luogo_nascita": dati.luogo_nascita,
+                "luogo_residenza": dati.luogo_residenza,
+                "telefono": dati.telefono,
+                "email": dati.email,
+                "note": dati.note,
+                "tipo_abbonamento": dati.tipo_abbonamento,
+                "data_inizio_abbonamento": dati.data_inizio_abbonamento,
+                "sedute_totali": dati.sedute_totali or 0,
+                "sedute_residue": dati.sedute_residue or 0,
+                "pagamento_effettuato": dati.pagamento_effettuato or False,
+                "metodo_pagamento": dati.metodo_pagamento
+            }
+        )
+
+    return {
+        "success": True,
+        "message": "Dati utente aggiornati con successo."
+    }
     
 # --- API REST GESTIONALE CLIENTI (PER L'AREA ADMIN) ---
 @app.get("/api/clienti-gestionale")
