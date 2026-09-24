@@ -4,485 +4,2283 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Postura & Pilates - Area Personale</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
+
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .font-serif-title { font-family: 'Playfair Display', serif; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .font-serif-title {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Nasconde la scrollbar mantenendo lo scroll */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
+
 <body class="bg-[#fff9fb] min-h-screen flex items-center justify-center p-4 md:p-8">
-    
-    <div class="max-w-6xl w-full bg-white border border-[#f9d1df] p-6 md:p-10 rounded-3xl shadow-2xl">
-        
-        <!-- Header & Benvenuto -->
-        <div class="flex justify-between items-center mb-6 pb-4 border-b border-[#f9d1df]">
-            <div class="text-xs font-semibold text-gray-700">👋 Benvenuto, {{ user.nome }} {{ user.cognome }}</div>
-            <a href="/logout" class="text-xs text-red-500 hover:text-red-700 font-semibold transition">Esci</a>
+
+<div class="max-w-6xl w-full bg-white border border-[#f9d1df] p-6 md:p-10 rounded-3xl shadow-2xl">
+
+    <!-- ====================================================== -->
+    <!-- HEADER -->
+    <!-- ====================================================== -->
+
+    <div class="flex justify-between items-center mb-6 pb-4 border-b border-[#f9d1df]">
+
+        <div class="text-xs font-semibold text-gray-700">
+            👋 Benvenuto, {{ user.nome }} {{ user.cognome }}
         </div>
 
-        <!-- Logo e Branding Principale -->
-        <div class="text-center mb-8">
-            <div class="mb-3">
-                <img src="https://github.com/TribalTW/posturaepilates/blob/main/pilates-webapp/static/css/logo.png?raw=true" 
-                     alt="Logo Postura & Pilates" 
-                     class="h-20 md:h-28 w-auto object-contain mx-auto">
-            </div>
-            <h1 class="text-2xl md:text-3xl font-serif-title font-bold text-pink-900 tracking-tight">Postura e Pilates</h1>
-            <p class="text-xs font-medium text-[#D81B60] mt-1">di Dott.ssa Roberta Sinagra</p>
-            <div class="flex items-center justify-center gap-3 mt-3 text-[#f9d1df]">
-                <div class="h-[1px] w-10 bg-[#f9d1df]"></div>
-                <span class="text-xs text-[#D81B60]">♥</span>
-                <div class="h-[1px] w-10 bg-[#f9d1df]"></div>
-            </div>
+        <a href="/logout"
+           class="text-xs text-red-500 hover:text-red-700 font-semibold transition">
+            Esci
+        </a>
+
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- LOGO E BRANDING -->
+    <!-- ====================================================== -->
+
+    <div class="text-center mb-8">
+
+        <div class="mb-3">
+
+            <img
+                src="https://github.com/TribalTW/posturaepilates/blob/main/pilates-webapp/static/css/logo.png?raw=true"
+                alt="Logo Postura & Pilates"
+                class="h-20 md:h-28 w-auto object-contain mx-auto"
+            >
+
         </div>
 
-        <!-- Pulsanti Navigazione a Tab -->
-        <div class="flex justify-center gap-2 mb-8">
-            <button onclick="mostraSezione('prenota')" id="btn-prenota" class="py-2.5 px-5 text-xs font-bold rounded-xl bg-gradient-to-r from-[#D81B60] to-[#AD1457] text-white shadow-sm transition cursor-pointer">
-                📅 Prenota la tua seduta
-            </button>
-            <button onclick="mostraSezione('info')" id="btn-info" class="py-2.5 px-5 text-xs font-semibold rounded-xl bg-[#fff0f5] text-[#880E4F] border border-[#f9d1df] hover:bg-[#fce7f3] transition cursor-pointer">
-                ℹ️ Info Studio
-            </button>
-            <button onclick="mostraSezione('regolamento')" id="btn-regolamento" class="py-2.5 px-5 text-xs font-semibold rounded-xl bg-[#fff0f5] text-[#880E4F] border border-[#f9d1df] hover:bg-[#fce7f3] transition cursor-pointer">
-                📜 Regolamento
-            </button>
+        <h1 class="text-2xl md:text-3xl font-serif-title font-bold text-pink-900 tracking-tight">
+            Postura e Pilates
+        </h1>
+
+        <p class="text-xs font-medium text-[#D81B60] mt-1">
+            di Dott.ssa Roberta Sinagra
+        </p>
+
+        <div class="flex items-center justify-center gap-3 mt-3 text-[#f9d1df]">
+
+            <div class="h-[1px] w-10 bg-[#f9d1df]"></div>
+
+            <span class="text-xs text-[#D81B60]">♥</span>
+
+            <div class="h-[1px] w-10 bg-[#f9d1df]"></div>
+
         </div>
 
-        <!-- SEZIONE 1: PRENOTA LEZIONE -->
-        <div id="sezione-prenota" class="space-y-6">
-            
-            {% if success %}
-                <div class="bg-emerald-100 border border-emerald-400 text-emerald-800 px-4 py-3 rounded-2xl text-xs text-center">
-                    ✅ {{ success }}
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- NAVIGAZIONE -->
+    <!-- ====================================================== -->
+
+    <div class="flex flex-wrap justify-center gap-2 mb-8">
+
+        <button
+            onclick="mostraSezione('prenota')"
+            id="btn-prenota"
+            class="py-2.5 px-5 text-xs font-bold rounded-xl bg-gradient-to-r from-[#D81B60] to-[#AD1457] text-white shadow-sm transition cursor-pointer">
+            📅 Prenota la tua seduta
+        </button>
+
+        <button
+            onclick="mostraSezione('info')"
+            id="btn-info"
+            class="py-2.5 px-5 text-xs font-semibold rounded-xl bg-[#fff0f5] text-[#880E4F] border border-[#f9d1df] hover:bg-[#fce7f3] transition cursor-pointer">
+            ℹ️ Info Studio
+        </button>
+
+        <button
+            onclick="mostraSezione('regolamento')"
+            id="btn-regolamento"
+            class="py-2.5 px-5 text-xs font-semibold rounded-xl bg-[#fff0f5] text-[#880E4F] border border-[#f9d1df] hover:bg-[#fce7f3] transition cursor-pointer">
+            📜 Regolamento
+        </button>
+
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- SEZIONE PRENOTA -->
+    <!-- ====================================================== -->
+
+    <div id="sezione-prenota" class="space-y-8">
+
+
+        <!-- ================================================== -->
+        <!-- MESSAGGIO SUCCESSO -->
+        <!-- ================================================== -->
+
+        {% if success %}
+
+        <div class="bg-emerald-100 border border-emerald-400 text-emerald-800 px-4 py-3 rounded-2xl text-xs text-center">
+            ✅ {{ success }}
+        </div>
+
+        {% if ultimo_trattamento and ultima_data and ultima_ora %}
+
+        <a
+            href="/download-ics?trattamento={{ ultimo_trattamento }}&data={{ ultima_data }}&ora={{ ultima_ora }}"
+            class="inline-block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl transition text-xs shadow-md">
+            📅 Aggiungi al tuo Calendario (.ics)
+        </a>
+
+        {% endif %}
+
+        {% endif %}
+
+
+        <!-- ================================================== -->
+        <!-- MESSAGGIO ERRORE -->
+        <!-- ================================================== -->
+
+        {% if error %}
+
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-2xl text-xs text-center">
+            ⚠️ {{ error }}
+        </div>
+
+        {% endif %}
+
+
+        <!-- ================================================== -->
+        <!-- LE MIE PRENOTAZIONI -->
+        <!-- ================================================== -->
+
+        <section>
+
+            <div class="bg-white border border-[#f9d1df] rounded-3xl p-5 md:p-7 shadow-sm">
+
+                <!-- Titolo -->
+
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-6">
+
+                    <div>
+
+                        <h2 class="text-lg md:text-xl font-serif-title font-bold text-pink-900">
+                            📅 Le mie prenotazioni
+                        </h2>
+
+                        <p class="text-[11px] md:text-xs text-gray-500 mt-1">
+                            Qui puoi controllare le tue lezioni prenotate e gli appuntamenti già effettuati.
+                        </p>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        onclick="caricaMiePrenotazioni()"
+                        class="inline-flex items-center gap-2 text-xs font-semibold text-[#D81B60] bg-[#fff0f5] border border-[#f9d1df] px-3 py-2 rounded-xl hover:bg-[#fce7f3] transition">
+
+                        🔄 Aggiorna
+
+                    </button>
+
                 </div>
-                {% if ultimo_trattamento and ultima_data and ultima_ora %}
-                    <a href="/download-ics?trattamento={{ ultimo_trattamento }}&data={{ ultima_data }}&ora={{ ultima_ora }}" class="inline-block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl transition text-xs shadow-md">
-                        📅 Aggiungi al tuo Calendario (.ics)
-                    </a>
-                {% endif %}
-            {% endif %}
 
-            {% if error %}
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-2xl text-xs text-center">
-                    ⚠️ {{ error }}
+
+                <!-- ================================================== -->
+                <!-- CALENDARIO PRENOTAZIONI -->
+                <!-- ================================================== -->
+
+                <div class="bg-[#fff9fb] border border-[#f9d1df] rounded-2xl p-4 md:p-6">
+
+                    <!-- Navigazione mese -->
+
+                    <div class="flex items-center justify-between mb-5">
+
+                        <button
+                            type="button"
+                            onclick="cambiaMesePrenotazioni(-1)"
+                            class="w-9 h-9 rounded-xl bg-white border border-[#f9d1df] text-[#D81B60] hover:bg-[#fff0f5] transition font-bold">
+
+                            ‹
+
+                        </button>
+
+
+                        <h3
+                            id="mese-prenotazioni"
+                            class="font-serif-title font-bold text-pink-900 text-base md:text-lg">
+                        </h3>
+
+
+                        <button
+                            type="button"
+                            onclick="cambiaMesePrenotazioni(1)"
+                            class="w-9 h-9 rounded-xl bg-white border border-[#f9d1df] text-[#D81B60] hover:bg-[#fff0f5] transition font-bold">
+
+                            ›
+
+                        </button>
+
+                    </div>
+
+
+                    <!-- Giorni settimana -->
+
+                    <div class="grid grid-cols-7 gap-1 mb-2 text-center">
+
+                        <div class="text-[9px] md:text-[10px] font-semibold text-gray-400">LUN</div>
+                        <div class="text-[9px] md:text-[10px] font-semibold text-gray-400">MAR</div>
+                        <div class="text-[9px] md:text-[10px] font-semibold text-gray-400">MER</div>
+                        <div class="text-[9px] md:text-[10px] font-semibold text-gray-400">GIO</div>
+                        <div class="text-[9px] md:text-[10px] font-semibold text-gray-400">VEN</div>
+                        <div class="text-[9px] md:text-[10px] font-semibold text-gray-400">SAB</div>
+                        <div class="text-[9px] md:text-[10px] font-semibold text-gray-400">DOM</div>
+
+                    </div>
+
+
+                    <!-- Giorni calendario -->
+
+                    <div
+                        id="calendario-mie-prenotazioni"
+                        class="grid grid-cols-7 gap-1">
+                    </div>
+
                 </div>
-            {% endif %}
 
-            <div class="text-center mb-4">
-                <h2 class="text-lg font-serif-title font-bold text-gray-900">Prenota la tua seduta</h2>
-                <p class="text-xs text-gray-500 mt-0.5">Scegli data, orario e tipo di seduta più adatti a te.</p>
+
+                <!-- ================================================== -->
+                <!-- DETTAGLIO GIORNO -->
+                <!-- ================================================== -->
+
+                <div
+                    id="dettaglio-prenotazione"
+                    class="mt-4">
+                </div>
+
+
+                <!-- ================================================== -->
+                <!-- PROSSIME LEZIONI -->
+                <!-- ================================================== -->
+
+                <div class="mt-7">
+
+                    <div class="flex items-center justify-between mb-3">
+
+                        <h3 class="text-sm font-semibold text-gray-800">
+                            🗓️ Prossime lezioni
+                        </h3>
+
+                        <span class="text-[10px] text-gray-400">
+                            Le tue prossime 5 prenotazioni
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        id="lista-prossime-prenotazioni"
+                        class="space-y-3">
+                    </div>
+
+                </div>
+
             </div>
+
+        </section>
+
+
+        <!-- ================================================== -->
+        <!-- NUOVA PRENOTAZIONE -->
+        <!-- ================================================== -->
+
+        <section>
+
+            <div class="text-center mb-5">
+
+                <h2 class="text-lg font-serif-title font-bold text-gray-900">
+                    Prenota una nuova seduta
+                </h2>
+
+                <p class="text-xs text-gray-500 mt-0.5">
+                    Scegli data, orario e tipo di seduta più adatti a te.
+                </p>
+
+            </div>
+
+
+            <!-- ================================================== -->
+            <!-- FORM PRENOTAZIONE -->
+            <!-- ================================================== -->
 
             <form action="/prenota" method="POST" id="formPrenotazione">
-                <!-- Campi nascosti per data e ora selezionate dai widget interattivi -->
-                <input type="hidden" name="data" id="data-input" required>
-                <input type="hidden" name="ora" id="ora-input" required>
+
+                <!-- Campi nascosti -->
+
+                <input
+                    type="hidden"
+                    name="data"
+                    id="data-input"
+                    required
+                >
+
+                <input
+                    type="hidden"
+                    name="ora"
+                    id="ora-input"
+                    required
+                >
+
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                    
-                    <!-- COLONNA 1: SELEZIONA LA DATA -->
+
+
+                    <!-- ================================================== -->
+                    <!-- COLONNA DATA -->
+                    <!-- ================================================== -->
+
                     <div class="bg-white border border-[#f9d1df] rounded-2xl p-5 shadow-sm space-y-4">
+
                         <div class="flex items-center gap-2 text-xs font-bold text-[#880E4F] uppercase tracking-wider">
-                            <span>📅</span> Seleziona la data
+
+                            <span>📅</span>
+
+                            Seleziona la data
+
                         </div>
-                        
+
+
+                        <!-- Navigazione mese -->
+
                         <div class="flex justify-between items-center px-2">
-                            <button type="button" onclick="cambiaMese(-1)" class="p-1.5 hover:bg-[#fff0f5] rounded-lg text-gray-600 transition cursor-pointer">❮</button>
-                            <span id="current-month-year" class="text-xs font-bold text-gray-800"></span>
-                            <button type="button" onclick="cambiaMese(1)" class="p-1.5 hover:bg-[#fff0f5] rounded-lg text-gray-600 transition cursor-pointer">❯</button>
+
+                            <button
+                                type="button"
+                                onclick="cambiaMese(-1)"
+                                class="p-1.5 hover:bg-[#fff0f5] rounded-lg text-gray-600 transition cursor-pointer">
+
+                                ❮
+
+                            </button>
+
+
+                            <span
+                                id="current-month-year"
+                                class="text-xs font-bold text-gray-800">
+                            </span>
+
+
+                            <button
+                                type="button"
+                                onclick="cambiaMese(1)"
+                                class="p-1.5 hover:bg-[#fff0f5] rounded-lg text-gray-600 transition cursor-pointer">
+
+                                ❯
+
+                            </button>
+
                         </div>
+
+
+                        <!-- Giorni settimana -->
 
                         <div class="grid grid-cols-7 text-center text-[10px] font-semibold text-gray-400">
-                            <span>LUN</span><span>MAR</span><span>MER</span><span>GIO</span><span>VEN</span><span>SAB</span><span>DOM</span>
+
+                            <span>LUN</span>
+                            <span>MAR</span>
+                            <span>MER</span>
+                            <span>GIO</span>
+                            <span>VEN</span>
+                            <span>SAB</span>
+                            <span>DOM</span>
+
                         </div>
 
-                        <div id="calendar-grid" class="grid grid-cols-7 gap-y-1 text-center"></div>
+
+                        <!-- Calendario -->
+
+                        <div
+                            id="calendar-grid"
+                            class="grid grid-cols-7 gap-y-1 text-center">
+                        </div>
+
 
                         <div class="text-center pt-2">
-                            <button type="button" onclick="impostaOggi()" class="text-[11px] text-[#D81B60] font-bold hover:underline cursor-pointer">Oggi</button>
+
+                            <button
+                                type="button"
+                                onclick="impostaOggi()"
+                                class="text-[11px] text-[#D81B60] font-bold hover:underline cursor-pointer">
+
+                                Oggi
+
+                            </button>
+
                         </div>
+
                     </div>
 
-                    <!-- COLONNA 2: SELEZIONA L'ORARIO -->
-                    <div class="bg-white border border-[#f9d1df] rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between">
-                        <div class="space-y-3">
-                            <div class="flex items-center gap-2 text-xs font-bold text-[#880E4F] uppercase tracking-wider">
-                                <span>⏰</span> Seleziona l'orario
-                            </div>
-                            <p class="text-[11px] text-gray-500">Gli orari disponibili si aggiornano in base alla data e al trattamento scelto.</p>
 
-                            <div id="orari-container" class="grid grid-cols-2 gap-2.5 max-h-56 overflow-y-auto pr-1">
-                                <p class="text-xs text-gray-400 text-center col-span-2 py-6">Seleziona prima una data...</p>
+                    <!-- ================================================== -->
+                    <!-- COLONNA ORARIO -->
+                    <!-- ================================================== -->
+
+                    <div class="bg-white border border-[#f9d1df] rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between">
+
+                        <div class="space-y-3">
+
+                            <div class="flex items-center gap-2 text-xs font-bold text-[#880E4F] uppercase tracking-wider">
+
+                                <span>⏰</span>
+
+                                Seleziona l'orario
+
                             </div>
+
+
+                            <p class="text-[11px] text-gray-500">
+
+                                Gli orari disponibili si aggiornano in base alla data e al trattamento scelto.
+
+                            </p>
+
+
+                            <div
+                                id="orari-container"
+                                class="grid grid-cols-2 gap-2.5 max-h-56 overflow-y-auto pr-1">
+
+                                <p class="text-xs text-gray-400 text-center col-span-2 py-6">
+
+                                    Seleziona prima una data...
+
+                                </p>
+
+                            </div>
+
                         </div>
+
 
                         <div class="bg-[#fff0f5] border border-[#f9d1df] p-3 rounded-xl text-[11px] text-gray-700 flex items-center gap-2 mt-4">
+
                             <span class="text-sm">ℹ️</span>
-                            <span>Le sedute hanno una durata di 50 minuti.</span>
+
+                            <span>
+                                Le sedute hanno una durata di 50 minuti.
+                            </span>
+
                         </div>
+
                     </div>
 
-                    <!-- COLONNA 3: SELEZIONA IL TIPO DI SEDUTA -->
+
+                    <!-- ================================================== -->
+                    <!-- COLONNA TRATTAMENTO -->
+                    <!-- ================================================== -->
+
                     <div class="bg-white border border-[#f9d1df] rounded-2xl p-5 shadow-sm space-y-4">
+
                         <div class="flex items-center gap-2 text-xs font-bold text-[#880E4F] uppercase tracking-wider">
-                            <span>👤</span> Seleziona il tipo di seduta
+
+                            <span>👤</span>
+
+                            Seleziona il tipo di seduta
+
                         </div>
+
 
                         <div class="space-y-2.5">
-                            <label id="card-Pilates-Individuale" class="treatment-card flex items-start gap-3 p-3 rounded-xl border border-[#f9d1df] bg-white cursor-pointer hover:border-[#D81B60] transition">
-                                <input type="radio" name="trattamento" value="Pilates Individuale" checked onchange="gestisciCambioTrattamento(this.value)" class="mt-1 accent-[#D81B60]">
+
+
+                            <!-- INDIVIDUALE -->
+
+                            <label
+                                id="card-Pilates-Individuale"
+                                class="treatment-card flex items-start gap-3 p-3 rounded-xl border border-[#f9d1df] bg-white cursor-pointer hover:border-[#D81B60] transition">
+
+                                <input
+                                    type="radio"
+                                    name="trattamento"
+                                    value="Pilates Individuale"
+                                    checked
+                                    onchange="gestisciCambioTrattamento(this.value)"
+                                    class="mt-1 accent-[#D81B60]"
+                                >
+
                                 <div>
-                                    <p class="text-xs font-bold text-gray-900">Lezione Individuale</p>
-                                    <p class="text-[11px] text-gray-500 mt-0.5">Percorso personalizzato 1:1 su misura per te.</p>
+
+                                    <p class="text-xs font-bold text-gray-900">
+                                        Lezione Individuale
+                                    </p>
+
+                                    <p class="text-[11px] text-gray-500 mt-0.5">
+                                        Percorso personalizzato 1:1 su misura per te.
+                                    </p>
+
                                 </div>
+
                             </label>
 
-                            <label id="card-Pilates-di-Coppia" class="treatment-card flex items-start gap-3 p-3 rounded-xl border border-[#f9d1df] bg-white cursor-pointer hover:border-[#D81B60] transition">
-                                <input type="radio" name="trattamento" value="Pilates di Coppia" onchange="gestisciCambioTrattamento(this.value)" class="mt-1 accent-[#D81B60]">
+
+                            <!-- COPPIA -->
+
+                            <label
+                                id="card-Pilates-di-Coppia"
+                                class="treatment-card flex items-start gap-3 p-3 rounded-xl border border-[#f9d1df] bg-white cursor-pointer hover:border-[#D81B60] transition">
+
+                                <input
+                                    type="radio"
+                                    name="trattamento"
+                                    value="Pilates di Coppia"
+                                    onchange="gestisciCambioTrattamento(this.value)"
+                                    class="mt-1 accent-[#D81B60]"
+                                >
+
                                 <div>
-                                    <p class="text-xs font-bold text-gray-900">Lezione di Coppia</p>
-                                    <p class="text-[11px] text-gray-500 mt-0.5">Allenati in coppia con un percorso dedicato.</p>
+
+                                    <p class="text-xs font-bold text-gray-900">
+                                        Lezione di Coppia
+                                    </p>
+
+                                    <p class="text-[11px] text-gray-500 mt-0.5">
+                                        Allenati in coppia con un percorso dedicato.
+                                    </p>
+
                                 </div>
+
                             </label>
 
-                            <label id="card-Seduta-di-Prova" class="treatment-card flex items-start gap-3 p-3 rounded-xl border border-[#f9d1df] bg-white cursor-pointer hover:border-[#D81B60] transition">
-                                <input type="radio" name="trattamento" value="Seduta di Prova" onchange="gestisciCambioTrattamento(this.value)" class="mt-1 accent-[#D81B60]">
+
+                            <!-- PROVA -->
+
+                            <label
+                                id="card-Seduta-di-Prova"
+                                class="treatment-card flex items-start gap-3 p-3 rounded-xl border border-[#f9d1df] bg-white cursor-pointer hover:border-[#D81B60] transition">
+
+                                <input
+                                    type="radio"
+                                    name="trattamento"
+                                    value="Seduta di Prova"
+                                    onchange="gestisciCambioTrattamento(this.value)"
+                                    class="mt-1 accent-[#D81B60]"
+                                >
+
                                 <div>
-                                    <p class="text-xs font-bold text-gray-900">Seduta di Prova</p>
-                                    <p class="text-[11px] text-gray-500 mt-0.5">Sessione introduttiva per iniziare.</p>
+
+                                    <p class="text-xs font-bold text-gray-900">
+                                        Seduta di Prova
+                                    </p>
+
+                                    <p class="text-[11px] text-gray-500 mt-0.5">
+                                        Sessione introduttiva per iniziare.
+                                    </p>
+
                                 </div>
+
                             </label>
 
-                            <label id="card-Valutazione-Posturale" class="treatment-card flex items-start gap-3 p-3 rounded-xl border border-[#f9d1df] bg-white cursor-pointer hover:border-[#D81B60] transition">
-                                <input type="radio" name="trattamento" value="Valutazione Posturale" onchange="gestisciCambioTrattamento(this.value)" class="mt-1 accent-[#D81B60]">
+
+                            <!-- VALUTAZIONE -->
+
+                            <label
+                                id="card-Valutazione-Posturale"
+                                class="treatment-card flex items-start gap-3 p-3 rounded-xl border border-[#f9d1df] bg-white cursor-pointer hover:border-[#D81B60] transition">
+
+                                <input
+                                    type="radio"
+                                    name="trattamento"
+                                    value="Valutazione Posturale"
+                                    onchange="gestisciCambioTrattamento(this.value)"
+                                    class="mt-1 accent-[#D81B60]"
+                                >
+
                                 <div>
-                                    <p class="text-xs font-bold text-gray-900">Valutazione Posturale</p>
-                                    <p class="text-[11px] text-gray-500 mt-0.5">Analisi posturale completa e primo colloquio.</p>
+
+                                    <p class="text-xs font-bold text-gray-900">
+                                        Valutazione Posturale
+                                    </p>
+
+                                    <p class="text-[11px] text-gray-500 mt-0.5">
+                                        Analisi posturale completa e primo colloquio.
+                                    </p>
+
                                 </div>
+
                             </label>
+
                         </div>
+
                     </div>
 
                 </div>
 
-                <!-- Box Secondo Partecipante (Se Coppia) -->
-                <div id="box_coppia" class="mt-6 bg-[#fff0f5] border border-[#f9d1df] p-5 rounded-2xl space-y-4 hidden">
-                    <h3 class="text-xs font-bold text-[#880E4F] uppercase tracking-wider">👥 Dati Secondo Partecipante</h3>
+
+                <!-- ================================================== -->
+                <!-- SECONDO PARTECIPANTE -->
+                <!-- ================================================== -->
+
+                <div
+                    id="box_coppia"
+                    class="mt-6 bg-[#fff0f5] border border-[#f9d1df] p-5 rounded-2xl space-y-4 hidden">
+
+                    <h3 class="text-xs font-bold text-[#880E4F] uppercase tracking-wider">
+                        👥 Dati Secondo Partecipante
+                    </h3>
+
+
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+
                         <div>
-                            <label for="nome_2" class="block text-xs font-semibold text-gray-700 mb-1">Nome</label>
-                            <input type="text" name="nome_2" id="nome_2" placeholder="Nome partner" class="w-full p-2.5 border border-[#f2c2d5] rounded-xl outline-none focus:border-[#D81B60] text-xs bg-white">
+
+                            <label
+                                for="nome_2"
+                                class="block text-xs font-semibold text-gray-700 mb-1">
+                                Nome
+                            </label>
+
+                            <input
+                                type="text"
+                                name="nome_2"
+                                id="nome_2"
+                                placeholder="Nome partner"
+                                class="w-full p-2.5 border border-[#f2c2d5] rounded-xl outline-none focus:border-[#D81B60] text-xs bg-white"
+                            >
+
                         </div>
+
+
                         <div>
-                            <label for="cognome_2" class="block text-xs font-semibold text-gray-700 mb-1">Cognome</label>
-                            <input type="text" name="cognome_2" id="cognome_2" placeholder="Cognome partner" class="w-full p-2.5 border border-[#f2c2d5] rounded-xl outline-none focus:border-[#D81B60] text-xs bg-white">
+
+                            <label
+                                for="cognome_2"
+                                class="block text-xs font-semibold text-gray-700 mb-1">
+                                Cognome
+                            </label>
+
+                            <input
+                                type="text"
+                                name="cognome_2"
+                                id="cognome_2"
+                                placeholder="Cognome partner"
+                                class="w-full p-2.5 border border-[#f2c2d5] rounded-xl outline-none focus:border-[#D81B60] text-xs bg-white"
+                            >
+
                         </div>
+
+
                         <div>
-                            <label for="cf_2" class="block text-xs font-semibold text-gray-700 mb-1">Codice Fiscale</label>
-                            <input type="text" name="cf_2" id="cf_2" maxlength="16" placeholder="Codice Fiscale partner" class="w-full p-2.5 border border-[#f2c2d5] rounded-xl outline-none focus:border-[#D81B60] uppercase text-xs bg-white">
+
+                            <label
+                                for="cf_2"
+                                class="block text-xs font-semibold text-gray-700 mb-1">
+                                Codice Fiscale
+                            </label>
+
+                            <input
+                                type="text"
+                                name="cf_2"
+                                id="cf_2"
+                                maxlength="16"
+                                placeholder="Codice Fiscale partner"
+                                class="w-full p-2.5 border border-[#f2c2d5] rounded-xl outline-none focus:border-[#D81B60] uppercase text-xs bg-white"
+                            >
+
                         </div>
+
                     </div>
+
                 </div>
 
-                <!-- Pulsante Conferma Finale (Modificato a type="button" per mostrare il modal) -->
+
+                <!-- ================================================== -->
+                <!-- CONFERMA -->
+                <!-- ================================================== -->
+
                 <div class="mt-8 text-center max-w-md mx-auto space-y-3">
-                    <button type="button" onclick="mostraRegolamento()" class="w-full bg-gradient-to-r from-[#D81B60] to-[#AD1457] text-white font-bold py-3.5 rounded-2xl shadow-md hover:opacity-95 transition text-xs cursor-pointer">
+
+                    <button
+                        type="button"
+                        onclick="mostraRegolamento()"
+                        class="w-full bg-gradient-to-r from-[#D81B60] to-[#AD1457] text-white font-bold py-3.5 rounded-2xl shadow-md hover:opacity-95 transition text-xs cursor-pointer">
+
                         Conferma prenotazione
+
                     </button>
-                    <a href="/prenota" class="inline-block text-xs text-gray-500 hover:text-[#D81B60] transition">Torna alla homepage</a>
+
+
+                    <a
+                        href="/prenota"
+                        class="inline-block text-xs text-gray-500 hover:text-[#D81B60] transition">
+
+                        Torna alla homepage
+
+                    </a>
+
                 </div>
+
             </form>
-        </div>
 
-        <!-- SEZIONE 2: INFO STUDIO -->
-        <div id="sezione-info" class="space-y-4 hidden text-left max-w-2xl mx-auto">
-            <h2 class="text-xs font-bold text-[#880E4F] uppercase tracking-wider mb-2">ℹ️ Informazioni sullo Studio</h2>
-            <div class="bg-[#fff0f5] border border-[#f9d1df] p-5 rounded-2xl space-y-3 text-xs text-gray-700 leading-relaxed">
-                <p><strong>Studio Postura & Pilates</strong> è uno spazio dedicato al benessere psicofisico, alla rieducazione posturale e al movimento consapevole diretto dalla Dott.ssa Roberta Sinagra.</p>
-                <div>
-                    <p class="font-semibold text-[#880E4F] mb-0.5">📍 Dove siamo:</p>
-                    <p>Via Roma 123, Studio Professionale - Catania</p>
-                </div>
-                <div>
-                    <p class="font-semibold text-[#880E4F] mb-0.5">📞 Contatti:</p>
-                    <p>Telefono / WhatsApp: +39 333 1234567</p>
-                    <p>Email: info@posturapilates.it</p>
-                </div>
-                <div>
-                    <p class="font-semibold text-[#880E4F] mb-0.5">⏰ Orari di Apertura:</p>
-                    <p>Lunedì - Venerdì: 08:30 - 20:00</p>
-                    <p>Sabato: 09:00 - 14:00 (su appuntamento)</p>
-                </div>
-            </div>
-        </div>
+        </section>
 
-        <!-- SEZIONE 3: REGOLAMENTO -->
-        <div id="sezione-regolamento" class="space-y-4 hidden text-left max-w-2xl mx-auto">
-            <h2 class="text-xs font-bold text-[#880E4F] uppercase tracking-wider mb-2">📜 Regolamento dello Studio</h2>
-            <div class="bg-[#fff0f5] border border-[#f9d1df] p-5 rounded-2xl space-y-3 text-xs text-gray-700 leading-relaxed">
-                <p>Per garantire un ambiente sereno, sicuro e professionale per tutti i partecipanti, si richiede di osservare le seguenti norme:</p>
-                <ul class="list-disc pl-4 space-y-2">
-                    <li><strong>Disdetta Lezioni:</strong> Eventuali cancellazioni o spostamenti di prenotazione devono essere effettuati con almeno 24 ore di preavviso.</li>
-                    <li><strong>Puntualità:</strong> Si raccomanda di arrivare 5 minuti prima dell'orario stabilito per consentire l'inizio regolare della sessione e il check-in tramite QR code.</li>
-                    <li><strong>Abbigliamento:</strong> È obbligatorio indossare abbigliamento comodo e calzini antiscivolo. Si prega di portare un telo personale.</li>
-                    <li><strong>Certificato Medico:</strong> Per accedere ai corsi di Pilates e alle valutazioni posturali è richiesto un certificato medico di idoneità non agonistica in corso di validità.</li>
-                    <li><strong>Rispetto degli spazi:</strong> Si invitano i gentili clienti a spegnere o silenziare i telefoni cellulari durante la permanenza in sala.</li>
-                </ul>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- INFO STUDIO -->
+    <!-- ====================================================== -->
+
+    <div
+        id="sezione-info"
+        class="space-y-4 hidden text-left max-w-2xl mx-auto">
+
+        <h2 class="text-xs font-bold text-[#880E4F] uppercase tracking-wider mb-2">
+            ℹ️ Informazioni sullo Studio
+        </h2>
+
+
+        <div class="bg-[#fff0f5] border border-[#f9d1df] p-5 rounded-2xl space-y-3 text-xs text-gray-700 leading-relaxed">
+
+            <p>
+                <strong>Studio Postura & Pilates</strong>
+                è uno spazio dedicato al benessere psicofisico,
+                alla rieducazione posturale e al movimento consapevole
+                diretto dalla Dott.ssa Roberta Sinagra.
+            </p>
+
+
+            <div>
+
+                <p class="font-semibold text-[#880E4F] mb-0.5">
+                    📍 Dove siamo:
+                </p>
+
+                <p>
+                    Via Roma 123, Studio Professionale - Catania
+                </p>
+
             </div>
+
+
+            <div>
+
+                <p class="font-semibold text-[#880E4F] mb-0.5">
+                    📞 Contatti:
+                </p>
+
+                <p>
+                    Telefono / WhatsApp: +39 333 1234567
+                </p>
+
+                <p>
+                    Email: info@posturapilates.it
+                </p>
+
+            </div>
+
+
+            <div>
+
+                <p class="font-semibold text-[#880E4F] mb-0.5">
+                    ⏰ Orari di Apertura:
+                </p>
+
+                <p>
+                    Lunedì - Venerdì: 08:30 - 20:00
+                </p>
+
+                <p>
+                    Sabato: 09:00 - 14:00 (su appuntamento)
+                </p>
+
+            </div>
+
         </div>
 
     </div>
 
-    <!-- MODAL REGOLE DELLO STUDIO (POP-UP DI CONFERMA) -->
-    <div id="rulesModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 hidden">
-        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-[#f9d1df] text-center">
-            <div class="mb-3 text-3xl">📋</div>
-            <h3 class="font-serif-title text-xl font-bold text-pink-900 mb-3">Regole dello Studio</h3>
-            
-            <div class="text-xs md:text-sm text-gray-600 mb-6 leading-relaxed text-left bg-[#faf6f8] p-4 rounded-2xl border border-[#f2c2d5] max-h-48 overflow-y-auto space-y-2">
-                <p>1. <strong>Disdetta:</strong> Le cancellazioni devono avvenire almeno 24 ore prima dell'inizio della lezione.</p>
-                <p>2. <strong>Puntualità:</strong> Ti preghiamo di arrivare 5 minuti prima per iniziare puntualmente.</p>
-                <p>3. <strong>Abbigliamento:</strong> È obbligatorio indossare abbigliamento comodo e calzini antiscivolo.</p>
-                <p>4. <strong>Certificato:</strong> Assicurati di avere il certificato medico in corso di validità.</p>
-            </div>
 
-            <div class="flex gap-3">
-                <button type="button" onclick="chiudiRegolamento()" 
-                        class="w-1/2 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition cursor-pointer">
-                    Annulla
-                </button>
-                <button type="button" onclick="confermaPrenotazione()" 
-                        class="w-1/2 py-3 bg-gradient-to-r from-[#D81B60] to-[#AD1457] hover:opacity-95 text-white font-bold rounded-xl text-xs transition shadow-md cursor-pointer">
-                    Accetto e prenota
-                </button>
-            </div>
+    <!-- ====================================================== -->
+    <!-- REGOLAMENTO -->
+    <!-- ====================================================== -->
+
+    <div
+        id="sezione-regolamento"
+        class="space-y-4 hidden text-left max-w-2xl mx-auto">
+
+        <h2 class="text-xs font-bold text-[#880E4F] uppercase tracking-wider mb-2">
+            📜 Regolamento dello Studio
+        </h2>
+
+
+        <div class="bg-[#fff0f5] border border-[#f9d1df] p-5 rounded-2xl space-y-3 text-xs text-gray-700 leading-relaxed">
+
+            <p>
+                Per garantire un ambiente sereno, sicuro e professionale
+                per tutti i partecipanti, si richiede di osservare
+                le seguenti norme:
+            </p>
+
+
+            <ul class="list-disc pl-4 space-y-2">
+
+                <li>
+                    <strong>Disdetta Lezioni:</strong>
+                    Eventuali cancellazioni o spostamenti di prenotazione
+                    devono essere effettuati con almeno 24 ore di preavviso.
+                </li>
+
+                <li>
+                    <strong>Puntualità:</strong>
+                    Si raccomanda di arrivare 5 minuti prima dell'orario
+                    stabilito per consentire l'inizio regolare della sessione
+                    e il check-in tramite QR code.
+                </li>
+
+                <li>
+                    <strong>Abbigliamento:</strong>
+                    È obbligatorio indossare abbigliamento comodo
+                    e calzini antiscivolo. Si prega di portare un telo personale.
+                </li>
+
+                <li>
+                    <strong>Certificato Medico:</strong>
+                    Per accedere ai corsi di Pilates e alle valutazioni posturali
+                    è richiesto un certificato medico di idoneità non agonistica
+                    in corso di validità.
+                </li>
+
+                <li>
+                    <strong>Rispetto degli spazi:</strong>
+                    Si invitano i gentili clienti a spegnere o silenziare
+                    i telefoni cellulari durante la permanenza in sala.
+                </li>
+
+            </ul>
+
         </div>
+
     </div>
 
-    <script>
-        // Logica Calendario Interattivo
-        let currentDate = new Date();
-        let selectedDateStr = '';
+</div>
 
-        const mesi = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
 
-        function renderCalendar() {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            
-            document.getElementById('current-month-year').textContent = `${mesi[month]} ${year}`;
+<!-- ====================================================== -->
+<!-- MODAL REGOLE -->
+<!-- ====================================================== -->
 
-            const grid = document.getElementById('calendar-grid');
-            grid.innerHTML = '';
+<div
+    id="rulesModal"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 hidden">
 
-            const firstDayIndex = new Date(year, month, 1).getDay();
-            let startingDay = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
-            
-            const totalDays = new Date(year, month + 1, 0).getDate();
-            const prevTotalDays = new Date(year, month, 0).getDate();
+    <div class="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-[#f9d1df] text-center">
 
-            const todayObj = new Date();
-            const todayStr = todayObj.toISOString().split('T')[0];
+        <div class="mb-3 text-3xl">
+            📋
+        </div>
 
-            for (let i = startingDay - 1; i >= 0; i--) {
-                const dayNum = prevTotalDays - i;
-                const cell = document.createElement('div');
-                cell.className = 'text-gray-300 text-xs py-1.5 text-center select-none';
-                cell.textContent = dayNum;
-                grid.appendChild(cell);
-            }
 
-            for (let d = 1; d <= totalDays; d++) {
-                const cell = document.createElement('div');
-                const monthFormatted = String(month + 1).padStart(2, '0');
-                const dayFormatted = String(d).padStart(2, '0');
-                const dateStr = `${year}-${monthFormatted}-${dayFormatted}`;
+        <h3 class="font-serif-title text-xl font-bold text-pink-900 mb-3">
+            Regole dello Studio
+        </h3>
 
-                cell.className = 'text-xs py-2 text-center rounded-full cursor-pointer transition font-medium ';
-                
-                const isPast = dateStr < todayStr;
-                const isSelected = dateStr === selectedDateStr;
-                const isToday = dateStr === todayStr;
 
-                if (isPast) {
-                    cell.classList.add('text-gray-300', 'cursor-not-allowed');
-                } else {
-                    cell.classList.add('text-gray-700', 'hover:bg-[#fce7f3]', 'hover:text-[#880E4F]');
-                    cell.onclick = () => selezionaData(dateStr);
-                }
+        <div class="text-xs md:text-sm text-gray-600 mb-6 leading-relaxed text-left bg-[#faf6f8] p-4 rounded-2xl border border-[#f2c2d5] max-h-48 overflow-y-auto space-y-2">
 
-                if (isSelected) {
-                    cell.className = 'text-xs py-2 text-center rounded-full cursor-pointer font-bold bg-[#D81B60] text-white shadow-sm';
-                } else if (isToday && !isPast) {
-                    cell.classList.add('border', 'border-[#D81B60]', 'text-[#D81B60]', 'font-bold');
-                }
+            <p>
+                1. <strong>Disdetta:</strong>
+                Le cancellazioni devono avvenire almeno 24 ore
+                prima dell'inizio della lezione.
+            </p>
 
-                cell.textContent = d;
-                grid.appendChild(cell);
-            }
+            <p>
+                2. <strong>Puntualità:</strong>
+                Ti preghiamo di arrivare 5 minuti prima
+                per iniziare puntualmente.
+            </p>
+
+            <p>
+                3. <strong>Abbigliamento:</strong>
+                È obbligatorio indossare abbigliamento comodo
+                e calzini antiscivolo.
+            </p>
+
+            <p>
+                4. <strong>Certificato:</strong>
+                Assicurati di avere il certificato medico
+                in corso di validità.
+            </p>
+
+        </div>
+
+
+        <div class="flex gap-3">
+
+            <button
+                type="button"
+                onclick="chiudiRegolamento()"
+                class="w-1/2 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition cursor-pointer">
+
+                Annulla
+
+            </button>
+
+
+            <button
+                type="button"
+                onclick="confermaPrenotazione()"
+                class="w-1/2 py-3 bg-gradient-to-r from-[#D81B60] to-[#AD1457] hover:opacity-95 text-white font-bold rounded-xl text-xs transition shadow-md cursor-pointer">
+
+                Accetto e prenota
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    /* ==========================================================
+       UTILITÀ DATE
+       ========================================================== */
+
+    function getLocalDateString(date = new Date()) {
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        return `${year}-${month}-${day}`;
+    }
+
+
+    /* ==========================================================
+       CALENDARIO PRENOTAZIONE
+       ========================================================== */
+
+    let currentDate = new Date();
+
+    let selectedDateStr = '';
+
+
+    const mesi = [
+        "Gennaio",
+        "Febbraio",
+        "Marzo",
+        "Aprile",
+        "Maggio",
+        "Giugno",
+        "Luglio",
+        "Agosto",
+        "Settembre",
+        "Ottobre",
+        "Novembre",
+        "Dicembre"
+    ];
+
+
+    function renderCalendar() {
+
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+
+
+        document.getElementById('current-month-year').textContent =
+            `${mesi[month]} ${year}`;
+
+
+        const grid = document.getElementById('calendar-grid');
+
+        grid.innerHTML = '';
+
+
+        const firstDayIndex =
+            new Date(year, month, 1).getDay();
+
+
+        let startingDay =
+            firstDayIndex === 0
+                ? 6
+                : firstDayIndex - 1;
+
+
+        const totalDays =
+            new Date(year, month + 1, 0).getDate();
+
+
+        const prevTotalDays =
+            new Date(year, month, 0).getDate();
+
+
+        const todayStr =
+            getLocalDateString();
+
+
+        /* Giorni mese precedente */
+
+        for (let i = startingDay - 1; i >= 0; i--) {
+
+            const dayNum =
+                prevTotalDays - i;
+
+
+            const cell =
+                document.createElement('div');
+
+
+            cell.className =
+                'text-gray-300 text-xs py-1.5 text-center select-none';
+
+
+            cell.textContent =
+                dayNum;
+
+
+            grid.appendChild(cell);
         }
 
-        function cambiaMese(direzione) {
-            currentDate.setMonth(currentDate.getMonth() + direzione);
-            renderCalendar();
+
+        /* Giorni del mese */
+
+        for (let d = 1; d <= totalDays; d++) {
+
+            const cell =
+                document.createElement('div');
+
+
+            const monthFormatted =
+                String(month + 1).padStart(2, '0');
+
+
+            const dayFormatted =
+                String(d).padStart(2, '0');
+
+
+            const dateStr =
+                `${year}-${monthFormatted}-${dayFormatted}`;
+
+
+            cell.className =
+                'text-xs py-2 text-center rounded-full cursor-pointer transition font-medium';
+
+
+            const isPast =
+                dateStr < todayStr;
+
+
+            const isSelected =
+                dateStr === selectedDateStr;
+
+
+            const isToday =
+                dateStr === todayStr;
+
+
+            if (isPast) {
+
+                cell.classList.add(
+                    'text-gray-300',
+                    'cursor-not-allowed'
+                );
+
+            } else {
+
+                cell.classList.add(
+                    'text-gray-700',
+                    'hover:bg-[#fce7f3]',
+                    'hover:text-[#880E4F]'
+                );
+
+
+                cell.onclick = () =>
+                    selezionaData(dateStr);
+            }
+
+
+            if (isSelected) {
+
+                cell.className =
+                    'text-xs py-2 text-center rounded-full cursor-pointer font-bold bg-[#D81B60] text-white shadow-sm';
+
+            } else if (isToday && !isPast) {
+
+                cell.classList.add(
+                    'border',
+                    'border-[#D81B60]',
+                    'text-[#D81B60]',
+                    'font-bold'
+                );
+            }
+
+
+            cell.textContent =
+                d;
+
+
+            grid.appendChild(cell);
+        }
+    }
+
+
+    function cambiaMese(direzione) {
+
+        currentDate.setMonth(
+            currentDate.getMonth() + direzione
+        );
+
+
+        renderCalendar();
+    }
+
+
+    function selezionaData(dateStr) {
+
+        selectedDateStr =
+            dateStr;
+
+
+        document.getElementById('data-input').value =
+            dateStr;
+
+
+        renderCalendar();
+
+
+        caricaOrariDisponibili();
+    }
+
+
+    function impostaOggi() {
+
+        currentDate =
+            new Date();
+
+
+        selezionaData(
+            getLocalDateString()
+        );
+    }
+
+
+    /* ==========================================================
+       TAB
+       ========================================================== */
+
+    function mostraSezione(sezione) {
+
+        const sPrenota =
+            document.getElementById('sezione-prenota');
+
+        const sInfo =
+            document.getElementById('sezione-info');
+
+        const sRegolamento =
+            document.getElementById('sezione-regolamento');
+
+
+        const btnPrenota =
+            document.getElementById('btn-prenota');
+
+        const btnInfo =
+            document.getElementById('btn-info');
+
+        const btnRegolamento =
+            document.getElementById('btn-regolamento');
+
+
+        sPrenota.classList.add('hidden');
+        sInfo.classList.add('hidden');
+        sRegolamento.classList.add('hidden');
+
+
+        const inactiveClass =
+            "py-2.5 px-5 text-xs font-semibold rounded-xl bg-[#fff0f5] text-[#880E4F] border border-[#f9d1df] hover:bg-[#fce7f3] transition cursor-pointer";
+
+
+        const activeClass =
+            "py-2.5 px-5 text-xs font-bold rounded-xl bg-gradient-to-r from-[#D81B60] to-[#AD1457] text-white shadow-sm transition cursor-pointer";
+
+
+        btnPrenota.className =
+            inactiveClass;
+
+        btnInfo.className =
+            inactiveClass;
+
+        btnRegolamento.className =
+            inactiveClass;
+
+
+        if (sezione === 'prenota') {
+
+            sPrenota.classList.remove('hidden');
+
+            btnPrenota.className =
+                activeClass;
+
+        } else if (sezione === 'info') {
+
+            sInfo.classList.remove('hidden');
+
+            btnInfo.className =
+                activeClass;
+
+        } else if (sezione === 'regolamento') {
+
+            sRegolamento.classList.remove('hidden');
+
+            btnRegolamento.className =
+                activeClass;
+        }
+    }
+
+
+    /* ==========================================================
+       TRATTAMENTO
+       ========================================================== */
+
+    function gestisciCambioTrattamento(valore) {
+
+        const box =
+            document.getElementById("box_coppia");
+
+
+        const nome2 =
+            document.getElementById("nome_2");
+
+
+        const cognome2 =
+            document.getElementById("cognome_2");
+
+
+        const cf2 =
+            document.getElementById("cf_2");
+
+
+        if (valore.toLowerCase().includes("coppia")) {
+
+            box.classList.remove("hidden");
+
+
+            nome2.required =
+                true;
+
+
+            cognome2.required =
+                true;
+
+
+            cf2.required =
+                true;
+
+        } else {
+
+            box.classList.add("hidden");
+
+
+            nome2.required =
+                false;
+
+
+            cognome2.required =
+                false;
+
+
+            cf2.required =
+                false;
+
+
+            nome2.value =
+                "";
+
+
+            cognome2.value =
+                "";
+
+
+            cf2.value =
+                "";
         }
 
-        function selezionaData(dateStr) {
-            selectedDateStr = dateStr;
-            document.getElementById('data-input').value = dateStr;
-            renderCalendar();
+
+        document
+            .querySelectorAll('.treatment-card')
+            .forEach(card => {
+
+                card.classList.remove(
+                    'border-[#D81B60]',
+                    'bg-[#fff0f5]'
+                );
+
+
+                card.classList.add(
+                    'border-[#f9d1df]',
+                    'bg-white'
+                );
+            });
+
+
+        const activeCard =
+            document.getElementById(
+                `card-${valore.replace(/\s+/g, '-')}`
+            );
+
+
+        if (activeCard) {
+
+            activeCard.classList.remove(
+                'border-[#f9d1df]',
+                'bg-white'
+            );
+
+
+            activeCard.classList.add(
+                'border-[#D81B60]',
+                'bg-[#fff0f5]'
+            );
+        }
+
+
+        if (
+            document.getElementById('data-input').value
+        ) {
+
             caricaOrariDisponibili();
         }
+    }
 
-        function impostaOggi() {
-            currentDate = new Date();
-            selezionaData(currentDate.toISOString().split('T')[0]);
+
+    /* ==========================================================
+       ORARI DISPONIBILI
+       ========================================================== */
+
+    async function caricaOrariDisponibili() {
+
+        const dataVal =
+            document.getElementById('data-input').value;
+
+
+        const trattamentoVal =
+            document.querySelector(
+                'input[name="trattamento"]:checked'
+            )?.value || '';
+
+
+        const container =
+            document.getElementById('orari-container');
+
+
+        const oraInput =
+            document.getElementById('ora-input');
+
+
+        container.innerHTML =
+            '<p class="text-xs text-gray-400 text-center col-span-2 py-6">Caricamento orari...</p>';
+
+
+        oraInput.value =
+            '';
+
+
+        if (!dataVal) {
+
+            container.innerHTML =
+                '<p class="text-xs text-gray-400 text-center col-span-2 py-6">Seleziona prima una data...</p>';
+
+            return;
         }
 
-        // Gestione Cambio Tab
-        function mostraSezione(sezione) {
-            const sPrenota = document.getElementById('sezione-prenota');
-            const sInfo = document.getElementById('sezione-info');
-            const sRegolamento = document.getElementById('sezione-regolamento');
-            
-            const btnPrenota = document.getElementById('btn-prenota');
-            const btnInfo = document.getElementById('btn-info');
-            const btnRegolamento = document.getElementById('btn-regolamento');
 
-            sPrenota.classList.add('hidden');
-            sInfo.classList.add('hidden');
-            sRegolamento.classList.add('hidden');
+        try {
 
-            const inactiveClass = "py-2.5 px-5 text-xs font-semibold rounded-xl bg-[#fff0f5] text-[#880E4F] border border-[#f9d1df] hover:bg-[#fce7f3] transition cursor-pointer";
-            const activeClass = "py-2.5 px-5 text-xs font-bold rounded-xl bg-gradient-to-r from-[#D81B60] to-[#AD1457] text-white shadow-sm transition cursor-pointer";
+            const response =
+                await fetch(
+                    `/api/orari?data=${encodeURIComponent(dataVal)}&trattamento=${encodeURIComponent(trattamentoVal)}`
+                );
 
-            btnPrenota.className = inactiveClass;
-            btnInfo.className = inactiveClass;
-            btnRegolamento.className = inactiveClass;
 
-            if (sezione === 'prenota') {
-                sPrenota.classList.remove('hidden');
-                btnPrenota.className = activeClass;
-            } else if (sezione === 'info') {
-                sInfo.classList.remove('hidden');
-                btnInfo.className = activeClass;
-            } else if (sezione === 'regolamento') {
-                sRegolamento.classList.remove('hidden');
-                btnRegolamento.className = activeClass;
-            }
-        }
+            if (!response.ok) {
 
-        // Gestione Trattamento e Box Coppia
-        function gestisciCambioTrattamento(valore) {
-            const box = document.getElementById("box_coppia");
-            const nome2 = document.getElementById("nome_2");
-            const cognome2 = document.getElementById("cognome_2");
-            const cf2 = document.getElementById("cf_2");
-
-            if (valore.toLowerCase().includes("coppia")) {
-                box.classList.remove("hidden");
-                nome2.required = true;
-                cognome2.required = true;
-                cf2.required = true;
-            } else {
-                box.classList.add("hidden");
-                nome2.required = false;
-                cognome2.required = false;
-                cf2.required = false;
-                nome2.value = "";
-                cognome2.value = "";
-                cf2.value = "";
+                throw new Error(
+                    "Errore API"
+                );
             }
 
-            document.querySelectorAll('.treatment-card').forEach(card => {
-                card.classList.remove('border-[#D81B60]', 'bg-[#fff0f5]');
-                card.classList.add('border-[#f9d1df]', 'bg-white');
-            });
-            const activeCard = document.getElementById(`card-${valore.replace(/\s+/g, '-')}`);
-            if (activeCard) {
-                activeCard.classList.remove('border-[#f9d1df]', 'bg-white');
-                activeCard.classList.add('border-[#D81B60]', 'bg-[#fff0f5]');
-            }
 
-            if (document.getElementById('data-input').value) {
-                caricaOrariDisponibili();
-            }
-        }
+            const data =
+                await response.json();
 
-        // Chiamata API per caricare gli orari dinamici
-        async function caricaOrariDisponibili() {
-            const dataVal = document.getElementById('data-input').value;
-            const trattamentoVal = document.querySelector('input[name="trattamento"]:checked')?.value || '';
-            const container = document.getElementById('orari-container');
-            const oraInput = document.getElementById('ora-input');
-            
-            container.innerHTML = '<p class="text-xs text-gray-400 text-center col-span-2 py-6">Caricamento orari...</p>';
-            oraInput.value = '';
 
-            if (!dataVal) {
-                container.innerHTML = '<p class="text-xs text-gray-400 text-center col-span-2 py-6">Seleziona prima una data...</p>';
-                return;
-            }
+            container.innerHTML =
+                '';
 
-            try {
-                const response = await fetch(`/api/orari?data=${dataVal}&trattamento=${encodeURIComponent(trattamentoVal)}`);
-                const data = await response.json();
 
-                container.innerHTML = '';
+            if (
+                data.orari &&
+                data.orari.length > 0
+            ) {
 
-                if (data.orari && data.orari.length > 0) {
-                    data.orari.forEach(o => {
-                        const btn = document.createElement('button');
-                        btn.type = 'button';
-                        btn.className = 'py-2 px-3 text-xs font-semibold rounded-xl border border-[#f9d1df] bg-white text-gray-700 hover:border-[#D81B60] hover:bg-[#fff0f5] transition cursor-pointer text-center';
-                        btn.textContent = o;
-                        btn.onclick = () => {
-                            container.querySelectorAll('button').forEach(b => {
-                                b.className = 'py-2 px-3 text-xs font-semibold rounded-xl border border-[#f9d1df] bg-white text-gray-700 hover:border-[#D81B60] hover:bg-[#fff0f5] transition cursor-pointer text-center';
-                            });
-                            btn.className = 'py-2 px-3 text-xs font-semibold rounded-xl bg-[#D81B60] text-white shadow-sm transition cursor-pointer text-center';
-                            oraInput.value = o;
+                data.orari.forEach(o => {
+
+                    const btn =
+                        document.createElement('button');
+
+
+                    btn.type =
+                        'button';
+
+
+                    btn.className =
+                        'py-2 px-3 text-xs font-semibold rounded-xl border border-[#f9d1df] bg-white text-gray-700 hover:border-[#D81B60] hover:bg-[#fff0f5] transition cursor-pointer text-center';
+
+
+                    btn.textContent =
+                        o;
+
+
+                    btn.onclick =
+                        () => {
+
+                            container
+                                .querySelectorAll('button')
+                                .forEach(b => {
+
+                                    b.className =
+                                        'py-2 px-3 text-xs font-semibold rounded-xl border border-[#f9d1df] bg-white text-gray-700 hover:border-[#D81B60] hover:bg-[#fff0f5] transition cursor-pointer text-center';
+                                });
+
+
+                            btn.className =
+                                'py-2 px-3 text-xs font-semibold rounded-xl bg-[#D81B60] text-white shadow-sm transition cursor-pointer text-center';
+
+
+                            oraInput.value =
+                                o;
                         };
-                        container.appendChild(btn);
-                    });
-                } else {
-                    container.innerHTML = '<p class="text-xs text-gray-400 text-center col-span-2 py-6">Nessun orario disponibile</p>';
+
+
+                    container.appendChild(
+                        btn
+                    );
+                });
+
+            } else {
+
+                container.innerHTML =
+                    '<p class="text-xs text-gray-400 text-center col-span-2 py-6">Nessun orario disponibile</p>';
+            }
+
+        } catch (err) {
+
+            console.error(err);
+
+
+            container.innerHTML =
+                '<p class="text-xs text-red-500 text-center col-span-2 py-6">Errore nel caricamento orari</p>';
+        }
+    }
+
+
+    /* ==========================================================
+       MODAL REGOLE
+       ========================================================== */
+
+    function mostraRegolamento() {
+
+        const form =
+            document.getElementById('formPrenotazione');
+
+
+        if (!form.checkValidity()) {
+
+            form.reportValidity();
+
+            return;
+        }
+
+
+        document
+            .getElementById('rulesModal')
+            .classList.remove('hidden');
+    }
+
+
+    function chiudiRegolamento() {
+
+        document
+            .getElementById('rulesModal')
+            .classList.add('hidden');
+    }
+
+
+    function confermaPrenotazione() {
+
+        document
+            .getElementById('formPrenotazione')
+            .submit();
+    }
+
+
+    /* ==========================================================
+       MIE PRENOTAZIONI
+       ========================================================== */
+
+    let miePrenotazioni = [];
+
+    let mesePrenotazioni =
+        new Date();
+
+
+    let giornoSelezionatoPrenotazione =
+        null;
+
+
+    /* ----------------------------------------------------------
+       CARICA DAL DATABASE
+       ---------------------------------------------------------- */
+
+    async function caricaMiePrenotazioni() {
+
+        const calendario =
+            document.getElementById(
+                "calendario-mie-prenotazioni"
+            );
+
+
+        const lista =
+            document.getElementById(
+                "lista-prossime-prenotazioni"
+            );
+
+
+        if (!calendario || !lista) {
+            return;
+        }
+
+
+        calendario.innerHTML = `
+            <div class="col-span-7 text-center py-6 text-xs text-gray-500">
+                Caricamento delle tue prenotazioni...
+            </div>
+        `;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/mie-prenotazioni"
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Errore nel caricamento delle prenotazioni"
+                );
+            }
+
+
+            const data =
+                await response.json();
+
+
+            miePrenotazioni =
+                data.prenotazioni || [];
+
+
+            renderCalendarioPrenotazioni();
+
+            renderProssimePrenotazioni();
+
+
+        } catch (error) {
+
+            console.error(
+                "Errore prenotazioni:",
+                error
+            );
+
+
+            calendario.innerHTML = `
+                <div class="col-span-7 text-center py-6">
+                    <p class="text-xs text-red-500">
+                        ⚠️ Impossibile caricare le tue prenotazioni.
+                    </p>
+                    <button
+                        type="button"
+                        onclick="caricaMiePrenotazioni()"
+                        class="mt-2 text-xs text-[#D81B60] font-semibold hover:underline">
+                        Riprova
+                    </button>
+                </div>
+            `;
+
+
+            lista.innerHTML =
+                "";
+        }
+    }
+
+
+    /* ----------------------------------------------------------
+       CALENDARIO
+       ---------------------------------------------------------- */
+
+    function renderCalendarioPrenotazioni() {
+
+        const calendario =
+            document.getElementById(
+                "calendario-mie-prenotazioni"
+            );
+
+
+        const titolo =
+            document.getElementById(
+                "mese-prenotazioni"
+            );
+
+
+        if (!calendario || !titolo) {
+            return;
+        }
+
+
+        const anno =
+            mesePrenotazioni.getFullYear();
+
+
+        const mese =
+            mesePrenotazioni.getMonth();
+
+
+        titolo.textContent =
+            `${mesi[mese]} ${anno}`;
+
+
+        calendario.innerHTML =
+            "";
+
+
+        const primoGiorno =
+            new Date(
+                anno,
+                mese,
+                1
+            );
+
+
+        const offset =
+            (primoGiorno.getDay() + 6) % 7;
+
+
+        const giorniNelMese =
+            new Date(
+                anno,
+                mese + 1,
+                0
+            ).getDate();
+
+
+        /* Celle vuote */
+
+        for (
+            let i = 0;
+            i < offset;
+            i++
+        ) {
+
+            const vuoto =
+                document.createElement("div");
+
+
+            vuoto.className =
+                "h-10";
+
+
+            calendario.appendChild(
+                vuoto
+            );
+        }
+
+
+        /* Giorni */
+
+        for (
+            let giorno = 1;
+            giorno <= giorniNelMese;
+            giorno++
+        ) {
+
+            const dataString =
+                `${anno}-${String(mese + 1).padStart(2, "0")}-${String(giorno).padStart(2, "0")}`;
+
+
+            const prenotazioniGiorno =
+                miePrenotazioni.filter(
+                    p => p.data === dataString
+                );
+
+
+            const bottone =
+                document.createElement("button");
+
+
+            bottone.type =
+                "button";
+
+
+            bottone.className =
+                "relative h-10 rounded-xl text-xs font-medium bg-white text-gray-700 hover:bg-[#fff0f5] transition";
+
+
+            const oggiString =
+                getLocalDateString();
+
+
+            const isToday =
+                dataString === oggiString;
+
+
+            if (isToday) {
+
+                bottone.classList.add(
+                    "border",
+                    "border-[#D81B60]",
+                    "text-[#D81B60]",
+                    "font-bold"
+                );
+            }
+
+
+            /* Giorno con prenotazione */
+
+            if (
+                prenotazioniGiorno.length > 0
+            ) {
+
+                bottone.classList.add(
+                    "bg-[#fce7f3]",
+                    "text-[#880E4F]",
+                    "font-bold"
+                );
+            }
+
+
+            /* Numero giorno */
+
+            const numero =
+                document.createElement("span");
+
+
+            numero.textContent =
+                giorno;
+
+
+            bottone.appendChild(
+                numero
+            );
+
+
+            /* Pallino */
+
+            if (
+                prenotazioniGiorno.length > 0
+            ) {
+
+                const pallino =
+                    document.createElement("span");
+
+
+                pallino.className =
+                    "absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#D81B60]";
+
+
+                bottone.appendChild(
+                    pallino
+                );
+            }
+
+
+            bottone.onclick =
+                () => {
+
+                    giornoSelezionatoPrenotazione =
+                        dataString;
+
+
+                    mostraDettaglioPrenotazione(
+                        dataString
+                    );
+                };
+
+
+            calendario.appendChild(
+                bottone
+            );
+        }
+    }
+
+
+    /* ----------------------------------------------------------
+       CAMBIA MESE
+       ---------------------------------------------------------- */
+
+    function cambiaMesePrenotazioni(
+        direzione
+    ) {
+
+        mesePrenotazioni.setMonth(
+            mesePrenotazioni.getMonth() + direzione
+        );
+
+
+        renderCalendarioPrenotazioni();
+
+
+        if (
+            giornoSelezionatoPrenotazione
+        ) {
+
+            const meseSelezionato =
+                giornoSelezionatoPrenotazione.substring(
+                    0,
+                    7
+                );
+
+
+            const meseAttuale =
+                `${mesePrenotazioni.getFullYear()}-${String(mesePrenotazioni.getMonth() + 1).padStart(2, "0")}`;
+
+
+            if (
+                meseSelezionato === meseAttuale
+            ) {
+
+                mostraDettaglioPrenotazione(
+                    giornoSelezionatoPrenotazione
+                );
+
+            } else {
+
+                document.getElementById(
+                    "dettaglio-prenotazione"
+                ).innerHTML = "";
+            }
+        }
+    }
+
+
+    /* ----------------------------------------------------------
+       DETTAGLIO GIORNO
+       ---------------------------------------------------------- */
+
+    function mostraDettaglioPrenotazione(
+        dataString
+    ) {
+
+        const contenitore =
+            document.getElementById(
+                "dettaglio-prenotazione"
+            );
+
+
+        if (!contenitore) {
+            return;
+        }
+
+
+        const prenotazioni =
+            miePrenotazioni.filter(
+                p => p.data === dataString
+            );
+
+
+        if (
+            prenotazioni.length === 0
+        ) {
+
+            contenitore.innerHTML = `
+                <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-center">
+
+                    <p class="text-xs text-gray-500">
+                        Nessuna prenotazione per questo giorno.
+                    </p>
+
+                </div>
+            `;
+
+
+            return;
+        }
+
+
+        const data =
+            new Date(
+                dataString + "T12:00:00"
+            );
+
+
+        const dataFormattata =
+            data.toLocaleDateString(
+                "it-IT",
+                {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long"
                 }
-            } catch (err) {
-                container.innerHTML = '<p class="text-xs text-red-500 text-center col-span-2 py-6">Errore nel caricamento orari</p>';
-            }
+            );
+
+
+        contenitore.innerHTML = `
+
+            <div class="bg-[#fff0f5] border border-[#f9d1df] rounded-2xl p-4">
+
+                <h3 class="text-sm font-bold text-pink-900 capitalize mb-3">
+                    📅 ${dataFormattata}
+                </h3>
+
+
+                <div class="space-y-3">
+
+                    ${prenotazioni
+                        .map(p =>
+                            creaCardPrenotazione(p)
+                        )
+                        .join("")
+                    }
+
+                </div>
+
+            </div>
+
+        `;
+    }
+
+
+    /* ----------------------------------------------------------
+       CARD PRENOTAZIONE
+       ---------------------------------------------------------- */
+
+    function creaCardPrenotazione(p) {
+
+        let statoClasse =
+            "bg-yellow-100 text-yellow-800";
+
+
+        let statoIcona =
+            "🟡";
+
+
+        if (
+            p.stato === "presente"
+        ) {
+
+            statoClasse =
+                "bg-green-100 text-green-800";
+
+
+            statoIcona =
+                "✅";
+
+        } else if (
+            p.stato === "confermata"
+        ) {
+
+            statoClasse =
+                "bg-blue-100 text-blue-800";
+
+
+            statoIcona =
+                "📌";
+
+        } else if (
+            p.stato === "cancellata"
+        ) {
+
+            statoClasse =
+                "bg-red-100 text-red-800";
+
+
+            statoIcona =
+                "❌";
         }
 
-        // Funzioni per gestire il modale delle regole
-        function mostraRegolamento() {
-            // Esegue prima la validazione HTML5 nativa del form (data, ora, campi obbligatori)
-            const form = document.getElementById('formPrenotazione');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-            document.getElementById('rulesModal').classList.remove('hidden');
+
+        return `
+
+            <div class="bg-white rounded-2xl border border-[#f9d1df] p-4 shadow-sm">
+
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+
+                    <div>
+
+                        <div class="text-xl font-bold text-[#D81B60]">
+                            ${p.ora}
+                        </div>
+
+
+                        <div class="text-sm font-semibold text-gray-800">
+                            ${p.trattamento}
+                        </div>
+
+
+                        ${
+                            p.is_coppia
+                            ?
+                            `
+                                <div class="text-[11px] text-gray-500 mt-1">
+                                    👥 Lezione di Coppia
+                                </div>
+                            `
+                            :
+                            ""
+                        }
+
+
+                        <span class="inline-block mt-2 px-2 py-1 rounded-full text-[10px] font-semibold ${statoClasse}">
+
+                            ${statoIcona}
+
+                            ${p.stato}
+
+                        </span>
+
+                    </div>
+
+
+                    <a
+                        href="/download-ics?trattamento=${encodeURIComponent(p.trattamento)}&data=${encodeURIComponent(p.data)}&ora=${encodeURIComponent(p.ora)}"
+                        class="inline-flex justify-center items-center gap-2 bg-gradient-to-r from-[#D81B60] to-[#AD1457] text-white text-xs font-semibold px-4 py-2.5 rounded-xl hover:opacity-95 transition shadow-sm">
+
+                        📲 Aggiungi al calendario
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        `;
+    }
+
+
+    /* ----------------------------------------------------------
+       PROSSIME LEZIONI
+       ---------------------------------------------------------- */
+
+    function renderProssimePrenotazioni() {
+
+        const lista =
+            document.getElementById(
+                "lista-prossime-prenotazioni"
+            );
+
+
+        if (!lista) {
+            return;
         }
 
-        function chiudiRegolamento() {
-            document.getElementById('rulesModal').classList.add('hidden');
+
+        const oggi =
+            getLocalDateString();
+
+
+        const prossime =
+            miePrenotazioni
+                .filter(p => {
+
+                    return (
+                        p.data >= oggi &&
+                        p.stato !== "cancellata"
+                    );
+
+                })
+                .sort((a, b) => {
+
+                    const dataA =
+                        new Date(
+                            `${a.data}T${a.ora}:00`
+                        );
+
+
+                    const dataB =
+                        new Date(
+                            `${b.data}T${b.ora}:00`
+                        );
+
+
+                    return dataA - dataB;
+
+                })
+                .slice(0, 5);
+
+
+        if (
+            prossime.length === 0
+        ) {
+
+            lista.innerHTML = `
+
+                <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-center">
+
+                    <p class="text-xs text-gray-500">
+                        Non hai ancora prenotazioni future.
+                    </p>
+
+                </div>
+
+            `;
+
+
+            return;
         }
 
-        function confermaPrenotazione() {
-            document.getElementById('formPrenotazione').submit();
-        }
 
-        // Inizializzazione automatica all'avvio
-        document.addEventListener("DOMContentLoaded", () => {
+        lista.innerHTML =
+            prossime.map(p => {
+
+                const data =
+                    new Date(
+                        p.data + "T12:00:00"
+                    );
+
+
+                const dataFormattata =
+                    data.toLocaleDateString(
+                        "it-IT",
+                        {
+                            weekday: "short",
+                            day: "numeric",
+                            month: "long"
+                        }
+                    );
+
+
+                return `
+
+                    <div class="bg-white border border-[#f9d1df] rounded-2xl p-4 shadow-sm">
+
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+
+
+                            <div>
+
+                                <div class="text-xs font-semibold text-[#D81B60] uppercase">
+                                    ${dataFormattata}
+                                </div>
+
+
+                                <div class="text-lg font-bold text-gray-900">
+                                    ${p.ora}
+                                </div>
+
+
+                                <div class="text-sm text-gray-700">
+                                    ${p.trattamento}
+                                </div>
+
+
+                                ${
+                                    p.is_coppia
+                                    ?
+                                    `
+                                        <div class="text-[10px] text-gray-400 mt-1">
+                                            👥 Lezione di Coppia
+                                        </div>
+                                    `
+                                    :
+                                    ""
+                                }
+
+                            </div>
+
+
+                            <a
+                                href="/download-ics?trattamento=${encodeURIComponent(p.trattamento)}&data=${encodeURIComponent(p.data)}&ora=${encodeURIComponent(p.ora)}"
+                                class="inline-flex justify-center items-center gap-2 bg-[#fff0f5] border border-[#f9d1df] text-[#D81B60] text-xs font-semibold px-4 py-2.5 rounded-xl hover:bg-[#fce7f3] transition">
+
+                                📅 Calendario
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                `;
+
+            }).join("");
+    }
+
+
+    /* ==========================================================
+       INIZIALIZZAZIONE
+       ========================================================== */
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        () => {
+
+            /* Calendario prenotazione */
+
             renderCalendar();
-            const defaultCard = document.getElementById('card-Pilates-Individuale');
+
+
+            /* Card trattamento predefinita */
+
+            const defaultCard =
+                document.getElementById(
+                    'card-Pilates-Individuale'
+                );
+
+
             if (defaultCard) {
-                defaultCard.classList.remove('border-[#f9d1df]', 'bg-white');
-                defaultCard.classList.add('border-[#D81B60]', 'bg-[#fff0f5]');
+
+                defaultCard.classList.remove(
+                    'border-[#f9d1df]',
+                    'bg-white'
+                );
+
+
+                defaultCard.classList.add(
+                    'border-[#D81B60]',
+                    'bg-[#fff0f5]'
+                );
             }
-        });
-    </script>
+
+
+            /* Calendario personale */
+
+            mesePrenotazioni =
+                new Date();
+
+
+            renderCalendarioPrenotazioni();
+
+
+            caricaMiePrenotazioni();
+
+        }
+    );
+
+</script>
+
 </body>
 </html>
