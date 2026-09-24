@@ -1,1273 +1,1471 @@
 <!DOCTYPE html>
+
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Postura & Pilates - Pannello Amministrazione</title>
+```
+<title>Postura & Pilates - Pannello Amministrazione</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com"></script>
 
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
-    <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+<style>
+    body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .font-serif-title {
+        font-family: 'Playfair Display', serif;
+    }
+
+    .modal-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .modal-scroll::-webkit-scrollbar-track {
+        background: #fff0f5;
+    }
+
+    .modal-scroll::-webkit-scrollbar-thumb {
+        background: #f2bfd1;
+        border-radius: 10px;
+    }
+
+    .history-scroll::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    .history-scroll::-webkit-scrollbar-track {
+        background: #fff9fb;
+    }
+
+    .history-scroll::-webkit-scrollbar-thumb {
+        background: #f2bfd1;
+        border-radius: 10px;
+    }
+
+    .spinner {
+        border: 2px solid #fce7f3;
+        border-top: 2px solid #D81B60;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        animation: spin 0.7s linear infinite;
+        display: inline-block;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
         }
+    }
+</style>
+```
 
-        .font-serif-title {
-            font-family: 'Playfair Display', serif;
-        }
-
-        .modal-scroll::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .modal-scroll::-webkit-scrollbar-track {
-            background: #fff0f5;
-        }
-
-        .modal-scroll::-webkit-scrollbar-thumb {
-            background: #f2bfd1;
-            border-radius: 10px;
-        }
-    </style>
 </head>
 
 <body class="bg-[#fff9fb] min-h-screen p-4 md:p-8">
 
 <div class="max-w-7xl mx-auto space-y-8">
 
-    <!-- ========================================================= -->
-    <!-- HEADER -->
-    <!-- ========================================================= -->
+```
+<!-- ========================================================= -->
+<!-- HEADER -->
+<!-- ========================================================= -->
 
-    <div class="bg-white border border-[#f9d1df] p-6 md:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+<div class="bg-white border border-[#f9d1df] p-6 md:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
 
-        <div class="text-center md:text-left">
-            <h1 class="text-2xl font-serif-title font-bold text-pink-900 tracking-tight">
-                Postura e Pilates
-            </h1>
+    <div class="text-center md:text-left">
 
-            <p class="text-xs text-gray-500 mt-1">
-                ⚙️ Pannello Amministrazione: Gestione Prenotazioni, Utenti e Calendario
-            </p>
-        </div>
+        <h1 class="text-2xl font-serif-title font-bold text-pink-900 tracking-tight">
+            Postura e Pilates
+        </h1>
 
-        <a href="/logout"
-           class="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-xl text-xs transition shadow-sm">
-            Esci dal Pannello
-        </a>
+        <p class="text-xs text-gray-500 mt-1">
+            ⚙️ Pannello Amministrazione: Gestione Prenotazioni, Utenti e Calendario
+        </p>
 
     </div>
 
+    <a href="/logout"
+       class="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-xl text-xs transition shadow-sm">
+        Esci dal Pannello
+    </a>
 
-    <!-- ========================================================= -->
-    <!-- QR CODE -->
-    <!-- ========================================================= -->
+</div>
 
-    <div class="bg-[#fff0f5] border border-[#f9d1df] rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md">
 
-        <div class="space-y-2 text-center md:text-left">
+<!-- ========================================================= -->
+<!-- QR CODE -->
+<!-- ========================================================= -->
 
-            <span class="bg-[#fce7f3] text-[#880E4F] text-xs font-semibold px-2.5 py-0.5 rounded-full uppercase">
-                Ingresso Studio
-            </span>
+<div class="bg-[#fff0f5] border border-[#f9d1df] rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md">
 
-            <h2 class="text-xl font-serif-title font-bold text-pink-900">
-                📱 QR Code Fisso Reception
-            </h2>
+    <div class="space-y-2 text-center md:text-left">
 
-            <p class="text-sm text-gray-700 max-w-xl">
-                Questo è il QR Code unico per il check-in.
-                Stampalo o mostralo su un tablet/iPad all'ingresso dello studio.
-                I clienti lo inquadreranno con il telefono per confermare la loro presenza.
-            </p>
+        <span class="bg-[#fce7f3] text-[#880E4F] text-xs font-semibold px-2.5 py-0.5 rounded-full uppercase">
+            Ingresso Studio
+        </span>
 
-            <div class="pt-2 flex flex-wrap gap-3 justify-center md:justify-start">
-
-                <a href="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={{ request.base_url }}checkin"
-                   target="_blank"
-                   class="inline-flex items-center gap-2 bg-gradient-to-r from-[#D81B60] to-[#AD1457] hover:opacity-95 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-md">
-                    🖨️ Stampare / Ingrandire QR Code
-                </a>
-
-                <a href="/checkin"
-                   target="_blank"
-                   class="inline-flex items-center gap-2 bg-white hover:bg-[#fff0f5] text-[#D81B60] border border-[#f9d1df] text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-sm">
-                    🔗 Apri Pagina Check-in
-                </a>
-
-            </div>
-
-        </div>
-
-        <div class="bg-white p-3 rounded-2xl border border-[#f9d1df] shadow-sm flex flex-col items-center shrink-0">
-
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ request.base_url }}checkin"
-                 alt="QR Code Fisso Reception"
-                 class="w-32 h-32 rounded-lg">
-
-            <span class="text-[11px] text-gray-500 font-mono mt-2">
-                URL: /checkin
-            </span>
-
-        </div>
-
-    </div>
-
-
-    <!-- ========================================================= -->
-    <!-- PRENOTAZIONI -->
-    <!-- ========================================================= -->
-
-    <div class="bg-white rounded-3xl shadow-xl border border-[#f9d1df] p-6 md:p-8">
-
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-
-            <h2 class="text-lg font-serif-title font-bold text-pink-900">
-                📅 Elenco Prenotazioni
-            </h2>
-
-            <form method="GET"
-                  action="/admin"
-                  class="flex items-center gap-2 bg-[#fff9fb] p-2 rounded-xl border border-[#f9d1df]">
-
-                <label for="data"
-                       class="text-xs font-semibold text-gray-700">
-                    Filtra data:
-                </label>
-
-                <input type="date"
-                       id="data"
-                       name="data"
-                       value="{{ data_selezionata }}"
-                       onchange="this.form.submit()"
-                       class="text-sm border border-[#f2c2d5] rounded-xl px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
-
-                <noscript>
-                    <button type="submit"
-                            class="text-xs bg-gradient-to-r from-[#D81B60] to-[#AD1457] text-white px-3 py-1 rounded-xl">
-                        Cerca
-                    </button>
-                </noscript>
-
-            </form>
-
-        </div>
-
-
-        <div class="overflow-x-auto">
-
-            <table class="w-full text-left border-collapse">
-
-                <thead>
-
-                    <tr class="bg-[#fff0f5] border-b border-[#f9d1df] text-xs font-semibold text-[#880E4F] uppercase tracking-wider">
-
-                        <th class="p-3">ID</th>
-                        <th class="p-3">Data e Ora</th>
-                        <th class="p-3">Trattamento</th>
-                        <th class="p-3">Partecipanti (Nome / CF)</th>
-                        <th class="p-3">Stato Presenza</th>
-                        <th class="p-3 text-center">Azioni</th>
-
-                    </tr>
-
-                </thead>
-
-
-                <tbody class="divide-y divide-[#f9d1df] text-sm">
-
-                {% for p in prenotazioni %}
-
-                    <tr class="hover:bg-[#fff9fb]">
-
-                        <td class="p-3 font-semibold text-gray-600">
-                            #{{ p[0] }}
-                        </td>
-
-                        <td class="p-3">
-
-                            <div class="font-medium text-gray-900">
-                                {{ p[2] }}
-                            </div>
-
-                            <div class="text-xs text-gray-500">
-                                Ore {{ p[3] }}
-                            </div>
-
-                        </td>
-
-                        <td class="p-3 font-medium text-gray-800">
-                            {{ p[4] }}
-                        </td>
-
-
-                        <td class="p-3">
-
-                            <div class="bg-[#fff9fb] p-2 rounded-xl border border-[#f9d1df] mb-1">
-
-                                <span class="text-xs font-bold text-[#D81B60] uppercase">
-                                    Persona 1:
-                                </span>
-
-                                <span class="font-semibold text-gray-800">
-                                    {{ p[1] }}
-                                </span>
-
-                                <div class="text-xs font-mono text-gray-500">
-                                    CF: {{ p[5] }}
-                                </div>
-
-                                {% if p[10] %}
-
-                                    <div class="text-xs text-gray-600 mt-0.5">
-                                        📧 {{ p[10] }}
-                                    </div>
-
-                                {% endif %}
-
-                            </div>
-
-
-                            {% if p[7] %}
-
-                                <div class="bg-[#fdf4f8] p-2 rounded-xl border border-[#f9d1df]">
-
-                                    <span class="text-xs font-bold text-[#880E4F] uppercase">
-                                        Persona 2:
-                                    </span>
-
-                                    <span class="font-semibold text-gray-800">
-                                        {{ p[7] }}
-                                    </span>
-
-                                    <div class="text-xs font-mono text-gray-500">
-                                        CF: {{ p[8] }}
-                                    </div>
-
-                                </div>
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <td class="p-3">
-
-                            <div class="mb-1">
-
-                                <span class="text-xs text-gray-500">
-                                    P1:
-                                </span>
-
-                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full
-                                    {{ 'bg-green-100 text-green-800' if p[6] == 'presente' else 'bg-yellow-100 text-yellow-800' }}">
-                                    {{ p[6] }}
-                                </span>
-
-                            </div>
-
-
-                            {% if p[7] %}
-
-                                <div>
-
-                                    <span class="text-xs text-gray-500">
-                                        P2:
-                                    </span>
-
-                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full
-                                        {{ 'bg-green-100 text-green-800' if p[9] == 'presente' else 'bg-yellow-100 text-yellow-800' }}">
-                                        {{ p[9] }}
-                                    </span>
-
-                                </div>
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <td class="p-3 text-center space-y-1">
-
-                            <form action="/admin/prenotazione/elimina"
-                                  method="POST"
-                                  onsubmit="return confirm('Confermi l\'eliminazione della prenotazione?');">
-
-                                <input type="hidden"
-                                       name="id_prenotazione"
-                                       value="{{ p[0] }}">
-
-                                <button type="submit"
-                                        class="bg-red-50 hover:bg-red-100 text-red-600 text-xs px-2.5 py-1 rounded-xl border border-red-200 transition">
-                                    Elimina
-                                </button>
-
-                            </form>
-
-                        </td>
-
-                    </tr>
-
-                {% endfor %}
-
-
-                {% if not prenotazioni %}
-
-                    <tr>
-
-                        <td colspan="6"
-                            class="p-6 text-center text-gray-500">
-
-                            Nessuna prenotazione trovata per la data selezionata.
-
-                        </td>
-
-                    </tr>
-
-                {% endif %}
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-    </div>
-
-
-    <!-- ========================================================= -->
-    <!-- BLOCCHI -->
-    <!-- ========================================================= -->
-
-    <div class="bg-white rounded-3xl shadow-xl border border-[#f9d1df] p-6 md:p-8">
-
-        <h2 class="text-lg font-serif-title font-bold text-pink-900 mb-4">
-            🚫 Blocca Giorni o Orari
+        <h2 class="text-xl font-serif-title font-bold text-pink-900">
+            📱 QR Code Fisso Reception
         </h2>
 
+        <p class="text-sm text-gray-700 max-w-xl">
+            Questo è il QR Code unico per il check-in.
+            Stampalo o mostrallo su un tablet/iPad all'ingresso dello studio.
+            I clienti lo inquadreranno con il telefono per confermare la loro presenza.
+        </p>
 
-        <form action="/admin/blocca"
-              method="POST"
-              class="flex flex-wrap items-end gap-4 mb-6">
+        <div class="pt-2 flex flex-wrap gap-3 justify-center md:justify-start">
 
-            <div>
+            <a href="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={{ request.base_url }}checkin"
+               target="_blank"
+               class="inline-flex items-center gap-2 bg-gradient-to-r from-[#D81B60] to-[#AD1457] hover:opacity-95 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-md">
+                🖨️ Stampare / Ingrandire QR Code
+            </a>
 
-                <label class="block text-xs font-medium text-gray-700 mb-1">
-                    Data
-                </label>
-
-                <input type="date"
-                       name="data"
-                       required
-                       class="p-2 border border-[#f2c2d5] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
-
-            </div>
-
-
-            <div>
-
-                <label class="block text-xs font-medium text-gray-700 mb-1">
-                    Ora (Opzionale: vuoto = intera giornata)
-                </label>
-
-                <input type="text"
-                       name="ora"
-                       placeholder="Es. 10:00"
-                       class="p-2 border border-[#f2c2d5] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
-
-            </div>
-
-
-            <button type="submit"
-                    class="bg-gradient-to-r from-[#D81B60] to-[#AD1457] hover:opacity-95 text-white font-medium px-4 py-2 rounded-xl text-sm transition shadow-sm">
-                Inserisci Blocco
-            </button>
-
-        </form>
-
-
-        <h3 class="text-sm font-semibold text-gray-700 mb-2">
-            Blocchi Attivi:
-        </h3>
-
-
-        <div class="overflow-x-auto">
-
-            <table class="w-full text-left border-collapse">
-
-                <thead>
-
-                    <tr class="bg-[#fff0f5] border-b border-[#f9d1df] text-xs font-semibold text-[#880E4F] uppercase">
-
-                        <th class="p-2">ID</th>
-                        <th class="p-2">Data</th>
-                        <th class="p-2">Ora</th>
-                        <th class="p-2 text-center">Azione</th>
-
-                    </tr>
-
-                </thead>
-
-
-                <tbody class="divide-y divide-[#f9d1df] text-sm">
-
-                {% for b in blocchi %}
-
-                    <tr>
-
-                        <td class="p-2">
-                            #{{ b[0] }}
-                        </td>
-
-                        <td class="p-2">
-                            {{ b[1] }}
-                        </td>
-
-                        <td class="p-2">
-                            {{ b[2] if b[2] else 'Intera Giornata' }}
-                        </td>
-
-                        <td class="p-2 text-center">
-
-                            <form action="/admin/sblocca"
-                                  method="POST">
-
-                                <input type="hidden"
-                                       name="id_blocco"
-                                       value="{{ b[0] }}">
-
-                                <button type="submit"
-                                        class="text-xs text-red-600 hover:underline">
-                                    Sblocca
-                                </button>
-
-                            </form>
-
-                        </td>
-
-                    </tr>
-
-                {% endfor %}
-
-                </tbody>
-
-            </table>
+            <a href="/checkin"
+               target="_blank"
+               class="inline-flex items-center gap-2 bg-white hover:bg-[#fff0f5] text-[#D81B60] border border-[#f9d1df] text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-sm">
+                🔗 Apri Pagina Check-in
+            </a>
 
         </div>
 
     </div>
 
 
-    <!-- ========================================================= -->
-    <!-- GESTIONE UTENTI -->
-    <!-- ========================================================= -->
-
-    <div class="bg-white rounded-3xl shadow-xl border border-[#f9d1df] p-6 md:p-8">
-
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-6">
-
-            <div>
-
-                <h2 class="text-lg font-serif-title font-bold text-pink-900">
-                    👥 Utenti Registrati
-                </h2>
-
-                <p class="text-xs text-gray-500 mt-1">
-                    Clicca sul nome di un cliente per aprire la sua scheda personale.
-                </p>
-
-            </div>
-
-        </div>
-
-
-        <div class="overflow-x-auto">
-
-            <table class="w-full text-left border-collapse">
-
-                <thead>
-
-                    <tr class="bg-[#fff0f5] border-b border-[#f9d1df] text-xs font-semibold text-[#880E4F] uppercase">
-
-                        <th class="p-3">
-                            Nome & Cognome
-                        </th>
-
-                        <th class="p-3">
-                            Codice Fiscale
-                        </th>
-
-                        <th class="p-3">
-                            Data Registrazione
-                        </th>
-
-                        <th class="p-3">
-                            Stato Account
-                        </th>
-
-                        <th class="p-3 text-center">
-                            Azioni
-                        </th>
-
-                    </tr>
-
-                </thead>
-
-
-                <tbody class="divide-y divide-[#f9d1df] text-sm">
-
-                {% for u in utenti %}
-
-                    <tr class="hover:bg-[#fff9fb] transition">
-
-                        <!-- NOME CLICCABILE -->
-
-                        <td class="p-3">
-
-                            <button type="button"
-                                    onclick="apriSchedaUtente({{ u[0] }})"
-                                    class="text-left group">
-
-                                <div class="font-semibold text-[#D81B60] group-hover:text-[#880E4F] transition">
-
-                                    {{ u[1] }} {{ u[2] }}
-
-                                </div>
-
-                                <div class="text-[10px] text-gray-400 mt-0.5">
-                                    Clicca per aprire la scheda →
-                                </div>
-
-                            </button>
-
-                        </td>
-
-
-                        <td class="p-3 font-mono text-gray-600">
-                            {{ u[3] }}
-                        </td>
-
-
-                        <td class="p-3 text-gray-500">
-                            {{ u[4] }}
-                        </td>
-
-
-                        <td class="p-3">
-
-                            {% if u[5] %}
-
-                                <span class="px-2 py-1 text-xs font-semibold bg-red-100 text-red-800 rounded-full">
-                                    Bannato
-                                </span>
-
-                            {% else %}
-
-                                <span class="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">
-                                    Attivo
-                                </span>
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <td class="p-3 text-center">
-
-                            <div class="flex justify-center items-center gap-2">
-
-                                <button type="button"
-                                        onclick="apriSchedaUtente({{ u[0] }})"
-                                        class="text-xs px-3 py-1.5 rounded-xl bg-[#fff0f5] text-[#D81B60] border border-[#f9d1df] hover:bg-[#fce7f3] transition">
-
-                                    👤 Scheda
-
-                                </button>
-
-
-                                <form action="/admin/utente/banna"
-                                      method="POST">
-
-                                    <input type="hidden"
-                                           name="id_utente"
-                                           value="{{ u[0] }}">
-
-                                    <input type="hidden"
-                                           name="stato_ban"
-                                           value="{{ u[5] }}">
-
-                                    <button type="submit"
-                                            class="text-xs px-2 py-1 rounded-xl border
-                                            {{ 'bg-gray-100 text-gray-700 border-gray-200' if u[5] else 'bg-yellow-50 text-yellow-700 border-yellow-200' }}">
-
-                                        {{ 'Sblocca' if u[5] else 'Banna' }}
-
-                                    </button>
-
-                                </form>
-
-
-                                <form action="/admin/utente/elimina"
-                                      method="POST"
-                                      onsubmit="return confirm('Sei sicuro di voler eliminare questo utente?');">
-
-                                    <input type="hidden"
-                                           name="id_utente"
-                                           value="{{ u[0] }}">
-
-                                    <button type="submit"
-                                            class="text-xs px-2 py-1 rounded-xl bg-red-50 text-red-600 border border-red-200">
-
-                                        Elimina
-
-                                    </button>
-
-                                </form>
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                {% endfor %}
-
-
-                {% if not utenti %}
-
-                    <tr>
-
-                        <td colspan="5"
-                            class="p-6 text-center text-gray-500">
-
-                            Nessun utente registrato.
-
-                        </td>
-
-                    </tr>
-
-                {% endif %}
-
-                </tbody>
-
-            </table>
-
-        </div>
+    <div class="bg-white p-3 rounded-2xl border border-[#f9d1df] shadow-sm flex flex-col items-center shrink-0">
+
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ request.base_url }}checkin"
+             alt="QR Code Fisso Reception"
+             class="w-32 h-32 rounded-lg">
+
+        <span class="text-[11px] text-gray-500 font-mono mt-2">
+            URL: /checkin
+        </span>
 
     </div>
 
 </div>
 
 
+<!-- ========================================================= -->
+<!-- PRENOTAZIONI -->
+<!-- ========================================================= -->
+
+<div class="bg-white rounded-3xl shadow-xl border border-[#f9d1df] p-6 md:p-8">
+
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+
+        <h2 class="text-lg font-serif-title font-bold text-pink-900">
+            📅 Elenco Prenotazioni
+        </h2>
+
+        <form method="GET"
+              action="/admin"
+              class="flex items-center gap-2 bg-[#fff9fb] p-2 rounded-xl border border-[#f9d1df]">
+
+            <label for="data"
+                   class="text-xs font-semibold text-gray-700">
+                Filtra data:
+            </label>
+
+            <input type="date"
+                   id="data"
+                   name="data"
+                   value="{{ data_selezionata }}"
+                   onchange="this.form.submit()"
+                   class="text-sm border border-[#f2c2d5] rounded-xl px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+
+            <noscript>
+
+                <button type="submit"
+                        class="text-xs bg-gradient-to-r from-[#D81B60] to-[#AD1457] text-white px-3 py-1 rounded-xl">
+                    Cerca
+                </button>
+
+            </noscript>
+
+        </form>
+
+    </div>
+
+
+    <div class="overflow-x-auto">
+
+        <table class="w-full text-left border-collapse">
+
+            <thead>
+
+                <tr class="bg-[#fff0f5] border-b border-[#f9d1df] text-xs font-semibold text-[#880E4F] uppercase tracking-wider">
+
+                    <th class="p-3">ID</th>
+                    <th class="p-3">Data e Ora</th>
+                    <th class="p-3">Trattamento</th>
+                    <th class="p-3">Partecipanti (Nome / CF)</th>
+                    <th class="p-3">Stato Presenza</th>
+                    <th class="p-3 text-center">Azioni</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody class="divide-y divide-[#f9d1df] text-sm">
+
+            {% for p in prenotazioni %}
+
+                <tr class="hover:bg-[#fff9fb]">
+
+                    <td class="p-3 font-semibold text-gray-600">
+                        #{{ p[0] }}
+                    </td>
+
+                    <td class="p-3">
+
+                        <div class="font-medium text-gray-900">
+                            {{ p[2] }}
+                        </div>
+
+                        <div class="text-xs text-gray-500">
+                            Ore {{ p[3] }}
+                        </div>
+
+                    </td>
+
+                    <td class="p-3 font-medium text-gray-800">
+                        {{ p[4] }}
+                    </td>
+
+
+                    <td class="p-3">
+
+                        <div class="bg-[#fff9fb] p-2 rounded-xl border border-[#f9d1df] mb-1">
+
+                            <span class="text-xs font-bold text-[#D81B60] uppercase">
+                                Persona 1:
+                            </span>
+
+                            <span class="font-semibold text-gray-800">
+                                {{ p[1] }}
+                            </span>
+
+                            <div class="text-xs font-mono text-gray-500">
+                                CF: {{ p[5] }}
+                            </div>
+
+                            {% if p[10] %}
+
+                                <div class="text-xs text-gray-600 mt-0.5">
+                                    📧 {{ p[10] }}
+                                </div>
+
+                            {% endif %}
+
+                        </div>
+
+
+                        {% if p[7] %}
+
+                            <div class="bg-[#fdf4f8] p-2 rounded-xl border border-[#f9d1df]">
+
+                                <span class="text-xs font-bold text-[#880E4F] uppercase">
+                                    Persona 2:
+                                </span>
+
+                                <span class="font-semibold text-gray-800">
+                                    {{ p[7] }}
+                                </span>
+
+                                <div class="text-xs font-mono text-gray-500">
+                                    CF: {{ p[8] }}
+                                </div>
+
+                            </div>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td class="p-3">
+
+                        <div class="mb-1">
+
+                            <span class="text-xs text-gray-500">
+                                P1:
+                            </span>
+
+                            <span class="px-2 py-0.5 text-xs font-semibold rounded-full
+                                {{ 'bg-green-100 text-green-800' if p[6] == 'presente'
+                                else 'bg-yellow-100 text-yellow-800' }}">
+                                {{ p[6] }}
+                            </span>
+
+                        </div>
+
+
+                        {% if p[7] %}
+
+                            <div>
+
+                                <span class="text-xs text-gray-500">
+                                    P2:
+                                </span>
+
+                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full
+                                    {{ 'bg-green-100 text-green-800' if p[9] == 'presente'
+                                    else 'bg-yellow-100 text-yellow-800' }}">
+                                    {{ p[9] }}
+                                </span>
+
+                            </div>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td class="p-3 text-center space-y-1">
+
+                        <form action="/admin/prenotazione/elimina"
+                              method="POST"
+                              onsubmit="return confirm('Confermi l\\'eliminazione della prenotazione?');">
+
+                            <input type="hidden"
+                                   name="id_prenotazione"
+                                   value="{{ p[0] }}">
+
+                            <button type="submit"
+                                    class="bg-red-50 hover:bg-red-100 text-red-600 text-xs px-2.5 py-1 rounded-xl border border-red-200 transition">
+                                Elimina
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+
+            {% if not prenotazioni %}
+
+                <tr>
+
+                    <td colspan="6"
+                        class="p-6 text-center text-gray-500">
+
+                        Nessuna prenotazione trovata per la data selezionata.
+
+                    </td>
+
+                </tr>
+
+            {% endif %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- BLOCCHI -->
+<!-- ========================================================= -->
+
+<div class="bg-white rounded-3xl shadow-xl border border-[#f9d1df] p-6 md:p-8">
+
+    <h2 class="text-lg font-serif-title font-bold text-pink-900 mb-4">
+        🚫 Blocca Giorni o Orari
+    </h2>
+
+
+    <form action="/admin/blocca"
+          method="POST"
+          class="flex flex-wrap items-end gap-4 mb-6">
+
+        <div>
+
+            <label class="block text-xs font-medium text-gray-700 mb-1">
+                Data
+            </label>
+
+            <input type="date"
+                   name="data"
+                   required
+                   class="p-2 border border-[#f2c2d5] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+
+        </div>
+
+
+        <div>
+
+            <label class="block text-xs font-medium text-gray-700 mb-1">
+                Ora (Opzionale: vuoto = intera giornata)
+            </label>
+
+            <input type="text"
+                   name="ora"
+                   placeholder="Es. 10:00"
+                   class="p-2 border border-[#f2c2d5] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+
+        </div>
+
+
+        <button type="submit"
+                class="bg-gradient-to-r from-[#D81B60] to-[#AD1457] hover:opacity-95 text-white font-medium px-4 py-2 rounded-xl text-sm transition shadow-sm">
+            Inserisci Blocco
+        </button>
+
+    </form>
+
+
+    <h3 class="text-sm font-semibold text-gray-700 mb-2">
+        Blocchi Attivi:
+    </h3>
+
+
+    <div class="overflow-x-auto">
+
+        <table class="w-full text-left border-collapse">
+
+            <thead>
+
+                <tr class="bg-[#fff0f5] border-b border-[#f9d1df] text-xs font-semibold text-[#880E4F] uppercase">
+
+                    <th class="p-2">ID</th>
+                    <th class="p-2">Data</th>
+                    <th class="p-2">Ora</th>
+                    <th class="p-2 text-center">Azione</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody class="divide-y divide-[#f9d1df] text-sm">
+
+            {% for b in blocchi %}
+
+                <tr>
+
+                    <td class="p-2">
+                        #{{ b[0] }}
+                    </td>
+
+                    <td class="p-2">
+                        {{ b[1] }}
+                    </td>
+
+                    <td class="p-2">
+                        {{ b[2] if b[2] else 'Intera Giornata' }}
+                    </td>
+
+                    <td class="p-2 text-center">
+
+                        <form action="/admin/sblocca"
+                              method="POST">
+
+                            <input type="hidden"
+                                   name="id_blocco"
+                                   value="{{ b[0] }}">
+
+                            <button type="submit"
+                                    class="text-xs text-red-600 hover:underline">
+                                Sblocca
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- GESTIONE UTENTI -->
+<!-- ========================================================= -->
+
+<div class="bg-white rounded-3xl shadow-xl border border-[#f9d1df] p-6 md:p-8">
+
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-6">
+
+        <div>
+
+            <h2 class="text-lg font-serif-title font-bold text-pink-900">
+                👥 Utenti Registrati
+            </h2>
+
+            <p class="text-xs text-gray-500 mt-1">
+                Clicca sul nome di un cliente per aprire la sua scheda personale.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="overflow-x-auto">
+
+        <table class="w-full text-left border-collapse">
+
+            <thead>
+
+                <tr class="bg-[#fff0f5] border-b border-[#f9d1df] text-xs font-semibold text-[#880E4F] uppercase">
+
+                    <th class="p-3">
+                        Nome & Cognome
+                    </th>
+
+                    <th class="p-3">
+                        Codice Fiscale
+                    </th>
+
+                    <th class="p-3">
+                        Data Registrazione
+                    </th>
+
+                    <th class="p-3">
+                        Stato Account
+                    </th>
+
+                    <th class="p-3 text-center">
+                        Azioni
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody class="divide-y divide-[#f9d1df] text-sm">
+
+            {% for u in utenti %}
+
+                <tr class="hover:bg-[#fff9fb] transition">
+
+                    <td class="p-3">
+
+                        <button type="button"
+                                onclick="apriSchedaUtente({{ u[0] }})"
+                                class="text-left group">
+
+                            <div class="font-semibold text-[#D81B60] group-hover:text-[#880E4F] transition">
+                                {{ u[1] }} {{ u[2] }}
+                            </div>
+
+                            <div class="text-[10px] text-gray-400 mt-0.5">
+                                Clicca per aprire la scheda →
+                            </div>
+
+                        </button>
+
+                    </td>
+
+
+                    <td class="p-3 font-mono text-gray-600">
+                        {{ u[3] }}
+                    </td>
+
+
+                    <td class="p-3 text-gray-500">
+                        {{ u[4] }}
+                    </td>
+
+
+                    <td class="p-3">
+
+                        {% if u[5] %}
+
+                            <span class="px-2 py-1 text-xs font-semibold bg-red-100 text-red-800 rounded-full">
+                                Bannato
+                            </span>
+
+                        {% else %}
+
+                            <span class="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">
+                                Attivo
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td class="p-3 text-center">
+
+                        <div class="flex justify-center items-center gap-2">
+
+                            <button type="button"
+                                    onclick="apriSchedaUtente({{ u[0] }})"
+                                    class="text-xs px-3 py-1.5 rounded-xl bg-[#fff0f5] text-[#D81B60] border border-[#f9d1df] hover:bg-[#fce7f3] transition">
+
+                                👤 Scheda
+
+                            </button>
+
+
+                            <form action="/admin/utente/banna"
+                                  method="POST">
+
+                                <input type="hidden"
+                                       name="id_utente"
+                                       value="{{ u[0] }}">
+
+                                <input type="hidden"
+                                       name="stato_ban"
+                                       value="{{ u[5] }}">
+
+                                <button type="submit"
+                                        class="text-xs px-2 py-1 rounded-xl border
+                                        {{ 'bg-gray-100 text-gray-700 border-gray-200' if u[5] else 'bg-yellow-50 text-yellow-700 border-yellow-200' }}">
+
+                                    {{ 'Sblocca' if u[5] else 'Banna' }}
+
+                                </button>
+
+                            </form>
+
+
+                            <form action="/admin/utente/elimina"
+                                  method="POST"
+                                  onsubmit="return confirm('Sei sicuro di voler eliminare questo utente?');">
+
+                                <input type="hidden"
+                                       name="id_utente"
+                                       value="{{ u[0] }}">
+
+                                <button type="submit"
+                                        class="text-xs px-2 py-1 rounded-xl bg-red-50 text-red-600 border border-red-200">
+
+                                    Elimina
+
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+
+            {% if not utenti %}
+
+                <tr>
+
+                    <td colspan="5"
+                        class="p-6 text-center text-gray-500">
+
+                        Nessun utente registrato.
+
+                    </td>
+
+                </tr>
+
+            {% endif %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+```
+
+</div>
+
 <!-- ============================================================= -->
+
 <!-- MODALE SCHEDA CLIENTE -->
+
 <!-- ============================================================= -->
 
 <div id="modaleUtente"
      class="fixed inset-0 z-50 hidden">
 
-    <!-- SFONDO -->
+```
+<!-- SFONDO -->
 
-    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"
-         onclick="chiudiSchedaUtente()">
-    </div>
-
-
-    <!-- CONTENITORE -->
-
-    <div class="relative min-h-screen flex items-center justify-center p-4 md:p-8">
-
-        <div class="relative bg-white w-full max-w-4xl max-h-[92vh] rounded-3xl shadow-2xl border border-[#f9d1df] overflow-hidden">
+<div class="absolute inset-0 bg-black/40 backdrop-blur-sm"
+     onclick="chiudiSchedaUtente()">
+</div>
 
 
-            <!-- HEADER MODALE -->
+<!-- CONTENITORE -->
 
-            <div class="bg-gradient-to-r from-[#D81B60] to-[#AD1457] px-6 py-5 text-white flex justify-between items-center">
+<div class="relative min-h-screen flex items-center justify-center p-4 md:p-8">
 
-                <div>
+    <div class="relative bg-white w-full max-w-5xl max-h-[92vh] rounded-3xl shadow-2xl border border-[#f9d1df] overflow-hidden">
 
-                    <div class="text-[10px] uppercase tracking-widest opacity-80">
-                        Scheda cliente
-                    </div>
 
-                    <h2 id="schedaTitolo"
-                        class="text-xl md:text-2xl font-serif-title font-bold mt-1">
-                        Caricamento...
-                    </h2>
+        <!-- HEADER MODALE -->
 
+        <div class="bg-gradient-to-r from-[#D81B60] to-[#AD1457] px-6 py-5 text-white flex justify-between items-center">
+
+            <div>
+
+                <div class="text-[10px] uppercase tracking-widest opacity-80">
+                    Scheda cliente
                 </div>
 
-
-                <button type="button"
-                        onclick="chiudiSchedaUtente()"
-                        class="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 transition flex items-center justify-center text-lg">
-
-                    ✕
-
-                </button>
+                <h2 id="schedaTitolo"
+                    class="text-xl md:text-2xl font-serif-title font-bold mt-1">
+                    Caricamento...
+                </h2>
 
             </div>
 
 
-            <!-- CONTENUTO -->
+            <button type="button"
+                    onclick="chiudiSchedaUtente()"
+                    class="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 transition flex items-center justify-center text-lg">
 
-            <div class="modal-scroll overflow-y-auto max-h-[calc(92vh-80px)] p-6 md:p-8">
+                ✕
+
+            </button>
+
+        </div>
 
 
-                <!-- LOADING -->
+        <!-- CONTENUTO -->
 
-                <div id="schedaLoading"
-                     class="text-center py-12">
+        <div class="modal-scroll overflow-y-auto max-h-[calc(92vh-80px)] p-6 md:p-8">
 
-                    <div class="text-3xl mb-3">
-                        ⏳
-                    </div>
 
-                    <p class="text-sm text-gray-500">
-                        Caricamento dati cliente...
-                    </p>
+            <!-- LOADING -->
 
+            <div id="schedaLoading"
+                 class="text-center py-12">
+
+                <div class="text-3xl mb-3">
+                    ⏳
                 </div>
 
-
-                <!-- ERRORE -->
-
-                <div id="schedaErrore"
-                     class="hidden bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl text-sm text-center">
-                </div>
-
-
-                <!-- FORM -->
-
-                <form id="formSchedaUtente"
-                      class="hidden space-y-8"
-                      onsubmit="salvaSchedaUtente(event)">
-
-                    <input type="hidden"
-                           id="utenteId">
-
-
-                    <!-- ================================================= -->
-                    <!-- DATI ACCOUNT -->
-                    <!-- ================================================= -->
-
-                    <section>
-
-                        <div class="flex items-center gap-3 mb-4">
-
-                            <div class="w-9 h-9 rounded-xl bg-[#fff0f5] flex items-center justify-center">
-                                👤
-                            </div>
-
-                            <div>
-
-                                <h3 class="font-serif-title font-bold text-pink-900">
-                                    Dati anagrafici
-                                </h3>
-
-                                <p class="text-[11px] text-gray-500">
-                                    Dati collegati all'account registrato.
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                            <div>
-
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">
-                                    Nome
-                                </label>
-
-                                <input id="campoNome"
-                                       type="text"
-                                       disabled
-                                       class="w-full p-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 text-sm">
-
-                            </div>
-
-
-                            <div>
-
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">
-                                    Cognome
-                                </label>
-
-                                <input id="campoCognome"
-                                       type="text"
-                                       disabled
-                                       class="w-full p-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 text-sm">
-
-                            </div>
-
-
-                            <div>
-
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">
-                                    Codice Fiscale
-                                </label>
-
-                                <input id="campoCF"
-                                       type="text"
-                                       disabled
-                                       class="w-full p-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 text-sm font-mono uppercase">
-
-                            </div>
-
-
-                            <div>
-
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">
-                                    Data di nascita
-                                </label>
-
-                                <input id="campoDataNascita"
-                                       type="date"
-                                       class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
-
-                            </div>
-
-
-                            <div>
-
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">
-                                    Luogo di nascita
-                                </label>
-
-                                <input id="campoLuogoNascita"
-                                       type="text"
-                                       placeholder="Es. Catania"
-                                       class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
-
-                            </div>
-
-
-                            <div>
-
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">
-                                    Luogo di residenza
-                                </label>
-
-                                <input id="campoResidenza"
-                                       type="text"
-                                       placeholder="Es. San Giovanni La Punta"
-                                       class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
-
-                            </div>
-
-                        </div>
-
-                    </section>
-
-
-                    <!-- ================================================= -->
-                    <!-- CONTATTI -->
-                    <!-- ================================================= -->
-
-                    <section>
-
-                        <div class="flex items-center gap-3 mb-4">
-
-                            <div class="w-9 h-9 rounded-xl bg-[#fff0f5] flex items-center justify-center">
-                                📞
-                            </div>
-
-                            <div>
-
-                                <h3 class="font-serif-title font-bold text-pink-900">
-                                    Contatti
-                                </h3>
-
-                                <p class="text-[11px] text-gray-500">
-                                    Recapiti del cliente.
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                            <div>
-
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">
-                                    Numero di telefono
-                                </label>
-
-                                <input id="campoTelefono"
-                                       type="tel"
-                                       placeholder="Es. 333 1234567"
-                                       class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
-
-                            </div>
-
-
-                            <div>
-
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">
-                                    E-mail
-                                </label>
-
-                                <input id="campoEmail"
-                                       type="email"
-                                       placeholder="email@esempio.it"
-                                       class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
-
-                            </div>
-
-                        </div>
-
-                    </section>
-
-
-                    <!-- ================================================= -->
-                    <!-- ABBONAMENTO -->
-                    <!-- ================================================= -->
-
-                    <section>
-
-                        <div class="flex items-center gap-3 mb-4">
-
-                            <div class="w-9 h-9 rounded-xl bg-[#fff0f5] flex items-center justify-center">
-                                🎫
-                            </div>
-
-                            <div>
-
-                                <h3 class="font-serif-title font-bold text-pink-900">
-                                    Abbonamento
-                                </h3>
-
-                                <p class="text-[11px] text-gray-500">
-                                    Informazioni relative al percorso acquistato.
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-
-                            <div class="md:col-span-2">
-
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">
-                                    Tipologia di abbonamento scelto
-                                </label>
-
-                                <input id="campoAbbonamento"
-                                       type="text"
-                                       placeholder="Es. 10 sedute individuali"
-                                       class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
-
-                            </div>
-
-
-                            <div>
-
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">
-                                    Giorno di inizio abbonamento
-                                </label>
-
-                                <input id="campoInizioAbbonamento"
-                                       type="date"
-                                       class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
-
-                            </div>
-
-
-                            <div>
-
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">
-                                    Sedute totali
-                                </label>
-
-                                <input id="campoSeduteTotali"
-                                       type="number"
-                                       min="0"
-                                       placeholder="Es. 10"
-                                       class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
-
-                            </div>
-
-
-                            <div>
-
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">
-                                    Sedute residue
-                                </label>
-
-                                <input id="campoSeduteResidue"
-                                       type="number"
-                                       min="0"
-                                       placeholder="Es. 7"
-                                       class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
-
-                            </div>
-
-                        </div>
-
-                    </section>
-
-
-                    <!-- ================================================= -->
-                    <!-- PAGAMENTO -->
-                    <!-- ================================================= -->
-
-                    <section>
-
-                        <div class="flex items-center gap-3 mb-4">
-
-                            <div class="w-9 h-9 rounded-xl bg-[#fff0f5] flex items-center justify-center">
-                                💳
-                            </div>
-
-                            <div>
-
-                                <h3 class="font-serif-title font-bold text-pink-900">
-                                    Pagamento
-                                </h3>
-
-                                <p class="text-[11px] text-gray-500">
-                                    Stato e modalità del pagamento.
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-
-                            <div>
-
-                                <label class="block text-xs font-semibold text-gray-700 mb-2">
-                                    Ha pagato?
-                                </label>
-
-                                <div class="flex gap-3">
-
-                                    <label class="flex-1 cursor-pointer">
-
-                                        <input type="radio"
-                                               name="pagamento"
-                                               value="true"
-                                               id="pagamentoSi"
-                                               class="peer hidden">
-
-                                        <div class="p-3 rounded-xl border border-gray-200 text-center text-sm peer-checked:border-green-400 peer-checked:bg-green-50 peer-checked:text-green-700 transition">
-                                            ✓ Sì, pagato
-                                        </div>
-
-                                    </label>
-
-
-                                    <label class="flex-1 cursor-pointer">
-
-                                        <input type="radio"
-                                               name="pagamento"
-                                               value="false"
-                                               id="pagamentoNo"
-                                               class="peer hidden">
-
-                                        <div class="p-3 rounded-xl border border-gray-200 text-center text-sm peer-checked:border-red-300 peer-checked:bg-red-50 peer-checked:text-red-700 transition">
-                                            ✕ No
-                                        </div>
-
-                                    </label>
-
-                                </div>
-
-                            </div>
-
-
-                            <div>
-
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">
-                                    Come ha pagato?
-                                </label>
-
-                                <select id="campoMetodoPagamento"
-                                        class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
-
-                                    <option value="">
-                                        Seleziona metodo
-                                    </option>
-
-                                    <option value="Contanti">
-                                        Contanti
-                                    </option>
-
-                                    <option value="Bonifico">
-                                        Bonifico
-                                    </option>
-
-                                    <option value="Carta">
-                                        Carta
-                                    </option>
-
-                                    <option value="POS">
-                                        POS
-                                    </option>
-
-                                    <option value="Altro">
-                                        Altro
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-                        </div>
-
-                    </section>
-
-
-                    <!-- ================================================= -->
-                    <!-- NOTE -->
-                    <!-- ================================================= -->
-
-                    <section>
-
-                        <div class="flex items-center gap-3 mb-4">
-
-                            <div class="w-9 h-9 rounded-xl bg-[#fff0f5] flex items-center justify-center">
-                                📝
-                            </div>
-
-                            <div>
-
-                                <h3 class="font-serif-title font-bold text-pink-900">
-                                    Note
-                                </h3>
-
-                                <p class="text-[11px] text-gray-500">
-                                    Spazio libero per annotazioni interne.
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-                        <textarea id="campoNote"
-                                  rows="5"
-                                  placeholder="Inserisci qui eventuali note sul cliente..."
-                                  class="w-full p-4 rounded-2xl border border-[#f2c2d5] bg-white text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[#D81B60]"></textarea>
-
-                    </section>
-
-
-                    <!-- ================================================= -->
-                    <!-- INFORMAZIONI ACCOUNT -->
-                    <!-- ================================================= -->
-
-                    <section class="bg-[#fff9fb] border border-[#f9d1df] rounded-2xl p-4">
-
-                        <h3 class="text-xs font-bold text-[#880E4F] uppercase tracking-wide mb-3">
-                            Informazioni account
-                        </h3>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-
-                            <div>
-                                <span class="text-gray-500">
-                                    ID utente:
-                                </span>
-
-                                <span id="infoId"
-                                      class="font-mono text-gray-700">
-                                </span>
-                            </div>
-
-
-                            <div>
-                                <span class="text-gray-500">
-                                    Registrato il:
-                                </span>
-
-                                <span id="infoRegistrazione"
-                                      class="text-gray-700">
-                                </span>
-                            </div>
-
-
-                            <div>
-                                <span class="text-gray-500">
-                                    Stato:
-                                </span>
-
-                                <span id="infoStato"
-                                      class="font-semibold">
-                                </span>
-                            </div>
-
-                        </div>
-
-                    </section>
-
-
-                    <!-- ================================================= -->
-                    <!-- MESSAGGIO -->
-                    <!-- ================================================= -->
-
-                    <div id="messaggioScheda"
-                         class="hidden px-4 py-3 rounded-xl text-sm text-center">
-                    </div>
-
-
-                    <!-- ================================================= -->
-                    <!-- BOTTONI -->
-                    <!-- ================================================= -->
-
-                    <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-2">
-
-                        <button type="button"
-                                onclick="chiudiSchedaUtente()"
-                                class="px-5 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition">
-
-                            Annulla
-
-                        </button>
-
-
-                        <button type="submit"
-                                id="btnSalvaScheda"
-                                class="px-6 py-3 rounded-xl bg-gradient-to-r from-[#D81B60] to-[#AD1457] text-white text-sm font-semibold shadow-md hover:opacity-95 transition">
-
-                            💾 Salva modifiche
-
-                        </button>
-
-                    </div>
-
-                </form>
+                <p class="text-sm text-gray-500">
+                    Caricamento dati cliente...
+                </p>
 
             </div>
+
+
+            <!-- ERRORE -->
+
+            <div id="schedaErrore"
+                 class="hidden bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl text-sm text-center">
+            </div>
+
+
+            <!-- FORM -->
+
+            <form id="formSchedaUtente"
+                  class="hidden space-y-8"
+                  onsubmit="salvaSchedaUtente(event)">
+
+                <input type="hidden"
+                       id="utenteId">
+
+
+                <!-- ================================================= -->
+                <!-- DATI ANAGRAFICI -->
+                <!-- ================================================= -->
+
+                <section>
+
+                    <div class="flex items-center gap-3 mb-4">
+
+                        <div class="w-9 h-9 rounded-xl bg-[#fff0f5] flex items-center justify-center">
+                            👤
+                        </div>
+
+                        <div>
+
+                            <h3 class="font-serif-title font-bold text-pink-900">
+                                Dati anagrafici
+                            </h3>
+
+                            <p class="text-[11px] text-gray-500">
+                                Dati collegati all'account registrato.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                        <div>
+
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                                Nome
+                            </label>
+
+                            <input id="campoNome"
+                                   type="text"
+                                   disabled
+                                   class="w-full p-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 text-sm">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                                Cognome
+                            </label>
+
+                            <input id="campoCognome"
+                                   type="text"
+                                   disabled
+                                   class="w-full p-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 text-sm">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                                Codice Fiscale
+                            </label>
+
+                            <input id="campoCF"
+                                   type="text"
+                                   disabled
+                                   class="w-full p-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 text-sm font-mono uppercase">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                                Data di nascita
+                            </label>
+
+                            <input id="campoDataNascita"
+                                   type="date"
+                                   class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                                Luogo di nascita
+                            </label>
+
+                            <input id="campoLuogoNascita"
+                                   type="text"
+                                   placeholder="Es. Catania"
+                                   class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                                Luogo di residenza
+                            </label>
+
+                            <input id="campoResidenza"
+                                   type="text"
+                                   placeholder="Es. San Giovanni La Punta"
+                                   class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- ================================================= -->
+                <!-- CONTATTI -->
+                <!-- ================================================= -->
+
+                <section>
+
+                    <div class="flex items-center gap-3 mb-4">
+
+                        <div class="w-9 h-9 rounded-xl bg-[#fff0f5] flex items-center justify-center">
+                            📞
+                        </div>
+
+                        <div>
+
+                            <h3 class="font-serif-title font-bold text-pink-900">
+                                Contatti
+                            </h3>
+
+                            <p class="text-[11px] text-gray-500">
+                                Recapiti del cliente.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                        <div>
+
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                                Numero di telefono
+                            </label>
+
+                            <input id="campoTelefono"
+                                   type="tel"
+                                   placeholder="Es. 333 1234567"
+                                   class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                                E-mail
+                            </label>
+
+                            <input id="campoEmail"
+                                   type="email"
+                                   placeholder="email@esempio.it"
+                                   class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- ================================================= -->
+                <!-- RIEPILOGO SEDUTE -->
+                <!-- ================================================= -->
+
+                <section>
+
+                    <div class="flex items-center gap-3 mb-4">
+
+                        <div class="w-9 h-9 rounded-xl bg-[#fff0f5] flex items-center justify-center">
+                            📊
+                        </div>
+
+                        <div>
+
+                            <h3 class="font-serif-title font-bold text-pink-900">
+                                Riepilogo sedute
+                            </h3>
+
+                            <p class="text-[11px] text-gray-500">
+                                Situazione attuale dell'abbonamento.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+
+                        <div class="bg-[#fff9fb] border border-[#f9d1df] rounded-2xl p-4">
+
+                            <div class="text-[10px] uppercase tracking-wide text-gray-500">
+                                Totali
+                            </div>
+
+                            <div id="riepilogoTotali"
+                                 class="text-2xl font-bold text-[#880E4F] mt-1">
+                                0
+                            </div>
+
+                        </div>
+
+
+                        <div class="bg-[#fff9fb] border border-[#f9d1df] rounded-2xl p-4">
+
+                            <div class="text-[10px] uppercase tracking-wide text-gray-500">
+                                Utilizzate
+                            </div>
+
+                            <div id="riepilogoUtilizzate"
+                                 class="text-2xl font-bold text-gray-700 mt-1">
+                                0
+                            </div>
+
+                        </div>
+
+
+                        <div class="bg-[#fff9fb] border border-[#f9d1df] rounded-2xl p-4">
+
+                            <div class="text-[10px] uppercase tracking-wide text-gray-500">
+                                Residue
+                            </div>
+
+                            <div id="riepilogoResidue"
+                                 class="text-2xl font-bold text-[#D81B60] mt-1">
+                                0
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+
+                        <div id="barraSedute"
+                             class="h-full bg-gradient-to-r from-[#D81B60] to-[#AD1457] rounded-full transition-all duration-500"
+                             style="width: 0%">
+                        </div>
+
+                    </div>
+
+
+                    <div id="testoBarraSedute"
+                         class="text-[11px] text-gray-500 mt-2 text-right">
+                        0% utilizzato
+                    </div>
+
+                </section>
+
+
+                <!-- ================================================= -->
+                <!-- ABBONAMENTO -->
+                <!-- ================================================= -->
+
+                <section>
+
+                    <div class="flex items-center gap-3 mb-4">
+
+                        <div class="w-9 h-9 rounded-xl bg-[#fff0f5] flex items-center justify-center">
+                            🎫
+                        </div>
+
+                        <div>
+
+                            <h3 class="font-serif-title font-bold text-pink-900">
+                                Abbonamento
+                            </h3>
+
+                            <p class="text-[11px] text-gray-500">
+                                Informazioni relative al percorso acquistato.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                        <div class="md:col-span-2">
+
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                                Tipologia di abbonamento scelto
+                            </label>
+
+                            <input id="campoAbbonamento"
+                                   type="text"
+                                   placeholder="Es. 10 sedute individuali"
+                                   class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                                Giorno di inizio abbonamento
+                            </label>
+
+                            <input id="campoInizioAbbonamento"
+                                   type="date"
+                                   class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                                Sedute totali
+                            </label>
+
+                            <input id="campoSeduteTotali"
+                                   type="number"
+                                   min="0"
+                                   placeholder="Es. 10"
+                                   oninput="aggiornaRiepilogo()"
+                                   class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                                Sedute residue
+                            </label>
+
+                            <input id="campoSeduteResidue"
+                                   type="number"
+                                   min="0"
+                                   placeholder="Es. 7"
+                                   oninput="aggiornaRiepilogo()"
+                                   class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- ================================================= -->
+                <!-- STORICO PRENOTAZIONI -->
+                <!-- ================================================= -->
+
+                <section>
+
+                    <div class="flex items-center justify-between gap-3 mb-4">
+
+                        <div class="flex items-center gap-3">
+
+                            <div class="w-9 h-9 rounded-xl bg-[#fff0f5] flex items-center justify-center">
+                                📅
+                            </div>
+
+                            <div>
+
+                                <h3 class="font-serif-title font-bold text-pink-900">
+                                    Storico sedute
+                                </h3>
+
+                                <p class="text-[11px] text-gray-500">
+                                    Presenze e scalatura delle sedute.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <span id="numeroPrenotazioni"
+                              class="text-[11px] font-semibold bg-[#fff0f5] text-[#880E4F] px-3 py-1.5 rounded-full">
+                            0 prenotazioni
+                        </span>
+
+                    </div>
+
+
+                    <div id="storicoVuoto"
+                         class="hidden text-center py-8 bg-[#fff9fb] border border-dashed border-[#f2bfd1] rounded-2xl">
+
+                        <div class="text-2xl mb-2">
+                            📭
+                        </div>
+
+                        <p class="text-sm text-gray-500">
+                            Nessuna prenotazione associata a questo cliente.
+                        </p>
+
+                    </div>
+
+
+                    <div id="storicoPrenotazioni"
+                         class="space-y-3">
+                    </div>
+
+                </section>
+
+
+                <!-- ================================================= -->
+                <!-- PAGAMENTO -->
+                <!-- ================================================= -->
+
+                <section>
+
+                    <div class="flex items-center gap-3 mb-4">
+
+                        <div class="w-9 h-9 rounded-xl bg-[#fff0f5] flex items-center justify-center">
+                            💳
+                        </div>
+
+                        <div>
+
+                            <h3 class="font-serif-title font-bold text-pink-900">
+                                Pagamento
+                            </h3>
+
+                            <p class="text-[11px] text-gray-500">
+                                Stato e modalità del pagamento.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                        <div>
+
+                            <label class="block text-xs font-semibold text-gray-700 mb-2">
+                                Ha pagato?
+                            </label>
+
+                            <div class="flex gap-3">
+
+                                <label class="flex-1 cursor-pointer">
+
+                                    <input type="radio"
+                                           name="pagamento"
+                                           value="true"
+                                           id="pagamentoSi"
+                                           class="peer hidden">
+
+                                    <div class="p-3 rounded-xl border border-gray-200 text-center text-sm peer-checked:border-green-400 peer-checked:bg-green-50 peer-checked:text-green-700 transition">
+                                        ✓ Sì, pagato
+                                    </div>
+
+                                </label>
+
+
+                                <label class="flex-1 cursor-pointer">
+
+                                    <input type="radio"
+                                           name="pagamento"
+                                           value="false"
+                                           id="pagamentoNo"
+                                           class="peer hidden">
+
+                                    <div class="p-3 rounded-xl border border-gray-200 text-center text-sm peer-checked:border-red-300 peer-checked:bg-red-50 peer-checked:text-red-700 transition">
+                                        ✕ No
+                                    </div>
+
+                                </label>
+
+                            </div>
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                                Come ha pagato?
+                            </label>
+
+                            <select id="campoMetodoPagamento"
+                                    class="w-full p-3 rounded-xl border border-[#f2c2d5] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#D81B60]">
+
+                                <option value="">
+                                    Seleziona metodo
+                                </option>
+
+                                <option value="Contanti">
+                                    Contanti
+                                </option>
+
+                                <option value="Bonifico">
+                                    Bonifico
+                                </option>
+
+                                <option value="Carta">
+                                    Carta
+                                </option>
+
+                                <option value="POS">
+                                    POS
+                                </option>
+
+                                <option value="Altro">
+                                    Altro
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- ================================================= -->
+                <!-- NOTE -->
+                <!-- ================================================= -->
+
+                <section>
+
+                    <div class="flex items-center gap-3 mb-4">
+
+                        <div class="w-9 h-9 rounded-xl bg-[#fff0f5] flex items-center justify-center">
+                            📝
+                        </div>
+
+                        <div>
+
+                            <h3 class="font-serif-title font-bold text-pink-900">
+                                Note
+                            </h3>
+
+                            <p class="text-[11px] text-gray-500">
+                                Spazio libero per annotazioni interne.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <textarea id="campoNote"
+                              rows="5"
+                              placeholder="Inserisci qui eventuali note sul cliente..."
+                              class="w-full p-4 rounded-2xl border border-[#f2c2d5] bg-white text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[#D81B60]"></textarea>
+
+                </section>
+
+
+                <!-- ================================================= -->
+                <!-- INFO ACCOUNT -->
+                <!-- ================================================= -->
+
+                <section class="bg-[#fff9fb] border border-[#f9d1df] rounded-2xl p-4">
+
+                    <h3 class="text-xs font-bold text-[#880E4F] uppercase tracking-wide mb-3">
+                        Informazioni account
+                    </h3>
+
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+
+                        <div>
+
+                            <span class="text-gray-500">
+                                ID utente:
+                            </span>
+
+                            <span id="infoId"
+                                  class="font-mono text-gray-700">
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <span class="text-gray-500">
+                                Registrato il:
+                            </span>
+
+                            <span id="infoRegistrazione"
+                                  class="text-gray-700">
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <span class="text-gray-500">
+                                Stato:
+                            </span>
+
+                            <span id="infoStato"
+                                  class="font-semibold">
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- ================================================= -->
+                <!-- MESSAGGIO -->
+                <!-- ================================================= -->
+
+                <div id="messaggioScheda"
+                     class="hidden px-4 py-3 rounded-xl text-sm text-center">
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- BOTTONI -->
+                <!-- ================================================= -->
+
+                <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-2">
+
+                    <button type="button"
+                            onclick="chiudiSchedaUtente()"
+                            class="px-5 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition">
+
+                        Chiudi
+
+                    </button>
+
+
+                    <button type="submit"
+                            id="btnSalvaScheda"
+                            class="px-6 py-3 rounded-xl bg-gradient-to-r from-[#D81B60] to-[#AD1457] text-white text-sm font-semibold shadow-md hover:opacity-95 transition">
+
+                        💾 Salva modifiche
+
+                    </button>
+
+                </div>
+
+            </form>
 
         </div>
 
     </div>
 
 </div>
+```
 
+</div>
 
 <!-- ============================================================= -->
+
 <!-- JAVASCRIPT -->
+
 <!-- ============================================================= -->
 
 <script>
 
 let utenteAttualmenteAperto = null;
+let datiUtenteAttuali = null;
 
 
 /* ============================================================= */
@@ -1291,28 +1489,40 @@ async function apriSchedaUtente(utenteId) {
     errore.classList.add('hidden');
     form.classList.add('hidden');
 
-    document.getElementById('schedaTitolo').textContent = 'Caricamento...';
+    document.getElementById('schedaTitolo').textContent =
+        'Caricamento...';
 
     try {
 
-        const response = await fetch(`/api/utente/${utenteId}`);
+        const response =
+            await fetch(`/api/utente/${utenteId}`);
 
-        const dati = await response.json();
+        const dati =
+            await response.json();
 
         if (!response.ok) {
-            throw new Error(dati.error || 'Errore durante il caricamento.');
+
+            throw new Error(
+                dati.error ||
+                'Errore durante il caricamento.'
+            );
+
         }
+
+        datiUtenteAttuali = dati;
 
         compilaScheda(dati);
 
         loading.classList.add('hidden');
+
         form.classList.remove('hidden');
 
     } catch (error) {
 
         loading.classList.add('hidden');
 
-        errore.textContent = error.message;
+        errore.textContent =
+            error.message;
 
         errore.classList.remove('hidden');
 
@@ -1327,89 +1537,839 @@ async function apriSchedaUtente(utenteId) {
 
 function compilaScheda(dati) {
 
-    document.getElementById('utenteId').value = dati.id;
+    const utente =
+        dati.utente || dati;
+
+    document.getElementById('utenteId').value =
+        utente.id;
 
     document.getElementById('schedaTitolo').textContent =
-        `${dati.nome} ${dati.cognome}`;
+        `${utente.nome} ${utente.cognome}`;
 
 
     document.getElementById('campoNome').value =
-        dati.nome || '';
+        utente.nome || '';
 
     document.getElementById('campoCognome').value =
-        dati.cognome || '';
+        utente.cognome || '';
 
     document.getElementById('campoCF').value =
-        dati.codice_fiscale || '';
+        utente.codice_fiscale || '';
 
 
     document.getElementById('campoDataNascita').value =
-        dati.data_nascita || '';
+        utente.data_nascita || '';
 
     document.getElementById('campoLuogoNascita').value =
-        dati.luogo_nascita || '';
+        utente.luogo_nascita || '';
 
     document.getElementById('campoResidenza').value =
-        dati.luogo_residenza || '';
+        utente.luogo_residenza || '';
 
 
     document.getElementById('campoTelefono').value =
-        dati.telefono || '';
+        utente.telefono || '';
 
     document.getElementById('campoEmail').value =
-        dati.email || '';
+        utente.email || '';
 
 
     document.getElementById('campoAbbonamento').value =
-        dati.tipo_abbonamento || '';
+        utente.tipo_abbonamento || '';
 
     document.getElementById('campoInizioAbbonamento').value =
-        dati.data_inizio_abbonamento || '';
+        utente.data_inizio_abbonamento || '';
 
     document.getElementById('campoSeduteTotali').value =
-        dati.sedute_totali ?? 0;
+        utente.sedute_totali ?? 0;
 
     document.getElementById('campoSeduteResidue').value =
-        dati.sedute_residue ?? 0;
+        utente.sedute_residue ?? 0;
 
 
     document.getElementById('campoMetodoPagamento').value =
-        dati.metodo_pagamento || '';
+        utente.metodo_pagamento || '';
 
 
-    if (dati.pagamento_effettuato) {
+    if (utente.pagamento_effettuato) {
 
-        document.getElementById('pagamentoSi').checked = true;
+        document.getElementById('pagamentoSi').checked =
+            true;
 
     } else {
 
-        document.getElementById('pagamentoNo').checked = true;
+        document.getElementById('pagamentoNo').checked =
+            true;
 
     }
 
 
     document.getElementById('campoNote').value =
-        dati.note || '';
+        utente.note || '';
 
 
     document.getElementById('infoId').textContent =
-        `#${dati.id}`;
+        `#${utente.id}`;
 
     document.getElementById('infoRegistrazione').textContent =
-        dati.data_registrazione || '—';
+        utente.data_registrazione || '—';
 
 
-    const infoStato = document.getElementById('infoStato');
+    const infoStato =
+        document.getElementById('infoStato');
 
-    if (dati.bannato) {
 
-        infoStato.textContent = 'Bannato';
-        infoStato.className = 'font-semibold text-red-600';
+    if (utente.bannato) {
+
+        infoStato.textContent =
+            'Bannato';
+
+        infoStato.className =
+            'font-semibold text-red-600';
 
     } else {
 
-        infoStato.textContent = 'Attivo';
-        infoStato.className = 'font-semibold text-green-600';
+        infoStato.textContent =
+            'Attivo';
+
+        infoStato.className =
+            'font-semibold text-green-600';
+
+    }
+
+
+    aggiornaRiepilogo();
+
+    renderStorico(
+        dati.prenotazioni || []
+    );
+
+}
+
+
+/* ============================================================= */
+/* RIEPILOGO SEDUTE */
+/* ============================================================= */
+
+function aggiornaRiepilogo() {
+
+    const totali =
+        parseInt(
+            document.getElementById('campoSeduteTotali').value
+        ) || 0;
+
+    const residue =
+        parseInt(
+            document.getElementById('campoSeduteResidue').value
+        ) || 0;
+
+
+    const utilizzate =
+        Math.max(0, totali - residue);
+
+
+    let percentuale = 0;
+
+    if (totali > 0) {
+
+        percentuale =
+            Math.min(
+                100,
+                Math.max(
+                    0,
+                    (utilizzate / totali) * 100
+                )
+            );
+
+    }
+
+
+    document.getElementById('riepilogoTotali').textContent =
+        totali;
+
+    document.getElementById('riepilogoUtilizzate').textContent =
+        utilizzate;
+
+    document.getElementById('riepilogoResidue').textContent =
+        residue;
+
+
+    document.getElementById('barraSedute').style.width =
+        `${percentuale}%`;
+
+    document.getElementById('testoBarraSedute').textContent =
+        `${Math.round(percentuale)}% utilizzato`;
+
+}
+
+
+/* ============================================================= */
+/* STORICO PRENOTAZIONI */
+/* ============================================================= */
+
+function renderStorico(prenotazioni) {
+
+    const contenitore =
+        document.getElementById('storicoPrenotazioni');
+
+    const vuoto =
+        document.getElementById('storicoVuoto');
+
+    const contatore =
+        document.getElementById('numeroPrenotazioni');
+
+
+    contenitore.innerHTML = '';
+
+
+    contatore.textContent =
+        `${prenotazioni.length} ${
+            prenotazioni.length === 1
+                ? 'prenotazione'
+                : 'prenotazioni'
+        }`;
+
+
+    if (!prenotazioni.length) {
+
+        vuoto.classList.remove('hidden');
+
+        return;
+
+    }
+
+
+    vuoto.classList.add('hidden');
+
+
+    prenotazioni.forEach(prenotazione => {
+
+        contenitore.appendChild(
+            creaCardPrenotazione(prenotazione)
+        );
+
+    });
+
+}
+
+
+/* ============================================================= */
+/* CARD PRENOTAZIONE */
+/* ============================================================= */
+
+function creaCardPrenotazione(p) {
+
+    const card =
+        document.createElement('div');
+
+
+    card.className =
+        'border border-[#f9d1df] rounded-2xl p-4 bg-white hover:bg-[#fff9fb] transition';
+
+
+    const intestazione =
+        document.createElement('div');
+
+    intestazione.className =
+        'flex flex-col md:flex-row md:items-center justify-between gap-3';
+
+
+    const informazioni =
+        document.createElement('div');
+
+
+    const dataOra =
+        document.createElement('div');
+
+    dataOra.className =
+        'flex flex-wrap items-center gap-2';
+
+
+    const data =
+        document.createElement('span');
+
+    data.className =
+        'font-semibold text-gray-900 text-sm';
+
+    data.textContent =
+        formatData(p.data);
+
+
+    const separatore =
+        document.createElement('span');
+
+    separatore.className =
+        'text-gray-300';
+
+    separatore.textContent =
+        '•';
+
+
+    const ora =
+        document.createElement('span');
+
+    ora.className =
+        'text-sm text-gray-500';
+
+    ora.textContent =
+        `Ore ${p.ora || '—'}`;
+
+
+    dataOra.appendChild(data);
+    dataOra.appendChild(separatore);
+    dataOra.appendChild(ora);
+
+
+    const trattamento =
+        document.createElement('div');
+
+    trattamento.className =
+        'text-sm font-medium text-[#880E4F] mt-1';
+
+    trattamento.textContent =
+        p.trattamento || 'Trattamento';
+
+
+    const partecipante =
+        document.createElement('span');
+
+    partecipante.className =
+        'inline-flex mt-2 text-[10px] font-semibold uppercase tracking-wide bg-[#fff0f5] text-[#D81B60] px-2 py-1 rounded-full';
+
+    partecipante.textContent =
+        p.partecipante === 2
+            ? 'Persona 2'
+            : 'Persona 1';
+
+
+    informazioni.appendChild(dataOra);
+    informazioni.appendChild(trattamento);
+    informazioni.appendChild(partecipante);
+
+
+    const statoArea =
+        document.createElement('div');
+
+    statoArea.className =
+        'flex flex-col sm:flex-row items-start sm:items-center gap-2';
+
+
+    const select =
+        document.createElement('select');
+
+    select.className =
+        'text-xs border border-[#f2c2d5] rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#D81B60]';
+
+
+    [
+        ['confermata', 'Confermata'],
+        ['presente', 'Presente'],
+        ['assente', 'Assente'],
+        ['cancellata', 'Cancellata']
+    ].forEach(([value, label]) => {
+
+        const option =
+            document.createElement('option');
+
+        option.value =
+            value;
+
+        option.textContent =
+            label;
+
+        if (
+            String(p.stato || '').toLowerCase() ===
+            value
+        ) {
+
+            option.selected =
+                true;
+
+        }
+
+        select.appendChild(option);
+
+    });
+
+
+    select.addEventListener('change', async () => {
+
+        await aggiornaStatoPrenotazione(
+            p.id,
+            p.partecipante,
+            select.value
+        );
+
+    });
+
+
+    statoArea.appendChild(select);
+
+
+    const badge =
+        document.createElement('span');
+
+
+    aggiornaClasseBadge(
+        badge,
+        p.stato
+    );
+
+
+    statoArea.appendChild(badge);
+
+
+    intestazione.appendChild(informazioni);
+    intestazione.appendChild(statoArea);
+
+
+    card.appendChild(intestazione);
+
+
+    const azioni =
+        document.createElement('div');
+
+    azioni.className =
+        'mt-4 pt-3 border-t border-[#f9d1df] flex flex-wrap items-center justify-between gap-2';
+
+
+    const descrizione =
+        document.createElement('div');
+
+    descrizione.className =
+        'text-[11px] text-gray-500';
+
+
+    if (p.is_prova) {
+
+        descrizione.textContent =
+            '🎟️ Seduta di Prova — non viene scalata dall\\'abbonamento.';
+
+    } else if (p.seduta_scalata) {
+
+        descrizione.textContent =
+            '✓ Questa seduta è già stata scalata dall\\'abbonamento.';
+
+    } else if (String(p.stato).toLowerCase() === 'presente') {
+
+        descrizione.textContent =
+            'Il cliente è presente. La seduta può essere scalata.';
+
+    } else {
+
+        descrizione.textContent =
+            'La seduta verrà scalata solo dopo la presenza.';
+
+    }
+
+
+    const areaBottone =
+        document.createElement('div');
+
+
+    if (p.is_prova) {
+
+        const badgeProva =
+            document.createElement('span');
+
+        badgeProva.className =
+            'inline-flex items-center text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-3 py-2 rounded-xl';
+
+        badgeProva.textContent =
+            '🎟️ Non scala';
+
+        areaBottone.appendChild(
+            badgeProva
+        );
+
+    } else if (p.seduta_scalata) {
+
+        const annulla =
+            document.createElement('button');
+
+        annulla.type =
+            'button';
+
+        annulla.className =
+            'text-xs px-3 py-2 rounded-xl bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition';
+
+        annulla.textContent =
+            '↩ Annulla scala';
+
+        annulla.onclick =
+            () => annullaScala(
+                p.id,
+                p.partecipante
+            );
+
+        areaBottone.appendChild(
+            annulla
+        );
+
+    } else if (p.puo_scalare) {
+
+        const scala =
+            document.createElement('button');
+
+        scala.type =
+            'button';
+
+        scala.className =
+            'text-xs px-4 py-2 rounded-xl bg-gradient-to-r from-[#D81B60] to-[#AD1457] text-white font-semibold shadow-sm hover:opacity-95 transition';
+
+        scala.textContent =
+            '🎫 Scala seduta';
+
+        scala.onclick =
+            () => scalaSeduta(
+                p.id,
+                p.partecipante
+            );
+
+        areaBottone.appendChild(
+            scala
+        );
+
+    } else {
+
+        const nonDisponibile =
+            document.createElement('span');
+
+        nonDisponibile.className =
+            'text-[11px] text-gray-400 italic';
+
+        if (
+            String(p.stato).toLowerCase() !==
+            'presente'
+        ) {
+
+            nonDisponibile.textContent =
+                'Disponibile dopo aver segnato il cliente come presente.';
+
+        } else {
+
+            nonDisponibile.textContent =
+                'Nessuna seduta residua disponibile.';
+
+        }
+
+        areaBottone.appendChild(
+            nonDisponibile
+        );
+
+    }
+
+
+    azioni.appendChild(
+        descrizione
+    );
+
+    azioni.appendChild(
+        areaBottone
+    );
+
+
+    card.appendChild(
+        azioni
+    );
+
+
+    return card;
+
+}
+
+
+/* ============================================================= */
+/* BADGE STATO */
+/* ============================================================= */
+
+function aggiornaClasseBadge(badge, stato) {
+
+    const valore =
+        String(stato || 'confermata').toLowerCase();
+
+
+    badge.className =
+        'inline-flex items-center text-[10px] font-semibold px-2 py-1 rounded-full';
+
+
+    if (valore === 'presente') {
+
+        badge.classList.add(
+            'bg-green-100',
+            'text-green-700'
+        );
+
+        badge.textContent =
+            '● Presente';
+
+    } else if (valore === 'assente') {
+
+        badge.classList.add(
+            'bg-red-100',
+            'text-red-700'
+        );
+
+        badge.textContent =
+            '● Assente';
+
+    } else if (valore === 'cancellata') {
+
+        badge.classList.add(
+            'bg-gray-100',
+            'text-gray-600'
+        );
+
+        badge.textContent =
+            '● Cancellata';
+
+    } else {
+
+        badge.classList.add(
+            'bg-yellow-100',
+            'text-yellow-700'
+        );
+
+        badge.textContent =
+            '● Confermata';
+
+    }
+
+}
+
+
+/* ============================================================= */
+/* AGGIORNA STATO PRENOTAZIONE */
+/* ============================================================= */
+
+async function aggiornaStatoPrenotazione(
+    prenotazioneId,
+    partecipante,
+    stato
+) {
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/prenotazione/${prenotazioneId}/stato`,
+                {
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+
+                    body: JSON.stringify({
+                        partecipante: partecipante,
+                        stato: stato
+                    })
+                }
+            );
+
+
+        const risultato =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                risultato.error ||
+                'Errore durante l\\'aggiornamento dello stato.'
+            );
+
+        }
+
+
+        await ricaricaSchedaUtente();
+
+    } catch (error) {
+
+        alert(
+            '⚠️ ' + error.message
+        );
+
+        await ricaricaSchedaUtente();
+
+    }
+
+}
+
+
+/* ============================================================= */
+/* SCALA SEDUTA */
+/* ============================================================= */
+
+async function scalaSeduta(
+    prenotazioneId,
+    partecipante
+) {
+
+    const conferma =
+        confirm(
+            'Confermi di voler scalare questa seduta dall\\'abbonamento del cliente?\\n\\nLa seduta verrà registrata come utilizzata e le sedute residue diminuiranno di 1.'
+        );
+
+
+    if (!conferma) {
+        return;
+    }
+
+
+    try {
+
+        const utenteId =
+            utenteAttualmenteAperto;
+
+
+        const response =
+            await fetch(
+                `/api/utente/${utenteId}/prenotazione/${prenotazioneId}/scala/${partecipante}`,
+                {
+                    method: 'POST'
+                }
+            );
+
+
+        const risultato =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                risultato.error ||
+                'Errore durante la scalatura della seduta.'
+            );
+
+        }
+
+
+        await ricaricaSchedaUtente();
+
+
+    } catch (error) {
+
+        alert(
+            '⚠️ ' + error.message
+        );
+
+    }
+
+}
+
+
+/* ============================================================= */
+/* ANNULLA SCALA */
+/* ============================================================= */
+
+async function annullaScala(
+    prenotazioneId,
+    partecipante
+) {
+
+    const conferma =
+        confirm(
+            'Vuoi annullare la scalatura di questa seduta?\\n\\nLa seduta verrà restituita al saldo delle sedute residue.'
+        );
+
+
+    if (!conferma) {
+        return;
+    }
+
+
+    try {
+
+        const utenteId =
+            utenteAttualmenteAperto;
+
+
+        const response =
+            await fetch(
+                `/api/utente/${utenteId}/prenotazione/${prenotazioneId}/scala/${partecipante}/annulla`,
+                {
+                    method: 'POST'
+                }
+            );
+
+
+        const risultato =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                risultato.error ||
+                'Errore durante l\\'annullamento della scalatura.'
+            );
+
+        }
+
+
+        await ricaricaSchedaUtente();
+
+
+    } catch (error) {
+
+        alert(
+            '⚠️ ' + error.message
+        );
+
+    }
+
+}
+
+
+/* ============================================================= */
+/* RICARICA SCHEDA */
+/* ============================================================= */
+
+async function ricaricaSchedaUtente() {
+
+    if (!utenteAttualmenteAperto) {
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/utente/${utenteAttualmenteAperto}`
+            );
+
+
+        const dati =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                dati.error ||
+                'Errore durante il caricamento.'
+            );
+
+        }
+
+
+        datiUtenteAttuali =
+            dati;
+
+
+        compilaScheda(
+            dati
+        );
+
+
+    } catch (error) {
+
+        alert(
+            '⚠️ ' + error.message
+        );
 
     }
 
@@ -1424,18 +2384,86 @@ async function salvaSchedaUtente(event) {
 
     event.preventDefault();
 
+
     const utenteId =
         document.getElementById('utenteId').value;
 
+
     const bottone =
         document.getElementById('btnSalvaScheda');
+
 
     const messaggio =
         document.getElementById('messaggioScheda');
 
 
     const pagamento =
-        document.querySelector('input[name="pagamento"]:checked');
+        document.querySelector(
+            'input[name="pagamento"]:checked'
+        );
+
+
+    const totali =
+        parseInt(
+            document.getElementById('campoSeduteTotali').value
+        );
+
+
+    const residue =
+        parseInt(
+            document.getElementById('campoSeduteResidue').value
+        );
+
+
+    if (
+        Number.isNaN(totali) ||
+        totali < 0
+    ) {
+
+        messaggio.textContent =
+            '⚠️ Inserisci un numero valido di sedute totali.';
+
+        messaggio.className =
+            'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
+
+        messaggio.classList.remove('hidden');
+
+        return;
+
+    }
+
+
+    if (
+        Number.isNaN(residue) ||
+        residue < 0
+    ) {
+
+        messaggio.textContent =
+            '⚠️ Inserisci un numero valido di sedute residue.';
+
+        messaggio.className =
+            'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
+
+        messaggio.classList.remove('hidden');
+
+        return;
+
+    }
+
+
+    if (residue > totali) {
+
+        messaggio.textContent =
+            '⚠️ Le sedute residue non possono essere superiori alle sedute totali.';
+
+        messaggio.className =
+            'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
+
+        messaggio.classList.remove('hidden');
+
+        return;
+
+    }
 
 
     const dati = {
@@ -1465,13 +2493,15 @@ async function salvaSchedaUtente(event) {
             document.getElementById('campoInizioAbbonamento').value || null,
 
         sedute_totali:
-            parseInt(document.getElementById('campoSeduteTotali').value) || 0,
+            totali,
 
         sedute_residue:
-            parseInt(document.getElementById('campoSeduteResidue').value) || 0,
+            residue,
 
         pagamento_effettuato:
-            pagamento ? pagamento.value === 'true' : false,
+            pagamento
+                ? pagamento.value === 'true'
+                : false,
 
         metodo_pagamento:
             document.getElementById('campoMetodoPagamento').value || null
@@ -1479,35 +2509,45 @@ async function salvaSchedaUtente(event) {
     };
 
 
-    bottone.disabled = true;
+    bottone.disabled =
+        true;
 
-    bottone.textContent = '⏳ Salvataggio...';
+    bottone.textContent =
+        '⏳ Salvataggio...';
 
-    messaggio.classList.add('hidden');
+    messaggio.classList.add(
+        'hidden'
+    );
 
 
     try {
 
-        const response = await fetch(`/api/utente/${utenteId}`, {
+        const response =
+            await fetch(
+                `/api/utente/${utenteId}`,
+                {
+                    method: 'PUT',
 
-            method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
 
-            headers: {
-                'Content-Type': 'application/json'
-            },
-
-            body: JSON.stringify(dati)
-
-        });
+                    body: JSON.stringify(dati)
+                }
+            );
 
 
-        const risultato = await response.json();
+        const risultato =
+            await response.json();
 
 
         if (!response.ok) {
+
             throw new Error(
-                risultato.error || 'Errore durante il salvataggio.'
+                risultato.error ||
+                'Errore durante il salvataggio.'
             );
+
         }
 
 
@@ -1517,12 +2557,29 @@ async function salvaSchedaUtente(event) {
         messaggio.className =
             'px-4 py-3 rounded-xl text-sm text-center bg-green-50 border border-green-200 text-green-700';
 
-        messaggio.classList.remove('hidden');
+        messaggio.classList.remove(
+            'hidden'
+        );
+
+
+        datiUtenteAttuali =
+            await (
+                await fetch(
+                    `/api/utente/${utenteId}`
+                )
+            ).json();
+
+
+        compilaScheda(
+            datiUtenteAttuali
+        );
 
 
         setTimeout(() => {
 
-            messaggio.classList.add('hidden');
+            messaggio.classList.add(
+                'hidden'
+            );
 
         }, 3500);
 
@@ -1535,16 +2592,50 @@ async function salvaSchedaUtente(event) {
         messaggio.className =
             'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
 
-        messaggio.classList.remove('hidden');
+        messaggio.classList.remove(
+            'hidden'
+        );
 
     } finally {
 
-        bottone.disabled = false;
+        bottone.disabled =
+            false;
 
         bottone.textContent =
             '💾 Salva modifiche';
 
     }
+
+}
+
+
+/* ============================================================= */
+/* FORMATTA DATA */
+/* ============================================================= */
+
+function formatData(data) {
+
+    if (!data) {
+        return '—';
+    }
+
+
+    const valore =
+        String(data);
+
+
+    const parti =
+        valore.split('-');
+
+
+    if (parti.length === 3) {
+
+        return `${parti[2]}/${parti[1]}/${parti[0]}`;
+
+    }
+
+
+    return valore;
 
 }
 
@@ -1558,9 +2649,17 @@ function chiudiSchedaUtente() {
     document.getElementById('modaleUtente')
         .classList.add('hidden');
 
-    document.body.classList.remove('overflow-hidden');
 
-    utenteAttualmenteAperto = null;
+    document.body.classList.remove(
+        'overflow-hidden'
+    );
+
+
+    utenteAttualmenteAperto =
+        null;
+
+    datiUtenteAttuali =
+        null;
 
 }
 
@@ -1569,22 +2668,29 @@ function chiudiSchedaUtente() {
 /* ESC PER CHIUDERE */
 /* ============================================================= */
 
-document.addEventListener('keydown', function(event) {
+document.addEventListener(
+    'keydown',
+    function(event) {
 
-    if (event.key === 'Escape') {
+        if (event.key !== 'Escape') {
+            return;
+        }
+
 
         const modale =
             document.getElementById('modaleUtente');
 
-        if (!modale.classList.contains('hidden')) {
+
+        if (
+            !modale.classList.contains('hidden')
+        ) {
 
             chiudiSchedaUtente();
 
         }
 
     }
-
-});
+);
 
 </script>
 
