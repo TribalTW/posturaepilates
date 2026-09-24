@@ -1,4 +1,5 @@
 import os
+import calendar
 from datetime import datetime, timedelta
 import random
 
@@ -200,6 +201,444 @@ def startup():
 
 
 # ============================================================
+# FUNZIONI ABBONAMENTI
+# ============================================================
+
+def normalizza_tipo_abbonamento(tipo):
+    """
+    Restituisce il tipo di abbonamento normalizzato.
+    """
+
+    if not tipo:
+        return None
+
+    valore = str(tipo).strip().lower()
+
+    if valore == "mensile":
+        return "Mensile"
+
+    if valore == "trimestrale":
+        return "Trimestrale"
+
+    if valore == "10 sedute":
+        return "10 sedute"
+
+    return str(tipo).strip()
+
+
+def aggiungi_mesi(data_base, mesi):
+    """
+    Aggiunge mesi a una data mantenendo il giorno quando possibile.
+
+    Esempio:
+    31 gennaio + 1 mese -> 28 febbraio
+    """
+
+    nuovo_mese = data_base.month - 1 + mesi
+
+    anno = (
+        data_base.year
+        + nuovo_mese // 12
+    )
+
+    mese = (
+        nuovo_mese % 12
+    ) + 1
+
+    giorno = min(
+        data_base.day,
+        calendar.monthrange(
+            anno,
+            mese
+        )[1]
+    )
+
+    return data_base.replace(
+        year=anno,
+        month=mese,
+        day=giorno
+    )
+
+
+def calcola_data_fine_abbonamento(
+    tipo_abbonamento,
+    data_inizio
+):
+    """
+    Calcola automaticamente la data di fine
+    per Mensile e Trimestrale.
+    """
+
+    tipo = normalizza_tipo_abbonamento(
+        tipo_abbonamento
+    )
+
+    if not data_inizio:
+        return None
+
+    try:
+        data = datetime.strptime(
+            str(data_inizio),
+            "%Y-%m-%d"
+        ).date()
+    except Exception:
+        return None
+
+    if tipo == "Mensile":
+        fine = aggiungi_mesi(
+            data,
+            1
+        )
+
+    elif tipo == "Trimestrale":
+        fine = aggiungi_mesi(
+            data,
+            3
+        )
+
+    else:
+        return None
+
+    return fine.strftime(
+        "%Y-%m-%d"
+    )
+
+
+def abbonamento_attivo(
+    tipo_abbonamento,
+    data_inizio,
+    data_fine,
+    data_richiesta
+):
+    """
+    Verifica se l'abbonamento è attivo nella data richiesta.
+
+    Per Mensile e Trimestrale:
+    data_inizio <= data_richiesta <= data_fine
+
+    Per 10 sedute:
+    la validità è determinata dal credito residuo.
+    """
+
+    tipo = normalizza_tipo_abbonamento(
+        tipo_abbonamento
+    )
+
+    if tipo == "10 sedute":
+
+        return True
+
+    if tipo not in (
+        "Mensile",
+        "Trimestrale"
+    ):
+
+        return False
+
+    if not data_inizio or not data_fine:
+
+        return False
+
+    try:
+
+        richiesta = datetime.strptime(
+            str(data_richiesta),
+            "%Y-%m-%d"
+        ).date()
+
+        inizio = datetime.strptime(
+            str(data_inizio),
+            "%Y-%m-%d"
+        ).date()
+
+        fine = datetime.strptime(
+            str(data_fine),
+            "%Y-%m-%d"
+        ).date()
+
+        return (
+            inizio
+            <= richiesta
+            <= fine
+        )
+
+    except Exception:
+
+        return False
+
+
+def inizio_settimana(data):
+    """
+    Restituisce il lunedì della settimana
+    contenente la data indicata.
+    """
+
+    return (
+        data
+        - timedelta(
+            days=data.weekday()
+        )
+    )
+
+
+def conta_prenotazioni_settimanali(
+    conn,
+    cf,
+    data_richiesta
+):
+    """
+    Conta quante prenotazioni ATTIVE ha fatto il cliente
+    nella settimana della data richiesta.
+
+    Una prenotazione cancellata non viene conteggiata.
+
+    Il conteggio è per partecipante:
+    se il CF compare come partecipante 1 o 2,
+    viene conteggiato una volta.
+    """
+
+    cf_clean = (
+        str(cf or "")
+        .strip()
+        .upper()
+    )
+
+    if not cf_clean:
+        return 0
+
+    try:
+
+        data_obj = datetime.strptime(
+            str(data_richiesta),
+            "%Y-%m-%d"
+        ).date()
+
+    except Exception:
+
+        return 0
+
+    lunedi = inizio_settimana(
+        data_obj
+    )
+
+    domenica = (
+        lunedi
+        + timedelta(days=6)
+    )
+
+    risultati = conn.execute(
+        text("""
+            SELECT
+                codice_fiscale,
+                codice_fiscale_2,
+                COALESCE(
+                    stato,
+                    'confermata'
+                ) AS stato_1,
+                COALESCE(
+                    stato_2,
+                    'confermata'
+                ) AS stato_2
+            FROM prenotazioni
+            WHERE
+                data >= :inizio
+                AND data <= :fine
+        """),
+        {
+            "inizio":
+                lunedi.strftime(
+                    "%Y-%m-%d"
+                ),
+
+            "fine":
+                domenica.strftime(
+                    "%Y-%m-%d"
+                )
+        }
+    ).fetchall()
+
+    conteggio = 0
+
+    for r in risultati:
+
+        cf1 = (
+            str(r[0]).strip().upper()
+            if r[0]
+            else ""
+        )
+
+        cf2 = (
+            str(r[1]).strip().upper()
+            if r[1]
+            else ""
+        )
+
+        stato1 = str(
+            r[2]
+        ).strip().lower()
+
+        stato2 = str(
+            r[3]
+        ).strip().lower()
+
+        if (
+            cf1 == cf_clean
+            and stato1 != "cancellata"
+        ):
+
+            conteggio += 1
+
+        if (
+            cf2 == cf_clean
+            and stato2 != "cancellata"
+        ):
+
+            conteggio += 1
+
+    return conteggio
+
+
+def verifica_abilitazione_prenotazione(
+    conn,
+    cf,
+    data_richiesta
+):
+    """
+    Verifica se un cliente può effettuare una prenotazione
+    nella data richiesta.
+
+    Restituisce:
+        True, messaggio
+    oppure:
+        False, messaggio
+    """
+
+    cf_clean = (
+        str(cf or "")
+        .strip()
+        .upper()
+    )
+
+    utente = conn.execute(
+        text("""
+            SELECT
+                tipo_abbonamento,
+                data_inizio_abbonamento,
+                data_fine_abbonamento,
+                COALESCE(
+                    sedute_totali,
+                    0
+                ) AS sedute_totali,
+                COALESCE(
+                    sedute_residue,
+                    0
+                ) AS sedute_residue,
+                COALESCE(
+                    bannato,
+                    false
+                ) AS bannato
+            FROM utenti
+            WHERE
+                UPPER(codice_fiscale) = :cf
+        """),
+        {
+            "cf":
+                cf_clean
+        }
+    ).mappings().first()
+
+    if not utente:
+
+        return (
+            False,
+            "Il tuo account non risulta "
+            "configurato per effettuare prenotazioni."
+        )
+
+    if utente["bannato"]:
+
+        return (
+            False,
+            "Il tuo account risulta bannato."
+        )
+
+    tipo = normalizza_tipo_abbonamento(
+        utente["tipo_abbonamento"]
+    )
+
+    if tipo == "10 sedute":
+
+        residue = int(
+            utente["sedute_residue"]
+            or 0
+        )
+
+        if residue <= 0:
+
+            return (
+                False,
+                "Non hai più sedute residue "
+                "nel tuo abbonamento."
+            )
+
+        return (
+            True,
+            None
+        )
+
+    if tipo in (
+        "Mensile",
+        "Trimestrale"
+    ):
+
+        attivo = abbonamento_attivo(
+            tipo,
+            utente[
+                "data_inizio_abbonamento"
+            ],
+            utente[
+                "data_fine_abbonamento"
+            ],
+            data_richiesta
+        )
+
+        if not attivo:
+
+            return (
+                False,
+                "Il tuo abbonamento non è attivo "
+                "nella data selezionata."
+            )
+
+        prenotazioni_settimana = (
+            conta_prenotazioni_settimanali(
+                conn,
+                cf_clean,
+                data_richiesta
+            )
+        )
+
+        if prenotazioni_settimana >= 2:
+
+            return (
+                False,
+                "Hai già raggiunto il limite massimo "
+                "di 2 prenotazioni questa settimana."
+            )
+
+        return (
+            True,
+            None
+        )
+
+    return (
+        False,
+        "Non hai un abbonamento attivo configurato. "
+        "Contatta l'amministrazione."
+    )
+
+
+# ============================================================
 # FUNZIONE: VERIFICA SE LA PROVA È GIÀ STATA UTILIZZATA
 # ============================================================
 
@@ -230,7 +669,8 @@ def utente_ha_usato_prova(cf: str) -> bool:
                     AND LOWER(trattamento) LIKE '%prova%'
             """),
             {
-                "cf": cf.strip().upper()
+                "cf":
+                    cf.strip().upper()
             }
         ).scalar()
 
@@ -249,6 +689,7 @@ def index(request: Request):
     if user:
 
         if user.get("cf") == ADMIN_CF:
+
             return RedirectResponse(
                 url="/admin",
                 status_code=303
@@ -278,6 +719,7 @@ def login_get(request: Request):
     if user:
 
         if user.get("cf") == ADMIN_CF:
+
             return RedirectResponse(
                 url="/admin",
                 status_code=303
@@ -582,6 +1024,7 @@ def pagina_registrazione(request: Request):
     user = request.session.get("user")
 
     if user:
+
         return RedirectResponse(
             url="/prenota",
             status_code=303
@@ -752,6 +1195,7 @@ def prenota_page(request: Request):
     user = request.session.get("user")
 
     if not user:
+
         return RedirectResponse(
             url="/",
             status_code=303
@@ -785,6 +1229,7 @@ def effettua_prenotazione(
     user = request.session.get("user")
 
     if not user:
+
         return RedirectResponse(
             url="/",
             status_code=303
@@ -793,6 +1238,20 @@ def effettua_prenotazione(
     ha_usato_prova = utente_ha_usato_prova(
         user["cf"]
     )
+
+    def errore(messaggio):
+
+        return templates.TemplateResponse(
+            request=request,
+            name="prenota.html",
+            context={
+                "user": user,
+                "ha_usato_prova":
+                    ha_usato_prova,
+                "error":
+                    messaggio
+            }
+        )
 
     with engine.begin() as conn:
 
@@ -803,36 +1262,23 @@ def effettua_prenotazione(
                 WHERE UPPER(codice_fiscale) = :cf
             """),
             {
-                "cf": user["cf"].strip().upper()
+                "cf":
+                    user["cf"].strip().upper()
             }
         ).scalar()
 
         if is_bannato:
 
-            return templates.TemplateResponse(
-                request=request,
-                name="prenota.html",
-                context={
-                    "user": user,
-                    "ha_usato_prova": ha_usato_prova,
-                    "error":
-                        "Il tuo account risulta bannato. "
-                        "Impossibile effettuare prenotazioni."
-                }
+            return errore(
+                "Il tuo account risulta bannato. "
+                "Impossibile effettuare prenotazioni."
             )
 
     if not trattamento or not data or not ora:
 
-        return templates.TemplateResponse(
-            request=request,
-            name="prenota.html",
-            context={
-                "user": user,
-                "ha_usato_prova": ha_usato_prova,
-                "error":
-                    "Seleziona un trattamento, una data "
-                    "e un orario validi prima di procedere."
-            }
+        return errore(
+            "Seleziona un trattamento, una data "
+            "e un orario validi prima di procedere."
         )
 
     try:
@@ -842,75 +1288,70 @@ def effettua_prenotazione(
             "%Y-%m-%d"
         )
 
-        giorno_settimana = dt_app.weekday()
+        giorno_settimana = (
+            dt_app.weekday()
+        )
+
         ora_num = int(
             ora.split(":")[0]
         )
 
         if giorno_settimana == 6:
 
-            return templates.TemplateResponse(
-                request=request,
-                name="prenota.html",
-                context={
-                    "user": user,
-                    "ha_usato_prova": ha_usato_prova,
-                    "error":
-                        "La domenica lo studio è chiuso."
-                }
+            return errore(
+                "La domenica lo studio è chiuso."
             )
 
         elif giorno_settimana == 5:
 
-            if not (8 <= ora_num <= 13):
+            if not (
+                8 <= ora_num <= 13
+            ):
 
-                return templates.TemplateResponse(
-                    request=request,
-                    name="prenota.html",
-                    context={
-                        "user": user,
-                        "ha_usato_prova": ha_usato_prova,
-                        "error":
-                            "Il sabato è possibile prenotare "
-                            "solo dalle 08:00 alle 13:00."
-                    }
+                return errore(
+                    "Il sabato è possibile prenotare "
+                    "solo dalle 08:00 alle 13:00."
                 )
 
         else:
 
-            if not (8 <= ora_num <= 19):
+            if not (
+                8 <= ora_num <= 19
+            ):
 
-                return templates.TemplateResponse(
-                    request=request,
-                    name="prenota.html",
-                    context={
-                        "user": user,
-                        "ha_usato_prova": ha_usato_prova,
-                        "error":
-                            "Gli orari consentiti vanno "
-                            "dalle 08:00 alle 19:00."
-                    }
+                return errore(
+                    "Gli orari consentiti vanno "
+                    "dalle 08:00 alle 19:00."
                 )
 
     except Exception:
-        pass
+
+        return errore(
+            "Data o orario non validi."
+        )
+
+    # ========================================================
+    # SEDUTA DI PROVA
+    # ========================================================
+
+    is_prova = (
+        "prova"
+        in trattamento.lower()
+    )
 
     if (
-        "prova" in trattamento.lower()
+        is_prova
         and ha_usato_prova
     ):
 
-        return templates.TemplateResponse(
-            request=request,
-            name="prenota.html",
-            context={
-                "user": user,
-                "ha_usato_prova": True,
-                "error":
-                    "Hai già usufruito della Seduta di Prova "
-                    "(limite massimo: 1 a persona)."
-            }
+        return errore(
+            "Hai già usufruito della Seduta di Prova "
+            "(limite massimo: 1 a persona)."
         )
+
+    # ========================================================
+    # DATI PRENOTAZIONE
+    # ========================================================
 
     nome_completo = (
         f"{user['nome']} {user['cognome']}"
@@ -925,42 +1366,35 @@ def effettua_prenotazione(
     cf_2_clean = None
 
     is_coppia = (
-        "coppia" in trattamento.lower()
+        "coppia"
+        in trattamento.lower()
     )
 
     if is_coppia:
 
-        if not nome_2 or not cognome_2 or not cf_2:
+        if (
+            not nome_2
+            or not cognome_2
+            or not cf_2
+        ):
 
-            return templates.TemplateResponse(
-                request=request,
-                name="prenota.html",
-                context={
-                    "user": user,
-                    "ha_usato_prova": ha_usato_prova,
-                    "error":
-                        "Per il Pilates di Coppia è necessario "
-                        "inserire tutti i dati della seconda persona."
-                }
+            return errore(
+                "Per il Pilates di Coppia è necessario "
+                "inserire tutti i dati della seconda persona."
             )
 
-        valido, msg = logic.valida_codice_fiscale(
-            nome_2.strip(),
-            cognome_2.strip(),
-            cf_2.strip()
+        valido, msg = (
+            logic.valida_codice_fiscale(
+                nome_2.strip(),
+                cognome_2.strip(),
+                cf_2.strip()
+            )
         )
 
         if not valido:
 
-            return templates.TemplateResponse(
-                request=request,
-                name="prenota.html",
-                context={
-                    "user": user,
-                    "ha_usato_prova": ha_usato_prova,
-                    "error":
-                        f"Dati 2° partecipante errati: {msg}"
-                }
+            return errore(
+                f"Dati 2° partecipante errati: {msg}"
             )
 
         nome_completo_2 = (
@@ -968,13 +1402,42 @@ def effettua_prenotazione(
             f"{cognome_2.strip().title()}"
         )
 
-        cf_2_clean = cf_2.strip().upper()
+        cf_2_clean = (
+            cf_2.strip().upper()
+        )
+
+    # ========================================================
+    # CONTROLLO ABBONAMENTO
+    # ========================================================
 
     with engine.begin() as conn:
 
         user_cf = (
-            user["cf"].strip().upper()
+            user["cf"]
+            .strip()
+            .upper()
         )
+
+        # La Seduta di Prova non richiede abbonamento.
+        if not is_prova:
+
+            puo_prenotare, messaggio = (
+                verifica_abilitazione_prenotazione(
+                    conn,
+                    user_cf,
+                    data
+                )
+            )
+
+            if not puo_prenotare:
+
+                return errore(
+                    messaggio
+                )
+
+        # ====================================================
+        # CONTROLLO DOPPIA PRENOTAZIONE STESSO ORARIO
+        # ====================================================
 
         gia_prenotato = conn.execute(
             text("""
@@ -985,33 +1448,57 @@ def effettua_prenotazione(
                     AND ora = :o
                     AND
                     (
-                        UPPER(codice_fiscale) = :cf
+                        (
+                            UPPER(codice_fiscale) = :cf
+                            AND LOWER(
+                                COALESCE(
+                                    stato,
+                                    'confermata'
+                                )
+                            ) != 'cancellata'
+                        )
 
-                        OR UPPER(codice_fiscale_2) = :cf
+                        OR
 
-                        OR (
+                        (
+                            UPPER(codice_fiscale_2) = :cf
+                            AND LOWER(
+                                COALESCE(
+                                    stato_2,
+                                    'confermata'
+                                )
+                            ) != 'cancellata'
+                        )
+
+                        OR
+
+                        (
                             :cf_2 IS NOT NULL
                             AND
                             (
-                                UPPER(codice_fiscale) = :cf_2
+                                (
+                                    UPPER(codice_fiscale) = :cf_2
+                                    AND LOWER(
+                                        COALESCE(
+                                            stato,
+                                            'confermata'
+                                        )
+                                    ) != 'cancellata'
+                                )
+
                                 OR
-                                UPPER(codice_fiscale_2) = :cf_2
+
+                                (
+                                    UPPER(codice_fiscale_2) = :cf_2
+                                    AND LOWER(
+                                        COALESCE(
+                                            stato_2,
+                                            'confermata'
+                                        )
+                                    ) != 'cancellata'
+                                )
                             )
                         )
-                    )
-
-                    AND NOT (
-                        UPPER(codice_fiscale) = :cf
-                        AND LOWER(
-                            COALESCE(stato, 'confermata')
-                        ) = 'cancellata'
-                    )
-
-                    AND NOT (
-                        UPPER(codice_fiscale_2) = :cf
-                        AND LOWER(
-                            COALESCE(stato_2, 'confermata')
-                        ) = 'cancellata'
                     )
             """),
             {
@@ -1027,24 +1514,28 @@ def effettua_prenotazione(
 
         if gia_prenotato > 0:
 
-            return templates.TemplateResponse(
-                request=request,
-                name="prenota.html",
-                context={
-                    "user": user,
-                    "ha_usato_prova": ha_usato_prova,
-                    "error":
-                        "Risulti già prenotato "
-                        "(o inserito come secondo partecipante) "
-                        "in questo giorno e orario!"
-                }
+            return errore(
+                "Risulti già prenotato "
+                "(o inserito come secondo partecipante) "
+                "in questo giorno e orario!"
             )
+
+        # ====================================================
+        # CONTROLLO POSTI
+        # ====================================================
 
         prenotazioni_esistenti = conn.execute(
             text("""
                 SELECT
                     trattamento,
-                    COALESCE(stato, 'confermata')
+                    COALESCE(
+                        stato,
+                        'confermata'
+                    ) AS stato_1,
+                    COALESCE(
+                        stato_2,
+                        'confermata'
+                    ) AS stato_2
                 FROM prenotazioni
                 WHERE
                     data = :d
@@ -1060,20 +1551,41 @@ def effettua_prenotazione(
 
         for (
             p_trattamento,
-            p_stato
+            p_stato,
+            p_stato_2
         ) in prenotazioni_esistenti:
 
-            if str(p_stato).lower() == "cancellata":
-                continue
+            trattamento_esistente = str(
+                p_trattamento
+                or ""
+            ).lower()
 
-            peso = (
-                2
-                if "coppia"
-                in str(p_trattamento).lower()
-                else 1
-            )
+            if "coppia" in trattamento_esistente:
 
-            posti_occupati += peso
+                stato1_attivo = (
+                    str(p_stato).lower()
+                    != "cancellata"
+                )
+
+                stato2_attivo = (
+                    str(p_stato_2).lower()
+                    != "cancellata"
+                )
+
+                if stato1_attivo:
+                    posti_occupati += 1
+
+                if stato2_attivo:
+                    posti_occupati += 1
+
+            else:
+
+                if (
+                    str(p_stato).lower()
+                    != "cancellata"
+                ):
+
+                    posti_occupati += 1
 
         posti_richiesti = (
             2
@@ -1082,21 +1594,20 @@ def effettua_prenotazione(
         )
 
         if (
-            posti_occupati + posti_richiesti
-        ) > 2:
+            posti_occupati
+            + posti_richiesti
+            > 2
+        ):
 
-            return templates.TemplateResponse(
-                request=request,
-                name="prenota.html",
-                context={
-                    "user": user,
-                    "ha_usato_prova": ha_usato_prova,
-                    "error":
-                        "Spiacenti, i lettini per questo orario "
-                        "sono esauriti o non sufficienti "
-                        "per questa prenotazione!"
-                }
+            return errore(
+                "Spiacenti, i lettini per questo orario "
+                "sono esauriti o non sufficienti "
+                "per questa prenotazione!"
             )
+
+        # ====================================================
+        # INSERIMENTO
+        # ====================================================
 
         conn.execute(
             text("""
@@ -1132,14 +1643,29 @@ def effettua_prenotazione(
                 )
             """),
             {
-                "n": nome_completo,
-                "d": data,
-                "o": ora,
-                "t": trattamento,
-                "dc": data_creazione,
-                "cf": user["cf"],
-                "n2": nome_completo_2,
-                "cf2": cf_2_clean
+                "n":
+                    nome_completo,
+
+                "d":
+                    data,
+
+                "o":
+                    ora,
+
+                "t":
+                    trattamento,
+
+                "dc":
+                    data_creazione,
+
+                "cf":
+                    user["cf"],
+
+                "n2":
+                    nome_completo_2,
+
+                "cf2":
+                    cf_2_clean
             }
         )
 
@@ -1147,14 +1673,24 @@ def effettua_prenotazione(
         request=request,
         name="prenota.html",
         context={
-            "user": user,
-            "ha_usato_prova": ha_usato_prova,
+            "user":
+                user,
+
+            "ha_usato_prova":
+                ha_usato_prova,
+
             "success":
                 f"Prenotazione confermata per il "
                 f"{data} alle ore {ora}!",
-            "ultimo_trattamento": trattamento,
-            "ultima_data": data,
-            "ultima_ora": ora
+
+            "ultimo_trattamento":
+                trattamento,
+
+            "ultima_data":
+                data,
+
+            "ultima_ora":
+                ora
         }
     )
 
@@ -1183,7 +1719,9 @@ def get_orari_disponibili(
             {"orari": []}
         )
 
-    giorno_settimana = dt.weekday()
+    giorno_settimana = (
+        dt.weekday()
+    )
 
     if giorno_settimana == 6:
 
@@ -1205,15 +1743,49 @@ def get_orari_disponibili(
             for h in range(8, 20)
         ]
 
-    user = request.session.get("user")
+    user = request.session.get(
+        "user"
+    )
 
     user_cf = (
         user["cf"].strip().upper()
-        if user and "cf" in user
+        if user
+        and "cf" in user
         else None
     )
 
     with engine.begin() as conn:
+
+        # ====================================================
+        # CONTROLLO ABBONAMENTO / LIMITE SETTIMANALE
+        # ====================================================
+
+        if user_cf and trattamento:
+
+            is_prova = (
+                "prova"
+                in trattamento.lower()
+            )
+
+            if not is_prova:
+
+                puo_prenotare, _ = (
+                    verifica_abilitazione_prenotazione(
+                        conn,
+                        user_cf,
+                        data
+                    )
+                )
+
+                if not puo_prenotare:
+
+                    return JSONResponse(
+                        {"orari": []}
+                    )
+
+        # ====================================================
+        # GIORNO BLOCCATO
+        # ====================================================
 
         giorno_bloccato = conn.execute(
             text("""
@@ -1223,7 +1795,9 @@ def get_orari_disponibili(
                     data = :d
                     AND ora IS NULL
             """),
-            {"d": data}
+            {
+                "d": data
+            }
         ).fetchone()
 
         if giorno_bloccato:
@@ -1231,6 +1805,10 @@ def get_orari_disponibili(
             return JSONResponse(
                 {"orari": []}
             )
+
+        # ====================================================
+        # ORARI BLOCCATI
+        # ====================================================
 
         orari_bloccati = [
             r[0]
@@ -1242,26 +1820,41 @@ def get_orari_disponibili(
                         data = :d
                         AND ora IS NOT NULL
                 """),
-                {"d": data}
+                {
+                    "d": data
+                }
             ).fetchall()
         ]
+
+        # ====================================================
+        # PRENOTAZIONI DEL GIORNO
+        # ====================================================
 
         prenotazioni_giorno = conn.execute(
             text("""
                 SELECT
                     ora,
                     trattamento,
-                    COALESCE(stato, 'confermata'),
+                    COALESCE(
+                        stato,
+                        'confermata'
+                    ),
                     codice_fiscale,
                     codice_fiscale_2,
-                    COALESCE(stato_2, 'confermata')
+                    COALESCE(
+                        stato_2,
+                        'confermata'
+                    )
                 FROM prenotazioni
                 WHERE data = :d
             """),
-            {"d": data}
+            {
+                "d": data
+            }
         ).fetchall()
 
     posti_occupati_per_ora = {}
+
     orari_utente_prenotato = set()
 
     for (
@@ -1277,14 +1870,16 @@ def get_orari_disponibili(
 
             is_cf1_match = (
                 cf1
-                and cf1.strip().upper() == user_cf
+                and cf1.strip().upper()
+                == user_cf
                 and str(stato).lower()
                 != "cancellata"
             )
 
             is_cf2_match = (
                 cf2
-                and cf2.strip().upper() == user_cf
+                and cf2.strip().upper()
+                == user_cf
                 and str(stato_2).lower()
                 != "cancellata"
             )
@@ -1293,27 +1888,64 @@ def get_orari_disponibili(
                 is_cf1_match
                 or is_cf2_match
             ):
+
                 orari_utente_prenotato.add(
                     ora
                 )
 
-        if str(stato).lower() == "cancellata":
-            continue
+        trattamento_esistente = str(
+            t_esistente
+            or ""
+        ).lower()
 
-        peso = (
-            2
-            if "coppia"
-            in str(t_esistente).lower()
-            else 1
-        )
+        if "coppia" in trattamento_esistente:
 
-        posti_occupati_per_ora[ora] = (
-            posti_occupati_per_ora.get(
-                ora,
-                0
-            )
-            + peso
-        )
+            if (
+                str(stato).lower()
+                != "cancellata"
+            ):
+
+                posti_occupati_per_ora[
+                    ora
+                ] = (
+                    posti_occupati_per_ora.get(
+                        ora,
+                        0
+                    )
+                    + 1
+                )
+
+            if (
+                str(stato_2).lower()
+                != "cancellata"
+            ):
+
+                posti_occupati_per_ora[
+                    ora
+                ] = (
+                    posti_occupati_per_ora.get(
+                        ora,
+                        0
+                    )
+                    + 1
+                )
+
+        else:
+
+            if (
+                str(stato).lower()
+                != "cancellata"
+            ):
+
+                posti_occupati_per_ora[
+                    ora
+                ] = (
+                    posti_occupati_per_ora.get(
+                        ora,
+                        0
+                    )
+                    + 1
+                )
 
     richiede_due_posti = (
         "coppia"
@@ -1325,12 +1957,14 @@ def get_orari_disponibili(
     for o in orari_teorici:
 
         if o in orari_bloccati:
+
             continue
 
         if (
             user_cf
             and o in orari_utente_prenotato
         ):
+
             continue
 
         posti_occupati = (
@@ -1343,15 +1977,24 @@ def get_orari_disponibili(
         if richiede_due_posti:
 
             if posti_occupati == 0:
-                orari_liberi.append(o)
+
+                orari_liberi.append(
+                    o
+                )
 
         else:
 
             if posti_occupati < 2:
-                orari_liberi.append(o)
+
+                orari_liberi.append(
+                    o
+                )
 
     return JSONResponse(
-        {"orari": orari_liberi}
+        {
+            "orari":
+                orari_liberi
+        }
     )
 
 
@@ -1360,19 +2003,28 @@ def get_orari_disponibili(
 # ============================================================
 
 @app.get("/api/mie-prenotazioni")
-def get_mie_prenotazioni(request: Request):
+def get_mie_prenotazioni(
+    request: Request
+):
 
-    user = request.session.get("user")
+    user = request.session.get(
+        "user"
+    )
 
     if not user:
 
         return JSONResponse(
-            {"error": "Non autenticato"},
+            {
+                "error":
+                    "Non autenticato"
+            },
             status_code=401
         )
 
     user_cf = (
-        user["cf"].strip().upper()
+        user["cf"]
+        .strip()
+        .upper()
     )
 
     with engine.begin() as conn:
@@ -1403,7 +2055,6 @@ def get_mie_prenotazioni(request: Request):
                         OR
                         UPPER(codice_fiscale_2) = :cf
                     )
-
                     AND NOT (
                         UPPER(codice_fiscale) = :cf
                         AND LOWER(
@@ -1413,7 +2064,6 @@ def get_mie_prenotazioni(request: Request):
                             )
                         ) = 'cancellata'
                     )
-
                     AND NOT (
                         UPPER(codice_fiscale_2) = :cf
                         AND LOWER(
@@ -1423,13 +2073,13 @@ def get_mie_prenotazioni(request: Request):
                             )
                         ) = 'cancellata'
                     )
-
                 ORDER BY
                     data ASC,
                     ora ASC
             """),
             {
-                "cf": user_cf
+                "cf":
+                    user_cf
             }
         ).fetchall()
 
@@ -1455,24 +2105,40 @@ def get_mie_prenotazioni(request: Request):
             and cf1.strip().upper()
             == user_cf
         ):
+
             stato_personale = stato1
 
         else:
+
             stato_personale = stato2
 
         risultati.append({
-            "id": id_prenotazione,
-            "nome": nome,
-            "data": data,
-            "ora": str(ora)[:5],
-            "trattamento": trattamento,
-            "stato": stato_personale,
-            "is_coppia": bool(nome_2)
+            "id":
+                id_prenotazione,
+
+            "nome":
+                nome,
+
+            "data":
+                data,
+
+            "ora":
+                str(ora)[:5],
+
+            "trattamento":
+                trattamento,
+
+            "stato":
+                stato_personale,
+
+            "is_coppia":
+                bool(nome_2)
         })
 
     return JSONResponse(
         {
-            "prenotazioni": risultati
+            "prenotazioni":
+                risultati
         }
     )
 
@@ -1481,9 +2147,13 @@ def get_mie_prenotazioni(request: Request):
 # VERIFICA ADMIN
 # ============================================================
 
-def verifica_admin(request: Request) -> bool:
+def verifica_admin(
+    request: Request
+) -> bool:
 
-    user = request.session.get("user")
+    user = request.session.get(
+        "user"
+    )
 
     return bool(
         user
@@ -1504,7 +2174,10 @@ def get_utente_gestionale(
     if not verifica_admin(request):
 
         return JSONResponse(
-            {"error": "Non autorizzato"},
+            {
+                "error":
+                    "Non autorizzato"
+            },
             status_code=403
         )
 
@@ -1557,14 +2230,18 @@ def get_utente_gestionale(
                 WHERE id = :id
             """),
             {
-                "id": utente_id
+                "id":
+                    utente_id
             }
         ).mappings().first()
 
         if not utente:
 
             return JSONResponse(
-                {"error": "Utente non trovato"},
+                {
+                    "error":
+                        "Utente non trovato"
+                },
                 status_code=404
             )
 
@@ -1619,11 +2296,16 @@ def get_utente_gestionale(
                     ora DESC
             """),
             {
-                "cf": cf
+                "cf":
+                    cf
             }
         ).mappings().all()
 
     prenotazioni = []
+
+    tipo_abbonamento = normalizza_tipo_abbonamento(
+        utente["tipo_abbonamento"]
+    )
 
     for p in prenotazioni_db:
 
@@ -1666,10 +2348,12 @@ def get_utente_gestionale(
             nome_partecipante = p["nome_2"]
 
         else:
+
             continue
 
         trattamento = str(
-            p["trattamento"] or ""
+            p["trattamento"]
+            or ""
         )
 
         is_prova = (
@@ -1677,8 +2361,12 @@ def get_utente_gestionale(
             in trattamento.lower()
         )
 
+        # La scalatura è possibile SOLO per 10 sedute.
         puo_scalare = (
-            str(stato).lower()
+            tipo_abbonamento
+            == "10 sedute"
+
+            and str(stato).lower()
             == "presente"
 
             and not is_prova
@@ -1692,13 +2380,14 @@ def get_utente_gestionale(
         )
 
         prenotazioni.append({
-            "id": p["id"],
+            "id":
+                p["id"],
 
-            "data": p["data"],
+            "data":
+                p["data"],
 
-            "ora": str(
-                p["ora"]
-            )[:5],
+            "ora":
+                str(p["ora"])[:5],
 
             "trattamento":
                 trattamento,
@@ -1732,10 +2421,37 @@ def get_utente_gestionale(
         or 0
     )
 
-    return {
-        "utente": dict(utente),
+    if tipo_abbonamento in (
+        "Mensile",
+        "Trimestrale"
+    ):
 
-        "riepilogo": {
+        riepilogo = {
+            "tipo":
+                tipo_abbonamento,
+
+            "frequenza_massima":
+                2,
+
+            "sedute_totali":
+                None,
+
+            "sedute_residue":
+                None,
+
+            "sedute_utilizzate":
+                None
+        }
+
+    else:
+
+        riepilogo = {
+            "tipo":
+                tipo_abbonamento,
+
+            "frequenza_massima":
+                None,
+
             "sedute_totali":
                 sedute_totali,
 
@@ -1748,7 +2464,14 @@ def get_utente_gestionale(
                     sedute_totali
                     - sedute_residue
                 )
-        },
+        }
+
+    return {
+        "utente":
+            dict(utente),
+
+        "riepilogo":
+            riepilogo,
 
         "prenotazioni":
             prenotazioni
@@ -1769,53 +2492,16 @@ def aggiorna_utente_gestionale(
     if not verifica_admin(request):
 
         return JSONResponse(
-            {"error": "Non autorizzato"},
+            {
+                "error":
+                    "Non autorizzato"
+            },
             status_code=403
         )
 
-    if (
-        dati.sedute_totali is not None
-        and dati.sedute_totali < 0
-    ):
-
-        return JSONResponse(
-            {
-                "error":
-                    "Il numero di sedute totali "
-                    "non può essere negativo."
-            },
-            status_code=400
-        )
-
-    if (
-        dati.sedute_residue is not None
-        and dati.sedute_residue < 0
-    ):
-
-        return JSONResponse(
-            {
-                "error":
-                    "Il numero di sedute residue "
-                    "non può essere negativo."
-            },
-            status_code=400
-        )
-
-    if (
-        dati.sedute_totali is not None
-        and dati.sedute_residue is not None
-        and dati.sedute_residue
-        > dati.sedute_totali
-    ):
-
-        return JSONResponse(
-            {
-                "error":
-                    "Le sedute residue non possono "
-                    "superare quelle totali."
-            },
-            status_code=400
-        )
+    # ========================================================
+    # RECUPERO DATI ATTUALI
+    # ========================================================
 
     with engine.begin() as conn:
 
@@ -1839,35 +2525,167 @@ def aggiorna_utente_gestionale(
                         false
                     ) AS pagamento_effettuato,
 
-                    metodo_pagamento
+                    metodo_pagamento,
+
+                    tipo_abbonamento,
+                    data_inizio_abbonamento,
+                    data_fine_abbonamento
 
                 FROM utenti
 
                 WHERE id = :id
+
+                FOR UPDATE
             """),
             {
-                "id": utente_id
+                "id":
+                    utente_id
             }
         ).mappings().first()
 
         if not esiste:
 
             return JSONResponse(
-                {"error": "Utente non trovato"},
+                {
+                    "error":
+                        "Utente non trovato"
+                },
                 status_code=404
             )
 
-        sedute_totali = (
-            dati.sedute_totali
-            if dati.sedute_totali is not None
-            else esiste["sedute_totali"]
+        # ====================================================
+        # TIPO ABBONAMENTO
+        # ====================================================
+
+        tipo_abbonamento = (
+            dati.tipo_abbonamento
+            if dati.tipo_abbonamento is not None
+            else esiste["tipo_abbonamento"]
         )
 
-        sedute_residue = (
-            dati.sedute_residue
-            if dati.sedute_residue is not None
-            else esiste["sedute_residue"]
+        tipo_abbonamento = (
+            normalizza_tipo_abbonamento(
+                tipo_abbonamento
+            )
         )
+
+        # ====================================================
+        # DATE
+        # ====================================================
+
+        data_inizio = (
+            dati.data_inizio_abbonamento
+            if dati.data_inizio_abbonamento
+            is not None
+            else esiste[
+                "data_inizio_abbonamento"
+            ]
+        )
+
+        data_fine = (
+            dati.data_fine_abbonamento
+            if dati.data_fine_abbonamento
+            is not None
+            else esiste[
+                "data_fine_abbonamento"
+            ]
+        )
+
+        # Per Mensile/Trimestrale la data fine viene
+        # calcolata automaticamente.
+        if tipo_abbonamento in (
+            "Mensile",
+            "Trimestrale"
+        ):
+
+            data_fine_calcolata = (
+                calcola_data_fine_abbonamento(
+                    tipo_abbonamento,
+                    data_inizio
+                )
+            )
+
+            if data_fine_calcolata:
+
+                data_fine = (
+                    data_fine_calcolata
+                )
+
+        # ====================================================
+        # SEDUTE
+        # ====================================================
+
+        if tipo_abbonamento == "10 sedute":
+
+            sedute_totali = (
+                dati.sedute_totali
+                if dati.sedute_totali
+                is not None
+                else esiste[
+                    "sedute_totali"
+                ]
+            )
+
+            sedute_residue = (
+                dati.sedute_residue
+                if dati.sedute_residue
+                is not None
+                else esiste[
+                    "sedute_residue"
+                ]
+            )
+
+            if sedute_totali is None:
+
+                sedute_totali = 10
+
+            if sedute_residue is None:
+
+                sedute_residue = 10
+
+            if sedute_totali != 10:
+
+                return JSONResponse(
+                    {
+                        "error":
+                            "L'abbonamento '10 sedute' "
+                            "deve avere esattamente 10 sedute totali."
+                    },
+                    status_code=400
+                )
+
+            if sedute_residue < 0:
+
+                return JSONResponse(
+                    {
+                        "error":
+                            "Le sedute residue "
+                            "non possono essere negative."
+                    },
+                    status_code=400
+                )
+
+            if sedute_residue > 10:
+
+                return JSONResponse(
+                    {
+                        "error":
+                            "Le sedute residue "
+                            "non possono superare 10."
+                    },
+                    status_code=400
+                )
+
+        else:
+
+            # Mensile e Trimestrale non hanno un credito
+            # di sedute.
+            sedute_totali = 0
+            sedute_residue = 0
+
+        # ====================================================
+        # PAGAMENTO
+        # ====================================================
 
         pagamento = (
             dati.pagamento_effettuato
@@ -1880,25 +2698,16 @@ def aggiorna_utente_gestionale(
 
         metodo_pagamento = (
             dati.metodo_pagamento
-            if dati.metodo_pagamento is not None
+            if dati.metodo_pagamento
+            is not None
             else esiste[
                 "metodo_pagamento"
             ]
         )
 
-        if (
-            sedute_residue
-            > sedute_totali
-        ):
-
-            return JSONResponse(
-                {
-                    "error":
-                        "Le sedute residue non possono "
-                        "superare quelle totali."
-                },
-                status_code=400
-            )
+        # ====================================================
+        # UPDATE
+        # ====================================================
 
         conn.execute(
             text("""
@@ -1947,7 +2756,8 @@ def aggiorna_utente_gestionale(
                 WHERE id = :id
             """),
             {
-                "id": utente_id,
+                "id":
+                    utente_id,
 
                 "data_nascita":
                     dati.data_nascita,
@@ -1968,13 +2778,13 @@ def aggiorna_utente_gestionale(
                     dati.note,
 
                 "tipo_abbonamento":
-                    dati.tipo_abbonamento,
+                    tipo_abbonamento,
 
                 "data_inizio_abbonamento":
-                    dati.data_inizio_abbonamento,
+                    data_inizio,
 
                 "data_fine_abbonamento":
-                    dati.data_fine_abbonamento,
+                    data_fine,
 
                 "sedute_totali":
                     sedute_totali,
@@ -1991,7 +2801,9 @@ def aggiorna_utente_gestionale(
         )
 
     return {
-        "success": True,
+        "success":
+            True,
+
         "message":
             "Dati utente aggiornati con successo."
     }
@@ -2013,11 +2825,17 @@ def aggiorna_stato_prenotazione(
     if not verifica_admin(request):
 
         return JSONResponse(
-            {"error": "Non autorizzato"},
+            {
+                "error":
+                    "Non autorizzato"
+            },
             status_code=403
         )
 
-    if dati.partecipante not in (1, 2):
+    if dati.partecipante not in (
+        1,
+        2
+    ):
 
         return JSONResponse(
             {
@@ -2027,7 +2845,11 @@ def aggiorna_stato_prenotazione(
             status_code=400
         )
 
-    stato = dati.stato.strip().lower()
+    stato = (
+        dati.stato
+        .strip()
+        .lower()
+    )
 
     stati_validi = {
         "confermata",
@@ -2052,19 +2874,35 @@ def aggiorna_stato_prenotazione(
         else "stato_2"
     )
 
+    colonna_scalata = (
+        "seduta_scalata"
+        if dati.partecipante == 1
+        else "seduta_scalata_2"
+    )
+
     with engine.begin() as conn:
 
         esiste = conn.execute(
             text("""
-                SELECT id
+                SELECT
+                    id,
+                    COALESCE(
+                        seduta_scalata,
+                        false
+                    ) AS scalata_1,
+                    COALESCE(
+                        seduta_scalata_2,
+                        false
+                    ) AS scalata_2
                 FROM prenotazioni
                 WHERE id = :id
+                FOR UPDATE
             """),
             {
                 "id":
                     prenotazione_id
             }
-        ).fetchone()
+        ).mappings().first()
 
         if not esiste:
 
@@ -2076,26 +2914,54 @@ def aggiorna_stato_prenotazione(
                 status_code=404
             )
 
+        scalata = bool(
+            esiste[
+                "scalata_1"
+                if dati.partecipante == 1
+                else "scalata_2"
+            ]
+        )
+
+        # Una seduta già scalata deve rimanere "presente"
+        # finché l'admin non annulla la scalatura.
+        if (
+            scalata
+            and stato != "presente"
+        ):
+
+            return JSONResponse(
+                {
+                    "error":
+                        "La seduta è già stata scalata. "
+                        "Per modificare lo stato devi prima "
+                        "annullare la scalatura."
+                },
+                status_code=400
+            )
+
         conn.execute(
             text(
                 f"""
                 UPDATE prenotazioni
-
                 SET {colonna} = :stato
-
                 WHERE id = :id
                 """
             ),
             {
-                "stato": stato,
+                "stato":
+                    stato,
+
                 "id":
                     prenotazione_id
             }
         )
 
     return {
-        "success": True,
-        "stato": stato
+        "success":
+            True,
+
+        "stato":
+            stato
     }
 
 
@@ -2117,11 +2983,17 @@ def scala_seduta_utente(
     if not verifica_admin(request):
 
         return JSONResponse(
-            {"error": "Non autorizzato"},
+            {
+                "error":
+                    "Non autorizzato"
+            },
             status_code=403
         )
 
-    if partecipante not in (1, 2):
+    if partecipante not in (
+        1,
+        2
+    ):
 
         return JSONResponse(
             {
@@ -2133,14 +3005,16 @@ def scala_seduta_utente(
 
     with engine.begin() as conn:
 
-        # ----------------------------------------
-        # BLOCCO CLIENTE
-        # ----------------------------------------
+        # ====================================================
+        # CLIENTE
+        # ====================================================
 
         utente = conn.execute(
             text("""
                 SELECT
                     codice_fiscale,
+
+                    tipo_abbonamento,
 
                     COALESCE(
                         sedute_residue,
@@ -2169,9 +3043,31 @@ def scala_seduta_utente(
                 status_code=404
             )
 
-        # ----------------------------------------
-        # BLOCCO PRENOTAZIONE
-        # ----------------------------------------
+        tipo_abbonamento = (
+            normalizza_tipo_abbonamento(
+                utente[
+                    "tipo_abbonamento"
+                ]
+            )
+        )
+
+        # Mensile e Trimestrale NON scalano sedute.
+        if tipo_abbonamento != "10 sedute":
+
+            return JSONResponse(
+                {
+                    "error":
+                        "Questo abbonamento non utilizza "
+                        "un conteggio di sedute. "
+                        "Le sedute possono essere scalate "
+                        "solo per l'abbonamento '10 sedute'."
+                },
+                status_code=400
+            )
+
+        # ====================================================
+        # PRENOTAZIONE
+        # ====================================================
 
         prenotazione = conn.execute(
             text("""
@@ -2279,9 +3175,9 @@ def scala_seduta_utente(
                 "seduta_scalata_2"
             )
 
-        # ----------------------------------------
-        # CONTROLLO APPARTENENZA
-        # ----------------------------------------
+        # ====================================================
+        # APPARTENENZA
+        # ====================================================
 
         if (
             cf_prenotazione
@@ -2297,9 +3193,9 @@ def scala_seduta_utente(
                 status_code=400
             )
 
-        # ----------------------------------------
+        # ====================================================
         # DEVE ESSERE PRESENTE
-        # ----------------------------------------
+        # ====================================================
 
         if stato != "presente":
 
@@ -2313,9 +3209,9 @@ def scala_seduta_utente(
                 status_code=400
             )
 
-        # ----------------------------------------
-        # SEDUTA DI PROVA
-        # ----------------------------------------
+        # ====================================================
+        # PROVA
+        # ====================================================
 
         trattamento = str(
             prenotazione[
@@ -2335,9 +3231,9 @@ def scala_seduta_utente(
                 status_code=400
             )
 
-        # ----------------------------------------
+        # ====================================================
         # GIÀ SCALATA
-        # ----------------------------------------
+        # ====================================================
 
         if scalata:
 
@@ -2366,17 +3262,15 @@ def scala_seduta_utente(
                 status_code=400
             )
 
-        # ----------------------------------------
+        # ====================================================
         # SCALATURA
-        # ----------------------------------------
+        # ====================================================
 
         conn.execute(
             text(
                 f"""
                 UPDATE prenotazioni
-
                 SET {colonna} = true
-
                 WHERE id = :id
                 """
             ),
@@ -2393,23 +3287,25 @@ def scala_seduta_utente(
         conn.execute(
             text("""
                 UPDATE utenti
-
                 SET sedute_residue = :residue
-
                 WHERE id = :id
             """),
             {
                 "residue":
                     nuove_residue,
+
                 "id":
                     utente_id
             }
         )
 
     return {
-        "success": True,
+        "success":
+            True,
+
         "sedute_residue":
             nuove_residue,
+
         "message":
             "Seduta scalata con successo."
     }
@@ -2433,11 +3329,17 @@ def annulla_scala_seduta(
     if not verifica_admin(request):
 
         return JSONResponse(
-            {"error": "Non autorizzato"},
+            {
+                "error":
+                    "Non autorizzato"
+            },
             status_code=403
         )
 
-    if partecipante not in (1, 2):
+    if partecipante not in (
+        1,
+        2
+    ):
 
         return JSONResponse(
             {
@@ -2449,14 +3351,16 @@ def annulla_scala_seduta(
 
     with engine.begin() as conn:
 
-        # ----------------------------------------
+        # ====================================================
         # CLIENTE
-        # ----------------------------------------
+        # ====================================================
 
         utente = conn.execute(
             text("""
                 SELECT
                     codice_fiscale,
+
+                    tipo_abbonamento,
 
                     COALESCE(
                         sedute_totali,
@@ -2490,9 +3394,28 @@ def annulla_scala_seduta(
                 status_code=404
             )
 
-        # ----------------------------------------
+        tipo_abbonamento = (
+            normalizza_tipo_abbonamento(
+                utente[
+                    "tipo_abbonamento"
+                ]
+            )
+        )
+
+        if tipo_abbonamento != "10 sedute":
+
+            return JSONResponse(
+                {
+                    "error":
+                        "Questo abbonamento non utilizza "
+                        "un conteggio di sedute."
+                },
+                status_code=400
+            )
+
+        # ====================================================
         # PRENOTAZIONE
-        # ----------------------------------------
+        # ====================================================
 
         prenotazione = conn.execute(
             text("""
@@ -2576,9 +3499,9 @@ def annulla_scala_seduta(
                 "seduta_scalata_2"
             )
 
-        # ----------------------------------------
-        # CONTROLLO APPARTENENZA
-        # ----------------------------------------
+        # ====================================================
+        # APPARTENENZA
+        # ====================================================
 
         if (
             cf_prenotazione
@@ -2594,9 +3517,9 @@ def annulla_scala_seduta(
                 status_code=400
             )
 
-        # ----------------------------------------
+        # ====================================================
         # CONTROLLO SCALATURA
-        # ----------------------------------------
+        # ====================================================
 
         if not scalata:
 
@@ -2627,17 +3550,15 @@ def annulla_scala_seduta(
             totale
         )
 
-        # ----------------------------------------
+        # ====================================================
         # ANNULLAMENTO
-        # ----------------------------------------
+        # ====================================================
 
         conn.execute(
             text(
                 f"""
                 UPDATE prenotazioni
-
                 SET {colonna} = false
-
                 WHERE id = :id
                 """
             ),
@@ -2650,23 +3571,25 @@ def annulla_scala_seduta(
         conn.execute(
             text("""
                 UPDATE utenti
-
                 SET sedute_residue = :residue
-
                 WHERE id = :id
             """),
             {
                 "residue":
                     nuove_residue,
+
                 "id":
                     utente_id
             }
         )
 
     return {
-        "success": True,
+        "success":
+            True,
+
         "sedute_residue":
             nuove_residue,
+
         "message":
             "Scalatura annullata."
     }
@@ -2677,7 +3600,19 @@ def annulla_scala_seduta(
 # ============================================================
 
 @app.get("/api/clienti-gestionale")
-def get_clienti_gestionale():
+def get_clienti_gestionale(
+    request: Request
+):
+
+    if not verifica_admin(request):
+
+        return JSONResponse(
+            {
+                "error":
+                    "Non autorizzato"
+            },
+            status_code=403
+        )
 
     with engine.connect() as conn:
 
@@ -2699,8 +3634,19 @@ def get_clienti_gestionale():
 
 @app.post("/api/clienti-gestionale")
 def create_cliente_gestionale(
+    request: Request,
     cliente: ClienteCreate
 ):
+
+    if not verifica_admin(request):
+
+        return JSONResponse(
+            {
+                "error":
+                    "Non autorizzato"
+            },
+            status_code=403
+        )
 
     with engine.connect() as conn:
 
@@ -2730,7 +3676,7 @@ def create_cliente_gestionale(
 
         result = conn.execute(
             query,
-            cliente.dict()
+            cliente.model_dump()
         )
 
         conn.commit()
@@ -2738,8 +3684,12 @@ def create_cliente_gestionale(
         new_id = result.fetchone()[0]
 
         return {
-            "success": True,
-            "id": new_id,
+            "success":
+                True,
+
+            "id":
+                new_id,
+
             "message":
                 "Cliente aggiunto con successo"
         }
@@ -2749,22 +3699,35 @@ def create_cliente_gestionale(
     "/api/clienti-gestionale/{cliente_id}"
 )
 def update_cliente_gestionale(
+    request: Request,
     cliente_id: int,
     cliente: ClienteUpdate
 ):
+
+    if not verifica_admin(request):
+
+        return JSONResponse(
+            {
+                "error":
+                    "Non autorizzato"
+            },
+            status_code=403
+        )
 
     with engine.connect() as conn:
 
         update_data = {
             k: v
-            for k, v in cliente.dict().items()
+            for k, v in cliente.model_dump().items()
             if v is not None
         }
 
         if not update_data:
 
             return {
-                "success": False,
+                "success":
+                    False,
+
                 "message":
                     "Nessun dato da aggiornare"
             }
@@ -2783,9 +3746,7 @@ def update_cliente_gestionale(
         query = text(
             f"""
             UPDATE clienti_gestionale
-
             SET {set_clauses}
-
             WHERE id = :cliente_id
             """
         )
@@ -2798,7 +3759,9 @@ def update_cliente_gestionale(
         conn.commit()
 
         return {
-            "success": True,
+            "success":
+                True,
+
             "message":
                 "Cliente aggiornato con successo"
         }
@@ -2807,7 +3770,20 @@ def update_cliente_gestionale(
 @app.post(
     "/api/clienti-gestionale/{cliente_id}/scala"
 )
-def scala_seduta(cliente_id: int):
+def scala_seduta(
+    request: Request,
+    cliente_id: int
+):
+
+    if not verifica_admin(request):
+
+        return JSONResponse(
+            {
+                "error":
+                    "Non autorizzato"
+            },
+            status_code=403
+        )
 
     with engine.connect() as conn:
 
@@ -2826,7 +3802,9 @@ def scala_seduta(cliente_id: int):
         if not res:
 
             return {
-                "success": False,
+                "success":
+                    False,
+
                 "message":
                     "Cliente non trovato"
             }
@@ -2839,13 +3817,13 @@ def scala_seduta(cliente_id: int):
         conn.execute(
             text("""
                 UPDATE clienti_gestionale
-
                 SET sedute_residue = :s
-
                 WHERE id = :id
             """),
             {
-                "s": nuove_sedute,
+                "s":
+                    nuove_sedute,
+
                 "id":
                     cliente_id
             }
@@ -2854,9 +3832,12 @@ def scala_seduta(cliente_id: int):
         conn.commit()
 
         return {
-            "success": True,
+            "success":
+                True,
+
             "sedute_residue":
                 nuove_sedute,
+
             "message":
                 "Seduta scalata con successo"
         }
@@ -2866,8 +3847,19 @@ def scala_seduta(cliente_id: int):
     "/api/clienti-gestionale/{cliente_id}"
 )
 def delete_cliente_gestionale(
+    request: Request,
     cliente_id: int
 ):
+
+    if not verifica_admin(request):
+
+        return JSONResponse(
+            {
+                "error":
+                    "Non autorizzato"
+            },
+            status_code=403
+        )
 
     with engine.connect() as conn:
 
@@ -2885,7 +3877,9 @@ def delete_cliente_gestionale(
         conn.commit()
 
         return {
-            "success": True,
+            "success":
+                True,
+
             "message":
                 "Cliente eliminato con successo"
         }
@@ -2904,7 +3898,9 @@ def admin_panel(
     data: str = None
 ):
 
-    user = request.session.get("user")
+    user = request.session.get(
+        "user"
+    )
 
     if (
         not user
@@ -2958,7 +3954,8 @@ def admin_panel(
                 ORDER BY p.ora ASC
             """),
             {
-                "d": data
+                "d":
+                    data
             }
         ).fetchall()
 
@@ -3024,7 +4021,9 @@ def elimina_prenotazione(
     id_prenotazione: int = Form(...)
 ):
 
-    user = request.session.get("user")
+    user = request.session.get(
+        "user"
+    )
 
     if (
         user
@@ -3053,10 +4052,6 @@ def elimina_prenotazione(
 # ============================================================
 # ADMIN - VECCHIO CAMBIO STATO
 # ============================================================
-# Mantenuto per compatibilità con eventuali vecchie parti
-# dell'interfaccia. Il nuovo admin.html userà invece
-# /api/prenotazione/{id}/stato per gestire separatamente
-# i due partecipanti.
 
 @app.post(
     "/admin/prenotazione/stato"
@@ -3067,14 +4062,20 @@ def cambia_stato_prenotazione(
     nuovo_stato: str = Form(...)
 ):
 
-    user = request.session.get("user")
+    user = request.session.get(
+        "user"
+    )
 
     if (
         user
         and user.get("cf") == ADMIN_CF
     ):
 
-        stato = nuovo_stato.strip().lower()
+        stato = (
+            nuovo_stato
+            .strip()
+            .lower()
+        )
 
         stati_validi = {
             "confermata",
@@ -3090,15 +4091,15 @@ def cambia_stato_prenotazione(
                 conn.execute(
                     text("""
                         UPDATE prenotazioni
-
                         SET
                             stato = :s,
                             stato_2 = :s
-
                         WHERE id = :id
                     """),
                     {
-                        "s": stato,
+                        "s":
+                            stato,
+
                         "id":
                             id_prenotazione
                     }
@@ -3121,7 +4122,9 @@ def blocca_orario(
     ora: str = Form(None)
 ):
 
-    user = request.session.get("user")
+    user = request.session.get(
+        "user"
+    )
 
     if (
         user
@@ -3151,8 +4154,11 @@ def blocca_orario(
                     )
                 """),
                 {
-                    "d": data,
-                    "o": ora_val
+                    "d":
+                        data,
+
+                    "o":
+                        ora_val
                 }
             )
 
@@ -3172,7 +4178,9 @@ def sblocca_orario(
     id_blocco: int = Form(...)
 ):
 
-    user = request.session.get("user")
+    user = request.session.get(
+        "user"
+    )
 
     if (
         user
@@ -3209,7 +4217,9 @@ def toggle_ban_utente(
     stato_ban: bool = Form(...)
 ):
 
-    user = request.session.get("user")
+    user = request.session.get(
+        "user"
+    )
 
     if (
         user
@@ -3221,14 +4231,13 @@ def toggle_ban_utente(
             conn.execute(
                 text("""
                     UPDATE utenti
-
                     SET bannato = :b
-
                     WHERE id = :id
                 """),
                 {
                     "b":
                         not stato_ban,
+
                     "id":
                         id_utente
                 }
@@ -3250,7 +4259,9 @@ def elimina_utente(
     id_utente: int = Form(...)
 ):
 
-    user = request.session.get("user")
+    user = request.session.get(
+        "user"
+    )
 
     if (
         user
@@ -3284,7 +4295,9 @@ def esegui_checkin_utente(
     cf: str
 ):
 
-    now = logic.get_current_time_local()
+    now = (
+        logic.get_current_time_local()
+    )
 
     now_naive = now.replace(
         tzinfo=None
@@ -3333,6 +4346,7 @@ def esegui_checkin_utente(
             {
                 "cf":
                     cf_upper,
+
                 "d":
                     data_oggi
             }
@@ -3367,14 +4381,20 @@ def esegui_checkin_utente(
                     - dt_appuntamento
                 ).total_seconds() / 60
 
-                # Finestra reale: ±35 minuti
+                # ====================================================
+                # FINESTRA CHECK-IN: ±30 MINUTI
+                # ====================================================
+
                 if (
-                    -35
+                    -30
                     <= diff_minuti
-                    <= 35
+                    <= 30
                 ):
 
+                    # =================================================
                     # PARTECIPANTE 1
+                    # =================================================
+
                     if (
                         cf1
                         and cf_upper
@@ -3382,7 +4402,18 @@ def esegui_checkin_utente(
                     ):
 
                         if (
-                            p_stato
+                            str(p_stato).lower()
+                            == "cancellata"
+                        ):
+
+                            return (
+                                False,
+                                "La prenotazione risulta "
+                                "cancellata."
+                            )
+
+                        if (
+                            str(p_stato).lower()
                             == "presente"
                         ):
 
@@ -3396,9 +4427,7 @@ def esegui_checkin_utente(
                         conn.execute(
                             text("""
                                 UPDATE prenotazioni
-
                                 SET stato = 'presente'
-
                                 WHERE id = :id
                             """),
                             {
@@ -3414,7 +4443,10 @@ def esegui_checkin_utente(
                             "Buon allenamento!"
                         )
 
+                    # =================================================
                     # PARTECIPANTE 2
+                    # =================================================
+
                     elif (
                         cf2
                         and cf_upper
@@ -3422,7 +4454,18 @@ def esegui_checkin_utente(
                     ):
 
                         if (
-                            p_stato_2
+                            str(p_stato_2).lower()
+                            == "cancellata"
+                        ):
+
+                            return (
+                                False,
+                                "La prenotazione risulta "
+                                "cancellata."
+                            )
+
+                        if (
+                            str(p_stato_2).lower()
                             == "presente"
                         ):
 
@@ -3436,9 +4479,7 @@ def esegui_checkin_utente(
                         conn.execute(
                             text("""
                                 UPDATE prenotazioni
-
                                 SET stato_2 = 'presente'
-
                                 WHERE id = :id
                             """),
                             {
@@ -3455,13 +4496,14 @@ def esegui_checkin_utente(
                         )
 
             except Exception:
+
                 continue
 
     return (
         False,
         "Nessuna prenotazione a tuo nome "
         "trovata per l'orario attuale "
-        "(finestra consentita: ±35 min)."
+        "(finestra consentita: ±30 min)."
     )
 
 
@@ -3473,7 +4515,9 @@ def checkin_qr_get(
     request: Request
 ):
 
-    user = request.session.get("user")
+    user = request.session.get(
+        "user"
+    )
 
     if not user:
 
@@ -3481,7 +4525,8 @@ def checkin_qr_get(
             request=request,
             name="checkin_login.html",
             context={
-                "error": None
+                "error":
+                    None
             }
         )
 
@@ -3492,10 +4537,16 @@ def checkin_qr_get(
     )
 
     context = (
-        {"success": messaggio}
+        {
+            "success":
+                messaggio
+        }
         if successo
         else
-        {"error": messaggio}
+        {
+            "error":
+                messaggio
+        }
     )
 
     return templates.TemplateResponse(
@@ -3542,6 +4593,7 @@ def checkin_qr_post(
             {
                 "n":
                     nome.strip().upper(),
+
                 "c":
                     cognome.strip().upper()
             }
@@ -3563,7 +4615,8 @@ def checkin_qr_post(
                     "error":
                         "Credenziali non valide "
                         "o utente non trovato.",
-                    "admin_error": None
+                    "admin_error":
+                        None
                 }
             )
 
@@ -3580,10 +4633,17 @@ def checkin_qr_post(
             )
 
         user = {
-            "id": str(res[0]),
-            "nome": str(res[1]),
-            "cognome": str(res[2]),
-            "cf": str(res[3])
+            "id":
+                str(res[0]),
+
+            "nome":
+                str(res[1]),
+
+            "cognome":
+                str(res[2]),
+
+            "cf":
+                str(res[3])
         }
 
         request.session["user"] = user
@@ -3595,10 +4655,16 @@ def checkin_qr_post(
     )
 
     context = (
-        {"success": messaggio}
+        {
+            "success":
+                messaggio
+        }
         if successo
         else
-        {"error": messaggio}
+        {
+            "error":
+                messaggio
+        }
     )
 
     return templates.TemplateResponse(
