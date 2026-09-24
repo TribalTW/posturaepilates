@@ -1793,11 +1793,6 @@ def effettua_prenotazione(
         }
     )
 
-
-# ============================================================
-# API ORARI DISPONIBILI
-# ============================================================
-
 # ============================================================
 # API ORARI DISPONIBILI
 # ============================================================
@@ -2202,9 +2197,37 @@ def get_orari_disponibili(
             # =================================================
 
             orari_liberi = []
+            # =================================================
+            # CONTROLLO DATA/ORA CORRENTE
+            # =================================================
+            
+            oggi = datetime.now().date()
+            
+            data_prenotazione = dt.date()
+            
+            ora_attuale = datetime.now().time()
 
             for o in orari_teorici:
-
+                # ---------------------------------------------
+                # NON MOSTRARE ORARI GIÀ PASSATI
+                # ---------------------------------------------
+            
+                if data_prenotazione == oggi:
+            
+                    try:
+            
+                        ora_slot = datetime.strptime(
+                            o,
+                            "%H:%M"
+                        ).time()
+            
+                        if ora_slot <= ora_attuale:
+            
+                            continue
+            
+                    except ValueError:
+            
+                        continue
                 # ---------------------------------------------
                 # ORARIO BLOCCATO
                 # ---------------------------------------------
