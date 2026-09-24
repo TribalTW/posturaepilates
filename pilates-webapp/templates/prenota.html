@@ -88,7 +88,109 @@
 
     </div>
 
+<!-- ====================================================== -->
+<!-- ABBONAMENTO -->
+<!-- ====================================================== -->
 
+<section class="mb-8">
+
+    <div class="bg-gradient-to-br from-[#fff0f5] to-[#fff9fb] border border-[#f9d1df] rounded-2xl p-4 sm:p-5 shadow-sm">
+
+        <div class="flex items-start gap-3">
+
+            <!-- ICONA -->
+
+            <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-white border border-[#f9d1df] flex items-center justify-center text-lg shadow-sm">
+                💗
+            </div>
+
+
+            <!-- CONTENUTO -->
+
+            <div class="flex-1 min-w-0">
+
+                <h2 class="text-sm sm:text-base font-serif-title font-bold text-pink-900">
+                    Il tuo abbonamento
+                </h2>
+
+
+                {% if tipo_abbonamento %}
+
+                    <!-- TIPO ABBONAMENTO -->
+
+                    <div class="mt-2">
+
+                        <span class="inline-flex items-center bg-white border border-[#f9d1df] text-[#AD1457] px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold shadow-sm">
+                            {{ tipo_abbonamento }}
+                        </span>
+
+                    </div>
+
+
+                    <!-- INFORMAZIONI -->
+
+                    <div class="mt-3 space-y-2">
+
+                        {% if tipo_abbonamento == "10 sedute" %}
+
+                            <div class="flex items-center gap-2 text-xs sm:text-sm text-gray-700">
+
+                                <span class="flex-shrink-0">
+                                    🟢
+                                </span>
+
+                                <span>
+                                    <strong class="text-gray-900">
+                                        {{ sedute_residue }}
+                                    </strong>
+                                    sedute disponibili
+                                </span>
+
+                            </div>
+
+                        {% endif %}
+
+
+                        {% if data_fine_abbonamento %}
+
+                            <div class="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+
+                                <span class="flex-shrink-0">
+                                    📅
+                                </span>
+
+                                <span>
+                                    Valido fino al
+                                    <strong class="text-gray-800">
+                                        {{ data_fine_abbonamento }}
+                                    </strong>
+                                </span>
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                {% else %}
+
+                    <!-- NESSUN ABBONAMENTO -->
+
+                    <p class="text-xs sm:text-sm text-gray-500 mt-2">
+                        Nessun abbonamento attivo
+                    </p>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+    
     <!-- ====================================================== -->
     <!-- NAVIGAZIONE -->
     <!-- ====================================================== -->
