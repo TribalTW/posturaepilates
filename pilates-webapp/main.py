@@ -44,6 +44,20 @@ class ClienteUpdate(BaseModel):
     sedute_residue: Optional[int] = None
     note: Optional[str] = None
 
+class UtenteGestionaleUpdate(BaseModel):
+    data_nascita: Optional[str] = None
+    luogo_nascita: Optional[str] = None
+    luogo_residenza: Optional[str] = None
+    telefono: Optional[str] = None
+    email: Optional[str] = None
+    note: Optional[str] = None
+    tipo_abbonamento: Optional[str] = None
+    data_inizio_abbonamento: Optional[str] = None
+    sedute_totali: Optional[int] = None
+    sedute_residue: Optional[int] = None
+    pagamento_effettuato: Optional[bool] = None
+    metodo_pagamento: Optional[str] = None
+
 @app.on_event("startup")
 def startup():
     init_db()
