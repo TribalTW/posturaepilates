@@ -544,6 +544,85 @@ def get_orari_disponibili(request: Request, data: str, trattamento: str = ""):
 
     return JSONResponse({"orari": orari_liberi})
 
+@app.get("/api/mie-prenotazioni")
+def get_mie_prenotazioni(request: Request):
+    user = request.session.get("user")
+
+    if not user:
+        return JSONResponse(
+            {"error": "Non autenticato"},
+            status_code=401
+        )
+
+    user_cf = user["cf"].strip().upper()
+
+    with engine.begin() as conn:
+        prenotazioni = conn.execute(
+            text("""
+                SELECT
+                    id,
+                    nome,
+                    data,
+                    ora,
+                    trattamento,
+                    codice_fiscale,
+                    nome_2,
+                    codice_fiscale_2,
+                    COALESCE(stato, 'confermata') AS stato,
+                    COALESCE(stato_2, 'confermata') AS stato_2
+                FROM prenotazioni
+                WHERE
+                    (
+                        UPPER(codice_fiscale) = :cf
+                        OR UPPER(codice_fiscale_2) = :cf
+                    )
+                    AND NOT (
+                        UPPER(codice_fiscale) = :cf
+                        AND LOWER(COALESCE(stato, 'confermata')) = 'cancellata'
+                    )
+                    AND NOT (
+                        UPPER(codice_fiscale_2) = :cf
+                        AND LOWER(COALESCE(stato_2, 'confermata')) = 'cancellata'
+                    )
+                ORDER BY data ASC, ora ASC
+            """),
+            {"cf": user_cf}
+        ).fetchall()
+
+    risultati = []
+
+    for p in prenotazioni:
+        (
+            id_prenotazione,
+            nome,
+            data,
+            ora,
+            trattamento,
+            cf1,
+            nome_2,
+            cf2,
+            stato1,
+            stato2
+        ) = p
+
+        # Capisce se l'utente è la persona 1 o la persona 2
+        if cf1 and cf1.strip().upper() == user_cf:
+            stato_personale = stato1
+        else:
+            stato_personale = stato2
+
+        risultati.append({
+            "id": id_prenotazione,
+            "nome": nome,
+            "data": data,
+            "ora": str(ora)[:5],
+            "trattamento": trattamento,
+            "stato": stato_personale,
+            "is_coppia": bool(nome_2)
+        })
+
+    return JSONResponse({"prenotazioni": risultati})
+    
 # --- API REST GESTIONALE CLIENTI (PER L'AREA ADMIN) ---
 @app.get("/api/clienti-gestionale")
 def get_clienti_gestionale():
