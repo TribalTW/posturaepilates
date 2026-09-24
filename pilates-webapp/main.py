@@ -51,12 +51,21 @@ class UtenteGestionaleUpdate(BaseModel):
     telefono: Optional[str] = None
     email: Optional[str] = None
     note: Optional[str] = None
+
     tipo_abbonamento: Optional[str] = None
     data_inizio_abbonamento: Optional[str] = None
+    data_fine_abbonamento: Optional[str] = None
+
     sedute_totali: Optional[int] = None
     sedute_residue: Optional[int] = None
+
     pagamento_effettuato: Optional[bool] = None
     metodo_pagamento: Optional[str] = None
+
+
+class StatoPrenotazioneUpdate(BaseModel):
+    partecipante: int
+    stato: str
 
 @app.on_event("startup")
 def startup():
@@ -82,6 +91,11 @@ def startup():
         "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS sedute_residue INTEGER DEFAULT 0",
         "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS pagamento_effettuato BOOLEAN DEFAULT false",
         "ALTER TABLE utenti ADD COLUMN IF NOT EXISTS metodo_pagamento TEXT",
+
+        # CONTROLLO SCALATURA SEDUTE
+        "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS seduta_scalata BOOLEAN DEFAULT false",
+        "ALTER TABLE prenotazioni ADD COLUMN IF NOT EXISTS seduta_scalata_2 BOOLEAN DEFAULT false",
+        
         # Tabella Gestionale Clienti
         """
         CREATE TABLE IF NOT EXISTS clienti_gestionale (
@@ -664,7 +678,7 @@ def get_utente_gestionale(request: Request, utente_id: int):
         )
 
     with engine.connect() as conn:
-        result = conn.execute(
+        utente = conn.execute(
             text("""
                 SELECT
                     id,
@@ -673,7 +687,7 @@ def get_utente_gestionale(request: Request, utente_id: int):
                     codice_fiscale,
                     email,
                     data_registrazione,
-                    COALESCE(bannato, false),
+                    COALESCE(bannato, false) AS bannato,
                     data_nascita,
                     luogo_nascita,
                     luogo_residenza,
@@ -681,41 +695,120 @@ def get_utente_gestionale(request: Request, utente_id: int):
                     note,
                     tipo_abbonamento,
                     data_inizio_abbonamento,
-                    COALESCE(sedute_totali, 0),
-                    COALESCE(sedute_residue, 0),
-                    COALESCE(pagamento_effettuato, false),
+                    data_fine_abbonamento,
+                    COALESCE(sedute_totali, 0) AS sedute_totali,
+                    COALESCE(sedute_residue, 0) AS sedute_residue,
+                    COALESCE(pagamento_effettuato, false) AS pagamento_effettuato,
                     metodo_pagamento
                 FROM utenti
                 WHERE id = :id
             """),
             {"id": utente_id}
-        ).fetchone()
+        ).mappings().first()
 
-    if not result:
-        return JSONResponse(
-            {"error": "Utente non trovato"},
-            status_code=404
+        if not utente:
+            return JSONResponse(
+                {"error": "Utente non trovato"},
+                status_code=404
+            )
+
+        cf = (utente["codice_fiscale"] or "").strip().upper()
+
+        prenotazioni_db = conn.execute(
+            text("""
+                SELECT
+                    id,
+                    data,
+                    ora,
+                    trattamento,
+                    nome,
+                    nome_2,
+                    codice_fiscale,
+                    codice_fiscale_2,
+
+                    COALESCE(stato, 'confermata') AS stato_1,
+                    COALESCE(stato_2, 'confermata') AS stato_2,
+
+                    COALESCE(seduta_scalata, false) AS seduta_scalata_1,
+                    COALESCE(seduta_scalata_2, false) AS seduta_scalata_2
+
+                FROM prenotazioni
+
+                WHERE
+                    UPPER(codice_fiscale) = :cf
+                    OR UPPER(codice_fiscale_2) = :cf
+
+                ORDER BY data DESC, ora DESC
+            """),
+            {"cf": cf}
+        ).mappings().all()
+
+    prenotazioni = []
+
+    for p in prenotazioni_db:
+
+        if (
+            p["codice_fiscale"]
+            and p["codice_fiscale"].strip().upper() == cf
+        ):
+            partecipante = 1
+            stato = p["stato_1"]
+            scalata = bool(p["seduta_scalata_1"])
+            nome_partecipante = p["nome"]
+
+        elif (
+            p["codice_fiscale_2"]
+            and p["codice_fiscale_2"].strip().upper() == cf
+        ):
+            partecipante = 2
+            stato = p["stato_2"]
+            scalata = bool(p["seduta_scalata_2"])
+            nome_partecipante = p["nome_2"]
+
+        else:
+            continue
+
+        trattamento = str(p["trattamento"] or "")
+        is_prova = "prova" in trattamento.lower()
+
+        puo_scalare = (
+            str(stato).lower() == "presente"
+            and not is_prova
+            and not scalata
+            and int(utente["sedute_residue"] or 0) > 0
         )
 
+        prenotazioni.append({
+            "id": p["id"],
+            "data": p["data"],
+            "ora": str(p["ora"])[:5],
+            "trattamento": trattamento,
+
+            "partecipante": partecipante,
+            "nome_partecipante": nome_partecipante,
+
+            "stato": stato,
+            "seduta_scalata": scalata,
+            "is_prova": is_prova,
+            "puo_scalare": puo_scalare
+        })
+
+    sedute_totali = int(utente["sedute_totali"] or 0)
+    sedute_residue = int(utente["sedute_residue"] or 0)
+
     return {
-        "id": result[0],
-        "nome": result[1],
-        "cognome": result[2],
-        "codice_fiscale": result[3],
-        "email": result[4],
-        "data_registrazione": result[5],
-        "bannato": result[6],
-        "data_nascita": result[7],
-        "luogo_nascita": result[8],
-        "luogo_residenza": result[9],
-        "telefono": result[10],
-        "note": result[11],
-        "tipo_abbonamento": result[12],
-        "data_inizio_abbonamento": result[13],
-        "sedute_totali": result[14],
-        "sedute_residue": result[15],
-        "pagamento_effettuato": result[16],
-        "metodo_pagamento": result[17]
+        "utente": dict(utente),
+
+        "riepilogo": {
+            "sedute_totali": sedute_totali,
+            "sedute_residue": sedute_residue,
+            "sedute_utilizzate": max(
+                0,
+                sedute_totali - sedute_residue
+            )
+        },
+
+        "prenotazioni": prenotazioni
     }
 
 
@@ -731,16 +824,78 @@ def aggiorna_utente_gestionale(
             status_code=403
         )
 
+    if dati.sedute_totali is not None and dati.sedute_totali < 0:
+        return JSONResponse(
+            {"error": "Il numero di sedute totali non può essere negativo."},
+            status_code=400
+        )
+
+    if dati.sedute_residue is not None and dati.sedute_residue < 0:
+        return JSONResponse(
+            {"error": "Il numero di sedute residue non può essere negativo."},
+            status_code=400
+        )
+
+    if (
+        dati.sedute_totali is not None
+        and dati.sedute_residue is not None
+        and dati.sedute_residue > dati.sedute_totali
+    ):
+        return JSONResponse(
+            {"error": "Le sedute residue non possono superare quelle totali."},
+            status_code=400
+        )
+
     with engine.begin() as conn:
+
         esiste = conn.execute(
-            text("SELECT id FROM utenti WHERE id = :id"),
+            text("""
+                SELECT
+                    id,
+                    COALESCE(sedute_totali, 0),
+                    COALESCE(sedute_residue, 0),
+                    COALESCE(pagamento_effettuato, false),
+                    metodo_pagamento
+                FROM utenti
+                WHERE id = :id
+            """),
             {"id": utente_id}
-        ).fetchone()
+        ).mappings().first()
 
         if not esiste:
             return JSONResponse(
                 {"error": "Utente non trovato"},
                 status_code=404
+            )
+
+        sedute_totali = (
+            dati.sedute_totali
+            if dati.sedute_totali is not None
+            else esiste["sedute_totali"]
+        )
+
+        sedute_residue = (
+            dati.sedute_residue
+            if dati.sedute_residue is not None
+            else esiste["sedute_residue"]
+        )
+
+        pagamento = (
+            dati.pagamento_effettuato
+            if dati.pagamento_effettuato is not None
+            else esiste["pagamento_effettuato"]
+        )
+
+        metodo_pagamento = (
+            dati.metodo_pagamento
+            if dati.metodo_pagamento is not None
+            else esiste["metodo_pagamento"]
+        )
+
+        if sedute_residue > sedute_totali:
+            return JSONResponse(
+                {"error": "Le sedute residue non possono superare quelle totali."},
+                status_code=400
             )
 
         conn.execute(
@@ -753,34 +908,466 @@ def aggiorna_utente_gestionale(
                     telefono = :telefono,
                     email = :email,
                     note = :note,
+
                     tipo_abbonamento = :tipo_abbonamento,
                     data_inizio_abbonamento = :data_inizio_abbonamento,
+                    data_fine_abbonamento = :data_fine_abbonamento,
+
                     sedute_totali = :sedute_totali,
                     sedute_residue = :sedute_residue,
+
                     pagamento_effettuato = :pagamento_effettuato,
                     metodo_pagamento = :metodo_pagamento
+
                 WHERE id = :id
             """),
             {
                 "id": utente_id,
+
                 "data_nascita": dati.data_nascita,
                 "luogo_nascita": dati.luogo_nascita,
                 "luogo_residenza": dati.luogo_residenza,
                 "telefono": dati.telefono,
                 "email": dati.email,
                 "note": dati.note,
+
                 "tipo_abbonamento": dati.tipo_abbonamento,
                 "data_inizio_abbonamento": dati.data_inizio_abbonamento,
-                "sedute_totali": dati.sedute_totali or 0,
-                "sedute_residue": dati.sedute_residue or 0,
-                "pagamento_effettuato": dati.pagamento_effettuato or False,
-                "metodo_pagamento": dati.metodo_pagamento
+                "data_fine_abbonamento": dati.data_fine_abbonamento,
+
+                "sedute_totali": sedute_totali,
+                "sedute_residue": sedute_residue,
+
+                "pagamento_effettuato": pagamento,
+                "metodo_pagamento": metodo_pagamento
             }
         )
 
     return {
         "success": True,
         "message": "Dati utente aggiornati con successo."
+    }
+
+@app.post("/api/prenotazione/{prenotazione_id}/stato")
+def aggiorna_stato_prenotazione(
+    request: Request,
+    prenotazione_id: int,
+    dati: StatoPrenotazioneUpdate
+):
+    if not verifica_admin(request):
+        return JSONResponse(
+            {"error": "Non autorizzato"},
+            status_code=403
+        )
+
+    if dati.partecipante not in (1, 2):
+        return JSONResponse(
+            {"error": "Partecipante non valido."},
+            status_code=400
+        )
+
+    stato = dati.stato.strip().lower()
+
+    stati_validi = {
+        "confermata",
+        "presente",
+        "assente",
+        "cancellata"
+    }
+
+    if stato not in stati_validi:
+        return JSONResponse(
+            {"error": "Stato non valido."},
+            status_code=400
+        )
+
+    colonna = (
+        "stato"
+        if dati.partecipante == 1
+        else "stato_2"
+    )
+
+    with engine.begin() as conn:
+
+        esiste = conn.execute(
+            text("""
+                SELECT id
+                FROM prenotazioni
+                WHERE id = :id
+            """),
+            {"id": prenotazione_id}
+        ).fetchone()
+
+        if not esiste:
+            return JSONResponse(
+                {"error": "Prenotazione non trovata."},
+                status_code=404
+            )
+
+        conn.execute(
+            text(
+                f"""
+                UPDATE prenotazioni
+                SET {colonna} = :stato
+                WHERE id = :id
+                """
+            ),
+            {
+                "stato": stato,
+                "id": prenotazione_id
+            }
+        )
+
+    return {
+        "success": True,
+        "stato": stato
+    }
+
+@app.post(
+    "/api/utente/{utente_id}/prenotazione/{prenotazione_id}/scala/{partecipante}"
+)
+def scala_seduta_utente(
+    request: Request,
+    utente_id: int,
+    prenotazione_id: int,
+    partecipante: int
+):
+    if not verifica_admin(request):
+        return JSONResponse(
+            {"error": "Non autorizzato"},
+            status_code=403
+        )
+
+    if partecipante not in (1, 2):
+        return JSONResponse(
+            {"error": "Partecipante non valido."},
+            status_code=400
+        )
+
+    with engine.begin() as conn:
+
+        # Blocchiamo il cliente durante l'operazione
+        utente = conn.execute(
+            text("""
+                SELECT
+                    codice_fiscale,
+                    COALESCE(sedute_residue, 0) AS sedute_residue
+                FROM utenti
+                WHERE id = :id
+                FOR UPDATE
+            """),
+            {"id": utente_id}
+        ).mappings().first()
+
+        if not utente:
+            return JSONResponse(
+                {"error": "Utente non trovato."},
+                status_code=404
+            )
+
+        # Blocchiamo anche la prenotazione
+        prenotazione = conn.execute(
+            text("""
+                SELECT
+                    trattamento,
+                    codice_fiscale,
+                    codice_fiscale_2,
+
+                    COALESCE(stato, 'confermata') AS stato_1,
+                    COALESCE(stato_2, 'confermata') AS stato_2,
+
+                    COALESCE(seduta_scalata, false) AS scalata_1,
+                    COALESCE(seduta_scalata_2, false) AS scalata_2
+
+                FROM prenotazioni
+                WHERE id = :id
+                FOR UPDATE
+            """),
+            {"id": prenotazione_id}
+        ).mappings().first()
+
+        if not prenotazione:
+            return JSONResponse(
+                {"error": "Prenotazione non trovata."},
+                status_code=404
+            )
+
+        cf_utente = (
+            utente["codice_fiscale"] or ""
+        ).strip().upper()
+
+        if partecipante == 1:
+
+            cf_prenotazione = (
+                prenotazione["codice_fiscale"] or ""
+            ).strip().upper()
+
+            stato = str(
+                prenotazione["stato_1"]
+            ).lower()
+
+            scalata = bool(
+                prenotazione["scalata_1"]
+            )
+
+            colonna = "seduta_scalata"
+
+        else:
+
+            cf_prenotazione = (
+                prenotazione["codice_fiscale_2"] or ""
+            ).strip().upper()
+
+            stato = str(
+                prenotazione["stato_2"]
+            ).lower()
+
+            scalata = bool(
+                prenotazione["scalata_2"]
+            )
+
+            colonna = "seduta_scalata_2"
+
+        # La prenotazione deve appartenere al cliente
+        if cf_prenotazione != cf_utente:
+            return JSONResponse(
+                {
+                    "error":
+                    "La prenotazione non appartiene a questo cliente."
+                },
+                status_code=400
+            )
+
+        # Prima deve esserci la presenza
+        if stato != "presente":
+            return JSONResponse(
+                {
+                    "error":
+                    "Puoi scalare la seduta solo dopo aver segnato il cliente come presente."
+                },
+                status_code=400
+            )
+
+        # La prova non consuma l'abbonamento
+        trattamento = str(
+            prenotazione["trattamento"] or ""
+        )
+
+        if "prova" in trattamento.lower():
+            return JSONResponse(
+                {
+                    "error":
+                    "La Seduta di Prova non viene scalata dall'abbonamento."
+                },
+                status_code=400
+            )
+
+        # Evita il doppio conteggio
+        if scalata:
+            return JSONResponse(
+                {
+                    "error":
+                    "Questa seduta è già stata scalata."
+                },
+                status_code=400
+            )
+
+        residue = int(
+            utente["sedute_residue"] or 0
+        )
+
+        if residue <= 0:
+            return JSONResponse(
+                {
+                    "error":
+                    "Il cliente non ha più sedute residue."
+                },
+                status_code=400
+            )
+
+        # Segniamo la seduta come consumata
+        conn.execute(
+            text(
+                f"""
+                UPDATE prenotazioni
+                SET {colonna} = true
+                WHERE id = :id
+                """
+            ),
+            {
+                "id": prenotazione_id
+            }
+        )
+
+        # Diminuiamo le sedute disponibili
+        nuove_residue = residue - 1
+
+        conn.execute(
+            text("""
+                UPDATE utenti
+                SET sedute_residue = :residue
+                WHERE id = :id
+            """),
+            {
+                "residue": nuove_residue,
+                "id": utente_id
+            }
+        )
+
+    return {
+        "success": True,
+        "sedute_residue": nuove_residue,
+        "message": "Seduta scalata con successo."
+    }
+
+@app.post(
+    "/api/utente/{utente_id}/prenotazione/{prenotazione_id}/scala/{partecipante}/annulla"
+)
+def annulla_scala_seduta(
+    request: Request,
+    utente_id: int,
+    prenotazione_id: int,
+    partecipante: int
+):
+    if not verifica_admin(request):
+        return JSONResponse(
+            {"error": "Non autorizzato"},
+            status_code=403
+        )
+
+    if partecipante not in (1, 2):
+        return JSONResponse(
+            {"error": "Partecipante non valido."},
+            status_code=400
+        )
+
+    with engine.begin() as conn:
+
+        utente = conn.execute(
+            text("""
+                SELECT
+                    codice_fiscale,
+                    COALESCE(sedute_totali, 0) AS sedute_totali,
+                    COALESCE(sedute_residue, 0) AS sedute_residue
+                FROM utenti
+                WHERE id = :id
+                FOR UPDATE
+            """),
+            {"id": utente_id}
+        ).mappings().first()
+
+        if not utente:
+            return JSONResponse(
+                {"error": "Utente non trovato."},
+                status_code=404
+            )
+
+        prenotazione = conn.execute(
+            text("""
+                SELECT
+                    codice_fiscale,
+                    codice_fiscale_2,
+                    COALESCE(seduta_scalata, false) AS scalata_1,
+                    COALESCE(seduta_scalata_2, false) AS scalata_2
+                FROM prenotazioni
+                WHERE id = :id
+                FOR UPDATE
+            """),
+            {"id": prenotazione_id}
+        ).mappings().first()
+
+        if not prenotazione:
+            return JSONResponse(
+                {"error": "Prenotazione non trovata."},
+                status_code=404
+            )
+
+        cf_utente = (
+            utente["codice_fiscale"] or ""
+        ).strip().upper()
+
+        if partecipante == 1:
+            cf_prenotazione = (
+                prenotazione["codice_fiscale"] or ""
+            ).strip().upper()
+
+            scalata = bool(
+                prenotazione["scalata_1"]
+            )
+
+            colonna = "seduta_scalata"
+
+        else:
+            cf_prenotazione = (
+                prenotazione["codice_fiscale_2"] or ""
+            ).strip().upper()
+
+            scalata = bool(
+                prenotazione["scalata_2"]
+            )
+
+            colonna = "seduta_scalata_2"
+
+        if cf_prenotazione != cf_utente:
+            return JSONResponse(
+                {
+                    "error":
+                    "La prenotazione non appartiene a questo cliente."
+                },
+                status_code=400
+            )
+
+        if not scalata:
+            return JSONResponse(
+                {
+                    "error":
+                    "Questa seduta non risulta scalata."
+                },
+                status_code=400
+            )
+
+        residue = int(
+            utente["sedute_residue"] or 0
+        )
+
+        totale = int(
+            utente["sedute_totali"] or 0
+        )
+
+        nuove_residue = min(
+            residue + 1,
+            totale
+        )
+
+        conn.execute(
+            text(
+                f"""
+                UPDATE prenotazioni
+                SET {colonna} = false
+                WHERE id = :id
+                """
+            ),
+            {
+                "id": prenotazione_id
+            }
+        )
+
+        conn.execute(
+            text("""
+                UPDATE utenti
+                SET sedute_residue = :residue
+                WHERE id = :id
+            """),
+            {
+                "residue": nuove_residue,
+                "id": utente_id
+            }
+        )
+
+    return {
+        "success": True,
+        "sedute_residue": nuove_residue,
+        "message": "Scalatura annullata."
     }
     
 # --- API REST GESTIONALE CLIENTI (PER L'AREA ADMIN) ---
