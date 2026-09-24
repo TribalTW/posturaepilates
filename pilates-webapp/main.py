@@ -1798,6 +1798,10 @@ def effettua_prenotazione(
 # API ORARI DISPONIBILI
 # ============================================================
 
+# ============================================================
+# API ORARI DISPONIBILI
+# ============================================================
+
 @app.get("/api/orari")
 def get_orari_disponibili(
     request: Request,
@@ -1807,111 +1811,165 @@ def get_orari_disponibili(
 
     try:
 
-        dt = datetime.strptime(
-            data,
-            "%Y-%m-%d"
-        )
-
-    except ValueError:
-
-        return JSONResponse(
-            {"orari": []}
-        )
-
-    giorno_settimana = (
-        dt.weekday()
-    )
-
-    if giorno_settimana == 6:
-
-        return JSONResponse(
-            {"orari": []}
-        )
-
-    elif giorno_settimana == 5:
-
-        orari_teorici = [
-            f"{h:02d}:00"
-            for h in range(8, 14)
-        ]
-
-    else:
-
-        orari_teorici = [
-            f"{h:02d}:00"
-            for h in range(8, 20)
-        ]
-
-    user = request.session.get(
-        "user"
-    )
-
-    user_cf = (
-        user["cf"].strip().upper()
-        if user
-        and "cf" in user
-        else None
-    )
-
-    with engine.begin() as conn:
-
         # ====================================================
-        # CONTROLLO ABBONAMENTO / LIMITE SETTIMANALE
+        # VALIDAZIONE DATA
         # ====================================================
 
-        if user_cf and trattamento:
+        try:
 
-            is_prova = (
-                "prova"
-                in trattamento.lower()
+            dt = datetime.strptime(
+                data,
+                "%Y-%m-%d"
             )
 
-            if not is_prova:
-
-                puo_prenotare, _ = (
-                    verifica_abilitazione_prenotazione(
-                        conn,
-                        user_cf,
-                        data
-                    )
-                )
-
-                if not puo_prenotare:
-
-                    return JSONResponse(
-                        {"orari": []}
-                    )
-
-        # ====================================================
-        # GIORNO BLOCCATO
-        # ====================================================
-
-        giorno_bloccato = conn.execute(
-            text("""
-                SELECT id
-                FROM blocchi
-                WHERE
-                    data = :d
-                    AND ora IS NULL
-            """),
-            {
-                "d": data
-            }
-        ).fetchone()
-
-        if giorno_bloccato:
+        except ValueError:
 
             return JSONResponse(
-                {"orari": []}
+                {
+                    "orari": []
+                }
             )
 
+        giorno_settimana = dt.weekday()
+
         # ====================================================
-        # ORARI BLOCCATI
+        # ORARI TEORICI
         # ====================================================
 
-        orari_bloccati = [
-            r[0]
-            for r in conn.execute(
+        if giorno_settimana == 6:
+
+            # Domenica
+            return JSONResponse(
+                {
+                    "orari": []
+                }
+            )
+
+        elif giorno_settimana == 5:
+
+            # Sabato
+            orari_teorici = [
+                f"{h:02d}:00"
+                for h in range(8, 14)
+            ]
+
+        else:
+
+            # Lunedì - Venerdì
+            orari_teorici = [
+                f"{h:02d}:00"
+                for h in range(8, 20)
+            ]
+
+        # ====================================================
+        # UTENTE CORRENTE
+        # ====================================================
+
+        user = request.session.get(
+            "user"
+        )
+
+        user_cf = (
+            user["cf"].strip().upper()
+            if user
+            and user.get("cf")
+            else None
+        )
+
+        # ====================================================
+        # TIPO DI PRENOTAZIONE
+        # ====================================================
+
+        trattamento_lower = (
+            str(trattamento or "")
+            .strip()
+            .lower()
+        )
+
+        is_prova = (
+            "prova"
+            in trattamento_lower
+        )
+
+        is_coppia = (
+            "coppia"
+            in trattamento_lower
+        )
+
+        # Numero di lettini richiesti
+        #
+        # Singola = 1
+        # Coppia  = 2
+
+        posti_richiesti = (
+            2
+            if is_coppia
+            else 1
+        )
+
+        # ====================================================
+        # DATABASE
+        # ====================================================
+
+        with engine.begin() as conn:
+
+            # =================================================
+            # CONTROLLO ABBONAMENTO / LIMITE SETTIMANALE
+            # =================================================
+
+            if (
+                user_cf
+                and trattamento
+            ):
+
+                if not is_prova:
+
+                    puo_prenotare, _ = (
+                        verifica_abilitazione_prenotazione(
+                            conn,
+                            user_cf,
+                            data
+                        )
+                    )
+
+                    if not puo_prenotare:
+
+                        return JSONResponse(
+                            {
+                                "orari": []
+                            }
+                        )
+
+            # =================================================
+            # GIORNO COMPLETAMENTE BLOCCATO
+            # =================================================
+
+            giorno_bloccato = conn.execute(
+                text("""
+                    SELECT id
+                    FROM blocchi
+                    WHERE
+                        data = :d
+                        AND ora IS NULL
+                """),
+                {
+                    "d": data
+                }
+            ).fetchone()
+
+            if giorno_bloccato:
+
+                return JSONResponse(
+                    {
+                        "orari": []
+                    }
+                )
+
+            # =================================================
+            # ORARI BLOCCATI
+            # =================================================
+
+            orari_bloccati_db = conn.execute(
                 text("""
                     SELECT ora
                     FROM blocchi
@@ -1923,174 +1981,318 @@ def get_orari_disponibili(
                     "d": data
                 }
             ).fetchall()
-        ]
 
-        # ====================================================
-        # PRENOTAZIONI DEL GIORNO
-        # ====================================================
+            orari_bloccati = set()
 
-        prenotazioni_giorno = conn.execute(
-            text("""
-                SELECT
-                    ora,
-                    trattamento,
-                    COALESCE(
-                        stato,
-                        'confermata'
-                    ),
-                    codice_fiscale,
-                    codice_fiscale_2,
-                    COALESCE(
-                        stato_2,
-                        'confermata'
+            for r in orari_bloccati_db:
+
+                ora_bloccata = r[0]
+
+                if ora_bloccata is None:
+                    continue
+
+                # PostgreSQL può restituire TIME oppure stringa.
+                # Normalizziamo sempre a HH:MM.
+
+                try:
+
+                    ora_bloccata_str = str(
+                        ora_bloccata
+                    )[:5]
+
+                    orari_bloccati.add(
+                        ora_bloccata_str
                     )
-                FROM prenotazioni
-                WHERE data = :d
-            """),
+
+                except Exception:
+
+                    continue
+
+            # =================================================
+            # PRENOTAZIONI DEL GIORNO
+            # =================================================
+
+            prenotazioni_giorno = conn.execute(
+                text("""
+                    SELECT
+                        ora,
+                        trattamento,
+
+                        COALESCE(
+                            stato,
+                            'confermata'
+                        ) AS stato_1,
+
+                        codice_fiscale,
+                        codice_fiscale_2,
+
+                        COALESCE(
+                            stato_2,
+                            'confermata'
+                        ) AS stato_2
+
+                    FROM prenotazioni
+
+                    WHERE
+                        data = :d
+                """),
+                {
+                    "d": data
+                }
+            ).fetchall()
+
+            # =================================================
+            # CALCOLO LETTINI OCCUPATI
+            # =================================================
+
+            posti_occupati_per_ora = {}
+
+            # Orari nei quali l'utente è già prenotato.
+            orari_utente_prenotato = set()
+
+            for (
+                ora,
+                trattamento_esistente,
+                stato_1,
+                cf1,
+                cf2,
+                stato_2
+            ) in prenotazioni_giorno:
+
+                # ---------------------------------------------
+                # NORMALIZZAZIONE ORA
+                # ---------------------------------------------
+
+                if ora is None:
+                    continue
+
+                try:
+
+                    ora_str = str(
+                        ora
+                    )[:5]
+
+                except Exception:
+
+                    continue
+
+                # ---------------------------------------------
+                # NORMALIZZAZIONE STATI
+                # ---------------------------------------------
+
+                stato_1_str = str(
+                    stato_1 or "confermata"
+                ).strip().lower()
+
+                stato_2_str = str(
+                    stato_2 or "confermata"
+                ).strip().lower()
+
+                # ---------------------------------------------
+                # CONTROLLO SE L'UTENTE È GIÀ PRENOTATO
+                # ---------------------------------------------
+
+                if user_cf:
+
+                    is_cf1_match = (
+                        cf1
+                        and
+                        str(cf1)
+                        .strip()
+                        .upper()
+                        == user_cf
+                        and
+                        stato_1_str
+                        != "cancellata"
+                    )
+
+                    is_cf2_match = (
+                        cf2
+                        and
+                        str(cf2)
+                        .strip()
+                        .upper()
+                        == user_cf
+                        and
+                        stato_2_str
+                        != "cancellata"
+                    )
+
+                    if (
+                        is_cf1_match
+                        or is_cf2_match
+                    ):
+
+                        orari_utente_prenotato.add(
+                            ora_str
+                        )
+
+                # ---------------------------------------------
+                # TIPO PRENOTAZIONE ESISTENTE
+                # ---------------------------------------------
+
+                trattamento_esistente_lower = str(
+                    trattamento_esistente or ""
+                ).strip().lower()
+
+                # ---------------------------------------------
+                # PRENOTAZIONE DI COPPIA
+                # ---------------------------------------------
+
+                if (
+                    "coppia"
+                    in trattamento_esistente_lower
+                ):
+
+                    # Partecipante 1
+                    if (
+                        stato_1_str
+                        != "cancellata"
+                    ):
+
+                        posti_occupati_per_ora[
+                            ora_str
+                        ] = (
+                            posti_occupati_per_ora.get(
+                                ora_str,
+                                0
+                            )
+                            + 1
+                        )
+
+                    # Partecipante 2
+                    if (
+                        stato_2_str
+                        != "cancellata"
+                    ):
+
+                        posti_occupati_per_ora[
+                            ora_str
+                        ] = (
+                            posti_occupati_per_ora.get(
+                                ora_str,
+                                0
+                            )
+                            + 1
+                        )
+
+                # ---------------------------------------------
+                # PRENOTAZIONE SINGOLA
+                # ---------------------------------------------
+
+                else:
+
+                    if (
+                        stato_1_str
+                        != "cancellata"
+                    ):
+
+                        posti_occupati_per_ora[
+                            ora_str
+                        ] = (
+                            posti_occupati_per_ora.get(
+                                ora_str,
+                                0
+                            )
+                            + 1
+                        )
+
+            # =================================================
+            # CALCOLO ORARI DISPONIBILI
+            # =================================================
+
+            orari_liberi = []
+
+            for o in orari_teorici:
+
+                # ---------------------------------------------
+                # ORARIO BLOCCATO
+                # ---------------------------------------------
+
+                if o in orari_bloccati:
+
+                    continue
+
+                # ---------------------------------------------
+                # UTENTE GIÀ PRENOTATO
+                # ---------------------------------------------
+
+                if (
+                    user_cf
+                    and
+                    o in orari_utente_prenotato
+                ):
+
+                    continue
+
+                # ---------------------------------------------
+                # LETTINI OCCUPATI
+                # ---------------------------------------------
+
+                posti_occupati = (
+                    posti_occupati_per_ora.get(
+                        o,
+                        0
+                    )
+                )
+
+                # ---------------------------------------------
+                # CONTROLLO CAPACITÀ
+                #
+                # Massimo 3 lettini:
+                #
+                # 0 occupati + singola = OK
+                # 0 occupati + coppia  = OK
+                #
+                # 1 occupato + singola = OK
+                # 1 occupato + coppia  = OK
+                #
+                # 2 occupati + singola = OK
+                # 2 occupati + coppia  = NO
+                #
+                # 3 occupati + qualsiasi = NO
+                # ---------------------------------------------
+
+                if (
+                    posti_occupati
+                    + posti_richiesti
+                    <= 3
+                ):
+
+                    orari_liberi.append(
+                        o
+                    )
+
+        # ====================================================
+        # RISPOSTA
+        # ====================================================
+
+        return JSONResponse(
             {
-                "d": data
+                "orari": orari_liberi
             }
-        ).fetchall()
-
-    posti_occupati_per_ora = {}
-
-    orari_utente_prenotato = set()
-
-    for (
-        ora,
-        t_esistente,
-        stato,
-        cf1,
-        cf2,
-        stato_2
-    ) in prenotazioni_giorno:
-
-        if user_cf:
-
-            is_cf1_match = (
-                cf1
-                and cf1.strip().upper()
-                == user_cf
-                and str(stato).lower()
-                != "cancellata"
-            )
-
-            is_cf2_match = (
-                cf2
-                and cf2.strip().upper()
-                == user_cf
-                and str(stato_2).lower()
-                != "cancellata"
-            )
-
-            if (
-                is_cf1_match
-                or is_cf2_match
-            ):
-
-                orari_utente_prenotato.add(
-                    ora
-                )
-
-        trattamento_esistente = str(
-            t_esistente
-            or ""
-        ).lower()
-
-        if "coppia" in trattamento_esistente:
-
-            if (
-                str(stato).lower()
-                != "cancellata"
-            ):
-
-                posti_occupati_per_ora[
-                    ora
-                ] = (
-                    posti_occupati_per_ora.get(
-                        ora,
-                        0
-                    )
-                    + 1
-                )
-
-            if (
-                str(stato_2).lower()
-                != "cancellata"
-            ):
-
-                posti_occupati_per_ora[
-                    ora
-                ] = (
-                    posti_occupati_per_ora.get(
-                        ora,
-                        0
-                    )
-                    + 1
-                )
-
-        else:
-
-            if (
-                str(stato).lower()
-                != "cancellata"
-            ):
-
-                posti_occupati_per_ora[
-                    ora
-                ] = (
-                    posti_occupati_per_ora.get(
-                        ora,
-                        0
-                    )
-                    + 1
-                )
-
-        posti_richiesti = (
-        2
-        if "coppia" in trattamento.lower()
-        else 1
-    )
-
-    orari_liberi = []
-
-    for o in orari_teorici:
-
-        if o in orari_bloccati:
-
-            continue
-
-        if (
-            user_cf
-            and o in orari_utente_prenotato
-        ):
-
-            continue
-
-        posti_occupati = (
-            posti_occupati_per_ora.get(
-                o,
-                0
-            )
         )
 
-        if (
-            posti_occupati
-            + posti_richiesti
-            <= 3
-        ):
+    except Exception as e:
 
-            orari_liberi.append(
-                o
-            )
+        # ====================================================
+        # LOG ERRORE REALE
+        # ====================================================
 
-    return JSONResponse(
-        {
-            "orari":
-                orari_liberi
-        }
-    )
+        print(
+            "ERRORE /api/orari:",
+            repr(e)
+        )
 
+        return JSONResponse(
+            {
+                "orari": [],
+                "error":
+                    "Errore interno nel caricamento "
+                    "degli orari."
+            },
+            status_code=500
+        )
 
 # ============================================================
 # MIE PRENOTAZIONI
