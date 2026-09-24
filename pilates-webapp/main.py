@@ -2201,15 +2201,11 @@ def get_orari_disponibili(
             # CONTROLLO DATA/ORA CORRENTE
             # =================================================
             
-            oggi = datetime.now(
-                ZoneInfo("Europe/Rome")
-            ).date()
-            
+            oggi = datetime.now().date()
+
             data_prenotazione = dt.date()
             
-            ora_attuale = datetime.now(
-                ZoneInfo("Europe/Rome")
-            ).time()
+            ora_attuale = datetime.now().time()
 
             for o in orari_teorici:
                 # ---------------------------------------------
