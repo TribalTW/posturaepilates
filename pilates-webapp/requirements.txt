@@ -3,6 +3,7 @@ uvicorn
 jinja2
 python-multipart
 sqlalchemy
+psycopg[binary]
 psycopg2-binary
 starlette
 pandas
