@@ -1572,7 +1572,7 @@ def effettua_prenotazione(
                         OR
 
                         (
-                            :cf_2 IS NOT NULL
+                            CAST(:cf_2 AS TEXT) IS NOT NULL
                             AND
                             (
                                 (
