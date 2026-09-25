@@ -676,7 +676,82 @@ def utente_ha_usato_prova(cf: str) -> bool:
 
         return count > 0
 
+# ============================================================
+# RECUPERA DATI ABBONAMENTO CLIENTE
+# ============================================================
 
+def recupera_dati_abbonamento(cf):
+    """
+    Recupera e prepara i dati dell'abbonamento
+    da mostrare nell'area personale.
+    """
+
+    with engine.connect() as conn:
+
+        abbonamento = conn.execute(
+            text("""
+                SELECT
+                    tipo_abbonamento,
+                    data_inizio_abbonamento,
+                    data_fine_abbonamento,
+
+                    COALESCE(
+                        sedute_totali,
+                        0
+                    ) AS sedute_totali,
+
+                    COALESCE(
+                        sedute_residue,
+                        0
+                    ) AS sedute_residue
+
+                FROM utenti
+
+                WHERE
+                    UPPER(codice_fiscale) = :cf
+            """),
+            {
+                "cf": str(cf).strip().upper()
+            }
+        ).mappings().first()
+
+    if not abbonamento:
+        return {
+            "tipo_abbonamento": None,
+            "data_fine_abbonamento": None,
+            "sedute_residue": 0
+        }
+
+    tipo_abbonamento = normalizza_tipo_abbonamento(
+        abbonamento["tipo_abbonamento"]
+    )
+
+    data_fine_abbonamento = (
+        abbonamento["data_fine_abbonamento"]
+    )
+
+    if data_fine_abbonamento:
+
+        try:
+
+            data_fine_abbonamento = datetime.strptime(
+                str(data_fine_abbonamento),
+                "%Y-%m-%d"
+            ).strftime("%d/%m/%Y")
+
+        except ValueError:
+            pass
+
+    sedute_residue = int(
+        abbonamento["sedute_residue"] or 0
+    )
+
+    return {
+        "tipo_abbonamento": tipo_abbonamento,
+        "data_fine_abbonamento": data_fine_abbonamento,
+        "sedute_residue": sedute_residue
+    }
+    
 # ============================================================
 # LOGIN CLIENTE
 # ============================================================
@@ -1195,7 +1270,6 @@ def prenota_page(request: Request):
     user = request.session.get("user")
 
     if not user:
-
         return RedirectResponse(
             url="/",
             status_code=303
@@ -1205,111 +1279,26 @@ def prenota_page(request: Request):
         user["cf"]
     )
 
-    # ========================================================
-    # RECUPERO ABBONAMENTO CLIENTE
-    # ========================================================
-
-    with engine.connect() as conn:
-
-        abbonamento = conn.execute(
-            text("""
-                SELECT
-                    tipo_abbonamento,
-                    data_inizio_abbonamento,
-                    data_fine_abbonamento,
-
-                    COALESCE(
-                        sedute_totali,
-                        0
-                    ) AS sedute_totali,
-
-                    COALESCE(
-                        sedute_residue,
-                        0
-                    ) AS sedute_residue
-
-                FROM utenti
-
-                WHERE
-                    UPPER(codice_fiscale) = :cf
-            """),
-            {
-                "cf":
-                    user["cf"].strip().upper()
-            }
-        ).mappings().first()
-
-    # ========================================================
-    # NORMALIZZAZIONE DATI ABBONAMENTO
-    # ========================================================
-
-    if abbonamento:
-
-        tipo_abbonamento = (
-            normalizza_tipo_abbonamento(
-                abbonamento["tipo_abbonamento"]
-            )
-        )
-
-        if tipo_abbonamento:
-
-            data_fine_abbonamento = (
-                abbonamento[
-                    "data_fine_abbonamento"
-                ]
-            )
-
-            # Formato data: YYYY-MM-DD → DD/MM/YYYY
-            if data_fine_abbonamento:
-
-                try:
-
-                    data_fine_abbonamento = datetime.strptime(
-                        str(data_fine_abbonamento),
-                        "%Y-%m-%d"
-                    ).strftime("%d/%m/%Y")
-
-                except ValueError:
-
-                    pass
-
-            sedute_residue = int(
-                abbonamento[
-                    "sedute_residue"
-                ]
-                or 0
-            )
-
-        else:
-
-            data_fine_abbonamento = None
-            sedute_residue = 0
-
-    else:
-
-        tipo_abbonamento = None
-        data_fine_abbonamento = None
-        sedute_residue = 0
+    # Recupera i dati dell'abbonamento
+    abbonamento = recupera_dati_abbonamento(
+        user["cf"]
+    )
 
     return templates.TemplateResponse(
         request=request,
         name="prenota.html",
         context={
-
-            "user":
-                user,
-
-            "ha_usato_prova":
-                ha_usato_prova,
+            "user": user,
+            "ha_usato_prova": ha_usato_prova,
 
             "tipo_abbonamento":
-                tipo_abbonamento,
+                abbonamento["tipo_abbonamento"],
 
             "data_fine_abbonamento":
-                data_fine_abbonamento,
+                abbonamento["data_fine_abbonamento"],
 
             "sedute_residue":
-                sedute_residue
+                abbonamento["sedute_residue"]
         }
     )
 
