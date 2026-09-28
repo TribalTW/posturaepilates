@@ -507,19 +507,21 @@ def verifica_abilitazione_prenotazione(
     Verifica se un cliente può effettuare una prenotazione
     nella data richiesta.
 
-    Restituisce:
-    True, messaggio
-    oppure:
-    False, messaggio
-
     Per l'abbonamento "10 sedute":
-    - le sedute vengono effettivamente scalate solo quando
-      l'admin registra il cliente come presente e scala la seduta;
-    - le prenotazioni ancora confermate vengono però considerate
-      sedute temporaneamente impegnate;
-    - anche una presenza non ancora scalata rimane impegnata;
-    - una prenotazione cancellata non viene considerata impegnata;
-    - una presenza già scalata non viene conteggiata una seconda volta.
+    - le sedute vengono scalate SOLO quando l'admin
+      effettua la scalatura;
+    - le prenotazioni confermate dell'ATTUALE abbonamento
+      impegnano temporaneamente una seduta;
+    - una prenotazione presente ma non ancora scalata
+      continua a impegnare una seduta;
+    - una prenotazione già scalata non viene conteggiata;
+    - una prenotazione cancellata non viene conteggiata;
+    - le prenotazioni effettuate prima dell'inizio
+      dell'attuale abbonamento non vengono conteggiate.
+
+    Per Mensile e Trimestrale:
+    - verifica la validità dell'abbonamento;
+    - massimo 2 prenotazioni settimanali.
     """
 
     cf_clean = (
@@ -528,25 +530,34 @@ def verifica_abilitazione_prenotazione(
         .upper()
     )
 
+    # ========================================================
+    # RECUPERO UTENTE
+    # ========================================================
+
     utente = conn.execute(
         text("""
         SELECT
             tipo_abbonamento,
             data_inizio_abbonamento,
             data_fine_abbonamento,
+
             COALESCE(
                 sedute_totali,
                 0
             ) AS sedute_totali,
+
             COALESCE(
                 sedute_residue,
                 0
             ) AS sedute_residue,
+
             COALESCE(
                 bannato,
                 false
             ) AS bannato
+
         FROM utenti
+
         WHERE
             UPPER(codice_fiscale) = :cf
         """),
@@ -594,26 +605,49 @@ def verifica_abilitazione_prenotazione(
             )
 
         # ----------------------------------------------------
-        # CONTROLLO SEDUTE IMPEGNATE
-        #
-        # Una prenotazione "confermata" impegna una seduta,
-        # anche se la seduta non è ancora stata scalata.
-        #
-        # Una prenotazione "presente" impegna ancora una seduta
-        # finché l'admin non effettua la scalatura.
-        #
-        # Una prenotazione "presente" già scalata NON viene
-        # conteggiata, perché la relativa seduta è già stata
-        # sottratta da sedute_residue.
-        #
-        # Una prenotazione "cancellata" non viene conteggiata.
-        #
-        # Una prenotazione "assente" non viene conteggiata.
+        # DATA INIZIO ATTUALE ABBONAMENTO
         # ----------------------------------------------------
+        #
+        # È fondamentale per non conteggiare le prenotazioni
+        # appartenenti al precedente abbonamento.
+        #
+        # Esempio:
+        #
+        # Vecchio abbonamento:
+        # 3 prenotazioni già effettuate
+        #
+        # Nuovo abbonamento:
+        # data inizio = 28/09/2026
+        # sedute residue = 2
+        #
+        # Le 3 vecchie prenotazioni NON vengono conteggiate.
+        # ----------------------------------------------------
+
+        data_inizio_abbonamento = (
+            utente[
+                "data_inizio_abbonamento"
+            ]
+        )
+
+        # Se per qualche motivo non è presente una data
+        # di inizio, utilizziamo solo le prenotazioni che
+        # hanno una data di creazione valida.
+        #
+        # In condizioni normali la data deve essere presente
+        # quando viene configurato l'abbonamento.
+
+        sedute_impegnate = 0
+
+        # ====================================================
+        # RECUPERO PRENOTAZIONI DEL CLIENTE
+        # ====================================================
 
         prenotazioni = conn.execute(
             text("""
             SELECT
+
+                data_creazione,
+
                 codice_fiscale,
                 codice_fiscale_2,
 
@@ -651,38 +685,107 @@ def verifica_abilitazione_prenotazione(
             }
         ).fetchall()
 
-        sedute_impegnate = 0
+        # ====================================================
+        # CONTROLLO PRENOTAZIONI
+        # ====================================================
 
         for r in prenotazioni:
 
-            cf1 = (
-                str(r[0]).strip().upper()
-                if r[0]
-                else ""
-            )
+            data_creazione = r[0]
 
-            cf2 = (
+            # ------------------------------------------------
+            # PRENOTAZIONE DEL VECCHIO ABBONAMENTO
+            # ------------------------------------------------
+            #
+            # Se esiste una data di inizio del nuovo
+            # abbonamento, consideriamo solo le prenotazioni
+            # create da quella data in poi.
+            # ------------------------------------------------
+
+            if data_inizio_abbonamento:
+
+                try:
+
+                    data_inizio = datetime.strptime(
+                        str(
+                            data_inizio_abbonamento
+                        )[:10],
+                        "%Y-%m-%d"
+                    ).date()
+
+                    if data_creazione:
+
+                        data_creazione_str = str(
+                            data_creazione
+                        )
+
+                        data_creazione_str = (
+                            data_creazione_str[:10]
+                        )
+
+                        data_creazione_date = (
+                            datetime.strptime(
+                                data_creazione_str,
+                                "%Y-%m-%d"
+                            ).date()
+                        )
+
+                        if (
+                            data_creazione_date
+                            < data_inizio
+                        ):
+
+                            continue
+
+                except Exception:
+
+                    # Se la data non è interpretabile,
+                    # non facciamo pesare la prenotazione
+                    # sul nuovo credito.
+                    continue
+
+            # ------------------------------------------------
+            # DATI PARTECIPANTI
+            # ------------------------------------------------
+
+            cf1 = (
                 str(r[1]).strip().upper()
                 if r[1]
                 else ""
             )
 
-            stato1 = str(
-                r[2] or "confermata"
-            ).strip().lower()
+            cf2 = (
+                str(r[2]).strip().upper()
+                if r[2]
+                else ""
+            )
 
-            stato2 = str(
+            stato1 = str(
                 r[3] or "confermata"
             ).strip().lower()
 
-            scalata1 = bool(r[4])
-            scalata2 = bool(r[5])
+            stato2 = str(
+                r[4] or "confermata"
+            ).strip().lower()
 
-            # ------------------------------------------------
+            scalata1 = bool(r[5])
+            scalata2 = bool(r[6])
+
+            # =================================================
             # PARTECIPANTE 1
-            # ------------------------------------------------
+            # =================================================
 
             if cf1 == cf_clean:
+
+                # Confermata = seduta impegnata
+                #
+                # Presente non scalata = seduta impegnata
+                #
+                # Presente scalata = già sottratta da
+                # sedute_residue, quindi NON conteggiare
+                #
+                # Cancellata = libera
+                # Assente = libera
 
                 if (
                     stato1 == "confermata"
@@ -695,9 +798,9 @@ def verifica_abilitazione_prenotazione(
 
                     sedute_impegnate += 1
 
-            # ------------------------------------------------
+            # =================================================
             # PARTECIPANTE 2
-            # ------------------------------------------------
+            # =================================================
 
             if cf2 == cf_clean:
 
@@ -712,9 +815,9 @@ def verifica_abilitazione_prenotazione(
 
                     sedute_impegnate += 1
 
-        # ----------------------------------------------------
-        # DISPONIBILITÀ REALE
-        # ----------------------------------------------------
+        # ====================================================
+        # VERIFICA DISPONIBILITÀ
+        # ====================================================
 
         if sedute_impegnate >= residue:
 
