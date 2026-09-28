@@ -508,9 +508,18 @@ def verifica_abilitazione_prenotazione(
     nella data richiesta.
 
     Restituisce:
-        True, messaggio
+    True, messaggio
     oppure:
-        False, messaggio
+    False, messaggio
+
+    Per l'abbonamento "10 sedute":
+    - le sedute vengono effettivamente scalate solo quando
+      l'admin registra il cliente come presente e scala la seduta;
+    - le prenotazioni ancora confermate vengono però considerate
+      sedute temporaneamente impegnate;
+    - anche una presenza non ancora scalata rimane impegnata;
+    - una prenotazione cancellata non viene considerata impegnata;
+    - una presenza già scalata non viene conteggiata una seconda volta.
     """
 
     cf_clean = (
@@ -521,29 +530,28 @@ def verifica_abilitazione_prenotazione(
 
     utente = conn.execute(
         text("""
-            SELECT
-                tipo_abbonamento,
-                data_inizio_abbonamento,
-                data_fine_abbonamento,
-                COALESCE(
-                    sedute_totali,
-                    0
-                ) AS sedute_totali,
-                COALESCE(
-                    sedute_residue,
-                    0
-                ) AS sedute_residue,
-                COALESCE(
-                    bannato,
-                    false
-                ) AS bannato
-            FROM utenti
-            WHERE
-                UPPER(codice_fiscale) = :cf
+        SELECT
+            tipo_abbonamento,
+            data_inizio_abbonamento,
+            data_fine_abbonamento,
+            COALESCE(
+                sedute_totali,
+                0
+            ) AS sedute_totali,
+            COALESCE(
+                sedute_residue,
+                0
+            ) AS sedute_residue,
+            COALESCE(
+                bannato,
+                false
+            ) AS bannato
+        FROM utenti
+        WHERE
+            UPPER(codice_fiscale) = :cf
         """),
         {
-            "cf":
-                cf_clean
+            "cf": cf_clean
         }
     ).mappings().first()
 
@@ -566,6 +574,10 @@ def verifica_abilitazione_prenotazione(
         utente["tipo_abbonamento"]
     )
 
+    # ========================================================
+    # ABBONAMENTO 10 SEDUTE
+    # ========================================================
+
     if tipo == "10 sedute":
 
         residue = int(
@@ -581,10 +593,146 @@ def verifica_abilitazione_prenotazione(
                 "nel tuo abbonamento."
             )
 
+        # ----------------------------------------------------
+        # CONTROLLO SEDUTE IMPEGNATE
+        #
+        # Una prenotazione "confermata" impegna una seduta,
+        # anche se la seduta non è ancora stata scalata.
+        #
+        # Una prenotazione "presente" impegna ancora una seduta
+        # finché l'admin non effettua la scalatura.
+        #
+        # Una prenotazione "presente" già scalata NON viene
+        # conteggiata, perché la relativa seduta è già stata
+        # sottratta da sedute_residue.
+        #
+        # Una prenotazione "cancellata" non viene conteggiata.
+        #
+        # Una prenotazione "assente" non viene conteggiata.
+        # ----------------------------------------------------
+
+        prenotazioni = conn.execute(
+            text("""
+            SELECT
+                codice_fiscale,
+                codice_fiscale_2,
+
+                COALESCE(
+                    stato,
+                    'confermata'
+                ) AS stato_1,
+
+                COALESCE(
+                    stato_2,
+                    'confermata'
+                ) AS stato_2,
+
+                COALESCE(
+                    seduta_scalata,
+                    false
+                ) AS seduta_scalata_1,
+
+                COALESCE(
+                    seduta_scalata_2,
+                    false
+                ) AS seduta_scalata_2
+
+            FROM prenotazioni
+
+            WHERE
+                (
+                    UPPER(codice_fiscale) = :cf
+                    OR
+                    UPPER(codice_fiscale_2) = :cf
+                )
+            """),
+            {
+                "cf": cf_clean
+            }
+        ).fetchall()
+
+        sedute_impegnate = 0
+
+        for r in prenotazioni:
+
+            cf1 = (
+                str(r[0]).strip().upper()
+                if r[0]
+                else ""
+            )
+
+            cf2 = (
+                str(r[1]).strip().upper()
+                if r[1]
+                else ""
+            )
+
+            stato1 = str(
+                r[2] or "confermata"
+            ).strip().lower()
+
+            stato2 = str(
+                r[3] or "confermata"
+            ).strip().lower()
+
+            scalata1 = bool(r[4])
+            scalata2 = bool(r[5])
+
+            # ------------------------------------------------
+            # PARTECIPANTE 1
+            # ------------------------------------------------
+
+            if cf1 == cf_clean:
+
+                if (
+                    stato1 == "confermata"
+                    or
+                    (
+                        stato1 == "presente"
+                        and not scalata1
+                    )
+                ):
+
+                    sedute_impegnate += 1
+
+            # ------------------------------------------------
+            # PARTECIPANTE 2
+            # ------------------------------------------------
+
+            if cf2 == cf_clean:
+
+                if (
+                    stato2 == "confermata"
+                    or
+                    (
+                        stato2 == "presente"
+                        and not scalata2
+                    )
+                ):
+
+                    sedute_impegnate += 1
+
+        # ----------------------------------------------------
+        # DISPONIBILITÀ REALE
+        # ----------------------------------------------------
+
+        if sedute_impegnate >= residue:
+
+            return (
+                False,
+                "Hai già utilizzato o impegnato "
+                "tutte le sedute disponibili "
+                "nel tuo abbonamento."
+            )
+
         return (
             True,
             None
         )
+
+    # ========================================================
+    # MENSILE / TRIMESTRALE
+    # ========================================================
 
     if tipo in (
         "Mensile",
@@ -630,6 +778,10 @@ def verifica_abilitazione_prenotazione(
             True,
             None
         )
+
+    # ========================================================
+    # NESSUN ABBONAMENTO
+    # ========================================================
 
     return (
         False,
