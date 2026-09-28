@@ -1824,6 +1824,17 @@ def effettua_prenotazione(
             }
         )
 
+    # Dopo una prenotazione riuscita, recuperiamo nuovamente
+    # i dati dell'abbonamento.
+    #
+    # IMPORTANTE:
+    # il limite di 2 prenotazioni settimanali viene controllato
+    # da verifica_abilitazione_prenotazione(), ma NON deve
+    # modificare o nascondere l'abbonamento visualizzato.
+    abbonamento = recupera_dati_abbonamento(
+        user["cf"]
+    )
+
     return templates.TemplateResponse(
         request=request,
         name="prenota.html",
@@ -1833,6 +1844,15 @@ def effettua_prenotazione(
 
             "ha_usato_prova":
                 ha_usato_prova,
+
+            "tipo_abbonamento":
+                abbonamento["tipo_abbonamento"],
+
+            "data_fine_abbonamento":
+                abbonamento["data_fine_abbonamento"],
+
+            "sedute_residue":
+                abbonamento["sedute_residue"],
 
             "success":
                 f"Prenotazione confermata per il "
