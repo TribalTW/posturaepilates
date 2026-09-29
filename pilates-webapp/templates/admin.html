@@ -1588,7 +1588,124 @@
 <!-- ============================================================= -->
 
 <script>
+    
+/* ============================================================= */
+/* RICERCA UTENTI */
+/* ============================================================= */
 
+function filtraUtenti() {
+
+    const ricerca =
+    document.getElementById('ricercaUtenti')
+    .value
+    .trim()
+    .toLowerCase();
+    
+    const righe =
+    document.querySelectorAll('#tabellaUtenti tr[data-nome]');
+    
+    
+    righe.forEach(riga => {
+    
+    const nome =
+    (riga.dataset.nome || '')
+    .toLowerCase();
+    
+    const cf =
+    (riga.dataset.cf || '')
+    .toLowerCase();
+    
+    
+    const corrisponde =
+    nome.includes(ricerca) ||
+    cf.includes(ricerca);
+    
+    
+    riga.style.display =
+    corrisponde ? '' : 'none';
+
+    });
+
+}
+
+
+/* ============================================================= */
+/* ORDINAMENTO UTENTI */
+/* ============================================================= */
+
+function ordinaUtenti() {
+    const criterio = document.getElementById('ordinamentoUtenti').value;
+    const tbody = document.getElementById('tabellaUtenti');
+    const righe = Array.from(tbody.querySelectorAll('tr[data-nome]'));
+
+    righe.sort((a, b) => {
+        const nomeA = (a.dataset.nome || '').trim().toLowerCase();
+        const nomeB = (b.dataset.nome || '').trim().toLowerCase();
+
+        if (criterio === 'az') {
+            return nomeA.localeCompare(nomeB, 'it', { sensitivity: 'base' });
+        }
+
+        if (criterio === 'za') {
+            return nomeB.localeCompare(nomeA, 'it', { sensitivity: 'base' });
+        }
+
+        const dataA = parseDataRegistrazione(a.dataset.registrazione);
+        const dataB = parseDataRegistrazione(b.dataset.registrazione);
+
+        if (criterio === 'recenti') {
+            return dataB - dataA;
+        }
+
+        if (criterio === 'vecchi') {
+            return dataA - dataB;
+        }
+
+        return 0;
+    });
+
+    righe.forEach(riga => {
+        tbody.appendChild(riga);
+    });
+}
+
+/* ============================================================= */
+/* CONVERSIONE DATA REGISTRAZIONE */
+/* ============================================================= */
+
+function parseDataRegistrazione(valore) {
+    if (!valore) {
+        return 0;
+    }
+
+    const testo = String(valore).trim();
+
+    /*
+     * Gestisce date nel formato:
+     * YYYY-MM-DD
+     * YYYY-MM-DD HH:MM:SS
+     */
+    const matchISO = testo.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}):(\d{2}))?/);
+
+    if (matchISO) {
+        return new Date(
+            Number(matchISO[1]),
+            Number(matchISO[2]) - 1,
+            Number(matchISO[3]),
+            Number(matchISO[4] || 0),
+            Number(matchISO[5] || 0),
+            Number(matchISO[6] || 0)
+        ).getTime();
+    }
+
+    /*
+     * Fallback per altri formati riconosciuti dal browser.
+     */
+    const data = new Date(testo);
+
+    return Number.isNaN(data.getTime()) ? 0 : data.getTime();
+}
+    
 let utenteAttualmenteAperto = null;
 let datiUtenteAttuali = null;
 
