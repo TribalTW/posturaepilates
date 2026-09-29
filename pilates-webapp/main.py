@@ -970,42 +970,209 @@ def recupera_dati_abbonamento(cf):
             }
         ).mappings().first()
 
-    if not abbonamento:
+        if not abbonamento:
+            return {
+                "tipo_abbonamento": None,
+                "data_fine_abbonamento": None,
+                "sedute_residue": 0,
+                "sedute_disponibili": 0
+            }
+
+        tipo_abbonamento = normalizza_tipo_abbonamento(
+            abbonamento["tipo_abbonamento"]
+        )
+
+        data_fine_abbonamento = (
+            abbonamento["data_fine_abbonamento"]
+        )
+
+        if data_fine_abbonamento:
+
+            try:
+
+                data_fine_abbonamento = datetime.strptime(
+                    str(data_fine_abbonamento),
+                    "%Y-%m-%d"
+                ).strftime("%d/%m/%Y")
+
+            except ValueError:
+                pass
+
+        sedute_residue = int(
+            abbonamento["sedute_residue"] or 0
+        )
+
+        # ====================================================
+        # SEDUTE TEMPORANEAMENTE IMPEGNATE
+        # ====================================================
+
+        sedute_impegnate = 0
+
+        if tipo_abbonamento == "10 sedute":
+
+            data_inizio_abbonamento = (
+                abbonamento[
+                    "data_inizio_abbonamento"
+                ]
+            )
+
+            prenotazioni = conn.execute(
+                text("""
+                    SELECT
+
+                        data_creazione,
+
+                        codice_fiscale,
+                        codice_fiscale_2,
+
+                        COALESCE(
+                            stato,
+                            'confermata'
+                        ) AS stato_1,
+
+                        COALESCE(
+                            stato_2,
+                            'confermata'
+                        ) AS stato_2,
+
+                        COALESCE(
+                            seduta_scalata,
+                            false
+                        ) AS seduta_scalata_1,
+
+                        COALESCE(
+                            seduta_scalata_2,
+                            false
+                        ) AS seduta_scalata_2
+
+                    FROM prenotazioni
+
+                    WHERE
+                        (
+                            UPPER(codice_fiscale) = :cf
+                            OR
+                            UPPER(codice_fiscale_2) = :cf
+                        )
+                """),
+                {
+                    "cf": str(cf).strip().upper()
+                }
+            ).fetchall()
+
+            for r in prenotazioni:
+
+                data_creazione = r[0]
+
+                # Ignora le prenotazioni precedenti
+                # all'attuale abbonamento.
+
+                if data_inizio_abbonamento:
+
+                    try:
+
+                        data_inizio = datetime.strptime(
+                            str(
+                                data_inizio_abbonamento
+                            )[:10],
+                            "%Y-%m-%d"
+                        ).date()
+
+                        if data_creazione:
+
+                            data_creazione_date = (
+                                datetime.strptime(
+                                    str(
+                                        data_creazione
+                                    )[:10],
+                                    "%Y-%m-%d"
+                                ).date()
+                            )
+
+                            if (
+                                data_creazione_date
+                                < data_inizio
+                            ):
+
+                                continue
+
+                    except Exception:
+
+                        continue
+
+                cf1 = (
+                    str(r[1]).strip().upper()
+                    if r[1]
+                    else ""
+                )
+
+                cf2 = (
+                    str(r[2]).strip().upper()
+                    if r[2]
+                    else ""
+                )
+
+                stato1 = str(
+                    r[3] or "confermata"
+                ).strip().lower()
+
+                stato2 = str(
+                    r[4] or "confermata"
+                ).strip().lower()
+
+                scalata1 = bool(r[5])
+                scalata2 = bool(r[6])
+
+                # Partecipante 1
+
+                if cf1 == str(cf).strip().upper():
+
+                    if (
+                        stato1 == "confermata"
+                        or
+                        (
+                            stato1 == "presente"
+                            and not scalata1
+                        )
+                    ):
+
+                        sedute_impegnate += 1
+
+                # Partecipante 2
+
+                if cf2 == str(cf).strip().upper():
+
+                    if (
+                        stato2 == "confermata"
+                        or
+                        (
+                            stato2 == "presente"
+                            and not scalata2
+                        )
+                    ):
+
+                        sedute_impegnate += 1
+
+        # ====================================================
+        # SEDUTE DISPONIBILI
+        # ====================================================
+
+        sedute_disponibili = max(
+            0,
+            sedute_residue - sedute_impegnate
+        )
+
         return {
-            "tipo_abbonamento": None,
-            "data_fine_abbonamento": None,
-            "sedute_residue": 0
+            "tipo_abbonamento": tipo_abbonamento,
+
+            "data_fine_abbonamento":
+                data_fine_abbonamento,
+
+            "sedute_residue":
+                sedute_residue,
+
+            "sedute_disponibili":
+                sedute_disponibili
         }
-
-    tipo_abbonamento = normalizza_tipo_abbonamento(
-        abbonamento["tipo_abbonamento"]
-    )
-
-    data_fine_abbonamento = (
-        abbonamento["data_fine_abbonamento"]
-    )
-
-    if data_fine_abbonamento:
-
-        try:
-
-            data_fine_abbonamento = datetime.strptime(
-                str(data_fine_abbonamento),
-                "%Y-%m-%d"
-            ).strftime("%d/%m/%Y")
-
-        except ValueError:
-            pass
-
-    sedute_residue = int(
-        abbonamento["sedute_residue"] or 0
-    )
-
-    return {
-        "tipo_abbonamento": tipo_abbonamento,
-        "data_fine_abbonamento": data_fine_abbonamento,
-        "sedute_residue": sedute_residue
-    }
     
 # ============================================================
 # LOGIN CLIENTE
@@ -1554,6 +1721,9 @@ def prenota_page(request: Request):
 
             "sedute_residue":
                 abbonamento["sedute_residue"]
+            
+            "sedute_disponibili":
+                abbonamento["sedute_disponibili"]
         }
     )
 
