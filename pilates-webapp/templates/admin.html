@@ -599,136 +599,142 @@
                 </thead>
 
 
-                <tbody class="divide-y divide-[#f9d1df] text-sm">
-
-                {% for u in utenti %}
-
-                    <tr class="hover:bg-[#fff9fb] transition">
-
-                        <td class="p-3">
-
-                            <button type="button"
-                                    onclick="apriSchedaUtente({{ u[0] }})"
-                                    class="text-left group">
-
-                                <div class="font-semibold text-[#D81B60] group-hover:text-[#880E4F] transition">
+                <tbody
+                    id="tabellaUtenti"
+                    class="divide-y divide-[#f9d1df] text-sm">
+                    
+                    {% for u in utenti %}
+    
+                        <tr
+                        class="hover:bg-[#fff9fb] transition"
+                        data-nome="{{ u[1] }} {{ u[2] }}"
+                        data-cf="{{ u[3] }}"
+                        data-registrazione="{{ u[4] }}">
+    
+                            <td class="p-3">
+    
+                                <button type="button"
+                                onclick="apriSchedaUtente({{ u[0] }})"
+                                class="text-left group">
+    
+                                    <div class="font-semibold text-[#D81B60] group-hover:text-[#880E4F] transition">
                                     {{ u[1] }} {{ u[2] }}
-                                </div>
-
-                                <div class="text-[10px] text-gray-400 mt-0.5">
+                                    </div>
+    
+                                    <div class="text-[10px] text-gray-400 mt-0.5">
                                     Clicca per aprire la scheda →
-                                </div>
-
-                            </button>
-
-                        </td>
-
-
-                        <td class="p-3 font-mono text-gray-600">
+                                    </div>
+    
+                                </button>
+    
+                            </td>
+    
+    
+                            <td class="p-3 font-mono text-gray-600">
                             {{ u[3] }}
-                        </td>
-
-
-                        <td class="p-3 text-gray-500">
+                            </td>
+    
+    
+                            <td class="p-3 text-gray-500">
                             {{ u[4] }}
-                        </td>
-
-
-                        <td class="p-3">
-
-                            {% if u[5] %}
-
+                            </td>
+    
+    
+                            <td class="p-3">
+                            
+                                {% if u[5] %}
+    
                                 <span class="px-2 py-1 text-xs font-semibold bg-red-100 text-red-800 rounded-full">
                                     Bannato
                                 </span>
-
-                            {% else %}
-
+    
+                                {% else %}
+    
                                 <span class="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">
-                                    Attivo
+                                Attivo
                                 </span>
-
-                            {% endif %}
-
-                        </td>
-
-
-                        <td class="p-3 text-center">
-
-                            <div class="flex justify-center items-center gap-2">
-
-                                <button type="button"
-                                        onclick="apriSchedaUtente({{ u[0] }})"
-                                        class="text-xs px-3 py-1.5 rounded-xl bg-[#fff0f5] text-[#D81B60] border border-[#f9d1df] hover:bg-[#fce7f3] transition">
-
+    
+                                {% endif %}
+    
+                                </td>
+    
+    
+                            <td class="p-3 text-center">
+    
+                                <div class="flex justify-center items-center gap-2">
+    
+                                    <button type="button"
+                                    onclick="apriSchedaUtente({{ u[0] }})"
+                                    class="text-xs px-3 py-1.5 rounded-xl bg-[#fff0f5] text-[#D81B60] border border-[#f9d1df] hover:bg-[#fce7f3] transition">
+                                    
                                     👤 Scheda
-
-                                </button>
-
-
-                                <form action="/admin/utente/banna"
-                                      method="POST">
-
-                                    <input type="hidden"
-                                           name="id_utente"
-                                           value="{{ u[0] }}">
-
-                                    <input type="hidden"
-                                           name="stato_ban"
-                                           value="{{ u[5] }}">
-
-                                    <button type="submit"
-                                            class="text-xs px-2 py-1 rounded-xl border
-                                            {{ 'bg-gray-100 text-gray-700 border-gray-200' if u[5] else 'bg-yellow-50 text-yellow-700 border-yellow-200' }}">
-
-                                        {{ 'Sblocca' if u[5] else 'Banna' }}
-
+    
                                     </button>
-
-                                </form>
-
-
-                                <form action="/admin/utente/elimina"
-                                      method="POST"
-                                      onsubmit="return confirm('Sei sicuro di voler eliminare questo utente?');">
-
-                                    <input type="hidden"
-                                           name="id_utente"
-                                           value="{{ u[0] }}">
-
-                                    <button type="submit"
+    
+    
+                                    <form action="/admin/utente/banna"
+                                    method="POST">
+    
+                                        <input type="hidden"
+                                        name="id_utente"
+                                        value="{{ u[0] }}">
+    
+                                            <input type="hidden"
+                                            name="stato_ban"
+                                            value="{{ u[5] }}">
+    
+                                                <button type="submit"
+                                                class="text-xs px-2 py-1 rounded-xl border
+                                                {{ 'bg-gray-100 text-gray-700 border-gray-200' if u[5] else 'bg-yellow-50 text-yellow-700 border-yellow-200' }}">
+    
+                                                    {{ 'Sblocca' if u[5] else 'Banna' }}
+    
+                                                </button>
+    
+                                    </form>
+    
+    
+                                    <form action="/admin/utente/elimina"
+                                    method="POST"
+                                    onsubmit="return confirm('Sei sicuro di voler eliminare questo utente?');">
+    
+                                        <input type="hidden"
+                                        name="id_utente"
+                                        value="{{ u[0] }}">
+    
+                                            <button type="submit"
                                             class="text-xs px-2 py-1 rounded-xl bg-red-50 text-red-600 border border-red-200">
-
-                                        Elimina
-
-                                    </button>
-
-                                </form>
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                {% endfor %}
-
-
-                {% if not utenti %}
-
-                    <tr>
-
-                        <td colspan="5"
+    
+                                                Elimina
+    
+                                            </button>
+    
+                                    </form>
+    
+                                </div>
+    
+                            </td>
+    
+                        </tr>
+    
+                        {% endfor %}
+    
+    
+                        {% if not utenti %}
+    
+                        <tr>
+                        
+                            <td colspan="5"
                             class="p-6 text-center text-gray-500">
-
-                            Nessun utente registrato.
-
-                        </td>
-
-                    </tr>
-
-                {% endif %}
-
+    
+                                Nessun utente registrato.
+    
+                            </td>
+    
+                        </tr>
+                        
+                        {% endif %}
+    
                 </tbody>
 
             </table>
