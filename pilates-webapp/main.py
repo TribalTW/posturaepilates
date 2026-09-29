@@ -1720,7 +1720,7 @@ def prenota_page(request: Request):
                 abbonamento["data_fine_abbonamento"],
 
             "sedute_residue":
-                abbonamento["sedute_residue"]
+                abbonamento["sedute_residue"],
             
             "sedute_disponibili":
                 abbonamento["sedute_disponibili"]
