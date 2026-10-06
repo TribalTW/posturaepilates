@@ -3392,125 +3392,137 @@ def aggiorna_utente_gestionale(
             else esiste["tipo_abbonamento"]
         )
 
-        tipo_abbonamento = (
-            normalizza_tipo_abbonamento(
-                tipo_abbonamento
-            )
+        tipo_abbonamento = normalizza_tipo_abbonamento(
+            tipo_abbonamento
         )
 
         # ====================================================
-        # DATE
+        # NESSUN ABBONAMENTO
         # ====================================================
 
-        data_inizio = (
-            dati.data_inizio_abbonamento
-            if dati.data_inizio_abbonamento
-            is not None
-            else esiste[
-                "data_inizio_abbonamento"
-            ]
-        )
+        if tipo_abbonamento is None:
 
-        data_fine = (
-            dati.data_fine_abbonamento
-            if dati.data_fine_abbonamento
-            is not None
-            else esiste[
-                "data_fine_abbonamento"
-            ]
-        )
+            data_inizio = None
+            data_fine = None
 
-        # Per Mensile/Trimestrale la data fine viene
-        # calcolata automaticamente.
-        if tipo_abbonamento in (
-            "Mensile",
-            "Trimestrale"
-        ):
-
-            data_fine_calcolata = (
-                calcola_data_fine_abbonamento(
-                    tipo_abbonamento,
-                    data_inizio
-                )
-            )
-
-            if data_fine_calcolata:
-
-                data_fine = (
-                    data_fine_calcolata
-                )
-
-        # ====================================================
-        # SEDUTE
-        # ====================================================
-
-        if tipo_abbonamento == "10 sedute":
-
-            sedute_totali = (
-                dati.sedute_totali
-                if dati.sedute_totali
-                is not None
-                else esiste[
-                    "sedute_totali"
-                ]
-            )
-
-            sedute_residue = (
-                dati.sedute_residue
-                if dati.sedute_residue
-                is not None
-                else esiste[
-                    "sedute_residue"
-                ]
-            )
-
-            if sedute_totali is None:
-
-                sedute_totali = 10
-
-            if sedute_residue is None:
-
-                sedute_residue = 10
-
-            if sedute_totali != 10:
-
-                return JSONResponse(
-                    {
-                        "error":
-                            "L'abbonamento '10 sedute' "
-                            "deve avere esattamente 10 sedute totali."
-                    },
-                    status_code=400
-                )
-
-            if sedute_residue < 0:
-
-                return JSONResponse(
-                    {
-                        "error":
-                            "Le sedute residue "
-                            "non possono essere negative."
-                    },
-                    status_code=400
-                )
-
-            if sedute_residue > 10:
-
-                return JSONResponse(
-                    {
-                        "error":
-                            "Le sedute residue "
-                            "non possono superare 10."
-                    },
-                    status_code=400
-                )
+            sedute_totali = 0
+            sedute_residue = 0
 
         else:
 
-            # Mensile e Trimestrale non hanno un credito
-            # di sedute.
-            sedute_totali = 0
-            sedute_residue = 0
+            # =================================================
+            # DATE
+            # =================================================
+
+            data_inizio = (
+                dati.data_inizio_abbonamento
+                if dati.data_inizio_abbonamento
+                is not None
+                else esiste[
+                    "data_inizio_abbonamento"
+                ]
+            )
+
+            data_fine = (
+                dati.data_fine_abbonamento
+                if dati.data_fine_abbonamento
+                is not None
+                else esiste[
+                    "data_fine_abbonamento"
+                ]
+            )
+
+            # Per Mensile/Trimestrale la data fine viene
+            # calcolata automaticamente.
+            if tipo_abbonamento in (
+                "Mensile",
+                "Trimestrale"
+            ):
+
+                data_fine_calcolata = (
+                    calcola_data_fine_abbonamento(
+                        tipo_abbonamento,
+                        data_inizio
+                    )
+                )
+
+                if data_fine_calcolata:
+
+                    data_fine = (
+                        data_fine_calcolata
+                    )
+
+            # =================================================
+            # SEDUTE
+            # =================================================
+
+            if tipo_abbonamento == "10 sedute":
+
+                sedute_totali = (
+                    dati.sedute_totali
+                    if dati.sedute_totali
+                    is not None
+                    else esiste[
+                        "sedute_totali"
+                    ]
+                )
+
+                sedute_residue = (
+                    dati.sedute_residue
+                    if dati.sedute_residue
+                    is not None
+                    else esiste[
+                        "sedute_residue"
+                    ]
+                )
+
+                if sedute_totali is None:
+
+                    sedute_totali = 10
+
+                if sedute_residue is None:
+
+                    sedute_residue = 10
+
+                if sedute_totali != 10:
+
+                    return JSONResponse(
+                        {
+                            "error":
+                                "L'abbonamento '10 sedute' "
+                                "deve avere esattamente 10 sedute totali."
+                        },
+                        status_code=400
+                    )
+
+                if sedute_residue < 0:
+
+                    return JSONResponse(
+                        {
+                            "error":
+                                "Le sedute residue "
+                                "non possono essere negative."
+                        },
+                        status_code=400
+                    )
+
+                if sedute_residue > 10:
+
+                    return JSONResponse(
+                        {
+                            "error":
+                                "Le sedute residue "
+                                "non possono superare 10."
+                        },
+                        status_code=400
+                    )
+
+            else:
+
+                # Mensile e Trimestrale non hanno un credito
+                # di sedute.
+                sedute_totali = 0
+                sedute_residue = 0
 
         # ====================================================
         # PAGAMENTO
@@ -3636,8 +3648,6 @@ def aggiorna_utente_gestionale(
         "message":
             "Dati utente aggiornati con successo."
     }
-
-
 # ============================================================
 # CAMBIO STATO PRENOTAZIONE
 # ============================================================
