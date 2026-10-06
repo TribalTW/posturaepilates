@@ -207,12 +207,22 @@ def startup():
 def normalizza_tipo_abbonamento(tipo):
     """
     Restituisce il tipo di abbonamento normalizzato.
+
+    None / Nessun abbonamento = cliente senza abbonamento.
     """
 
     if not tipo:
         return None
 
     valore = str(tipo).strip().lower()
+
+    if valore in (
+        "",
+        "nessun abbonamento",
+        "nessuno",
+        "nessun"
+    ):
+        return None
 
     if valore == "mensile":
         return "Mensile"
@@ -887,9 +897,8 @@ def verifica_abilitazione_prenotazione(
     # ========================================================
 
     return (
-        False,
-        "Non hai un abbonamento attivo configurato. "
-        "Contatta l'amministrazione."
+        True,
+        None
     )
 
 
