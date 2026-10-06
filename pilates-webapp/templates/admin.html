@@ -3235,82 +3235,44 @@ async function salvaSchedaUtente(event) {
     /* ========================================================= */
 
     if (tipoAbbonamento === '10 sedute') {
+    totali = 10;
+    residue =
+        parseInt(
+            document.getElementById('campoSeduteResidue').value
+        );
 
-        totali = 10;
-
-        residue =
-            parseInt(
-                document.getElementById('campoSeduteResidue').value
-            );
-
-
-        if (
-            Number.isNaN(residue) ||
-            residue < 0 ||
-            residue > 10
-        ) {
-
-            messaggio.textContent =
-                '⚠️ Le sedute residue devono essere comprese tra 0 e 10.';
-
-            messaggio.className =
-                'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
-
-            messaggio.classList.remove('hidden');
-
-            return;
-
-        }
+    if (
+        Number.isNaN(residue) ||
+        residue < 0 ||
+        residue > 10
+    ) {
+        messaggio.textContent =
+            '⚠️ Le sedute residue devono essere comprese tra 0 e 10.';
+        messaggio.className =
+            'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
+        messaggio.classList.remove('hidden');
+        return;
+    }
 
     } else if (
         tipoAbbonamento === 'Mensile' ||
         tipoAbbonamento === 'Trimestrale'
     ) {
-
-        /*
-         * Per gli abbonamenti a tempo il backend
-         * gestisce automaticamente sedute_totali/residue.
-         */
-
         totali = 0;
         residue = 0;
-
+    
+    } else if (tipoAbbonamento === '') {
+        // Nessun abbonamento
+        totali = 0;
+        residue = 0;
+    
     } else {
-
         messaggio.textContent =
             '⚠️ Seleziona una tipologia di abbonamento.';
-
         messaggio.className =
             'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
-
         messaggio.classList.remove('hidden');
-
         return;
-
-    }
-
-
-    const dataInizio =
-        document.getElementById('campoInizioAbbonamento').value || null;
-
-    const dataFine =
-        document.getElementById('campoFineAbbonamento').value || null;
-
-
-    if (
-        !dataInizio
-    ) {
-
-        messaggio.textContent =
-            '⚠️ Inserisci la data di inizio dell\'abbonamento.';
-
-        messaggio.className =
-            'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
-
-        messaggio.classList.remove('hidden');
-
-        return;
-
     }
 
 
