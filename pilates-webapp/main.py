@@ -4545,10 +4545,21 @@ def update_cliente_gestionale(
 
     with engine.connect() as conn:
 
+        dati = cliente.model_dump()
+
+        # Normalizza il tipo di abbonamento.
+        # "Nessun abbonamento" diventa None.
+        if "tipo_abbonamento" in dati:
+            dati["tipo_abbonamento"] = normalizza_tipo_abbonamento(
+                dati["tipo_abbonamento"]
+            )
+
+        # Manteniamo tutti i campi realmente inviati,
+        # compreso tipo_abbonamento = None.
         update_data = {
             k: v
-            for k, v in cliente.model_dump().items()
-            if v is not None
+            for k, v in dati.items()
+            if v is not None or k == "tipo_abbonamento"
         }
 
         if not update_data:
@@ -4560,6 +4571,13 @@ def update_cliente_gestionale(
                 "message":
                     "Nessun dato da aggiornare"
             }
+
+        # Se viene scelto "Nessun abbonamento",
+        # eliminiamo anche i dati relativi all'abbonamento precedente.
+        if update_data.get("tipo_abbonamento") is None:
+
+            update_data["sedute_totali"] = None
+            update_data["sedute_residue"] = None
 
         set_clauses = ", ".join(
             [
