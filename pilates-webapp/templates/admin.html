@@ -3199,6 +3199,10 @@ async function ricaricaSchedaUtente() {
 /* SALVA SCHEDA */
 /* ============================================================= */
 
+/* ============================================================= */
+/* SALVA SCHEDA */
+/* ============================================================= */
+
 async function salvaSchedaUtente(event) {
 
     event.preventDefault();
@@ -3231,58 +3235,56 @@ async function salvaSchedaUtente(event) {
 
 
     /* ========================================================= */
-    /* VALIDAZIONE 10 SEDUTE */
+    /* VALIDAZIONE TIPO ABBONAMENTO */
     /* ========================================================= */
 
     if (tipoAbbonamento === '10 sedute') {
-    totali = 10;
-    residue =
-        parseInt(
-            document.getElementById('campoSeduteResidue').value
-        );
 
-    if (
-        Number.isNaN(residue) ||
-        residue < 0 ||
-        residue > 10
-    ) {
-        messaggio.textContent =
-            '⚠️ Le sedute residue devono essere comprese tra 0 e 10.';
-        messaggio.className =
-            'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
-        messaggio.classList.remove('hidden');
-        return;
-    }
+        totali = 10;
+
+        residue =
+            parseInt(
+                document.getElementById('campoSeduteResidue').value
+            );
+
+        if (
+            Number.isNaN(residue) ||
+            residue < 0 ||
+            residue > 10
+        ) {
+
+            messaggio.textContent =
+                '⚠️ Le sedute residue devono essere comprese tra 0 e 10.';
+
+            messaggio.className =
+                'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
+
+            messaggio.classList.remove('hidden');
+
+            return;
+        }
 
     } else if (
         tipoAbbonamento === 'Mensile' ||
         tipoAbbonamento === 'Trimestrale'
     ) {
+
         totali = 0;
         residue = 0;
-    
+
     } else if (tipoAbbonamento === '') {
-        // Nessun abbonamento
+
+        /* ===================================================== */
+        /* NESSUN ABBONAMENTO */
+        /* ===================================================== */
+
         totali = 0;
         residue = 0;
-    
+
     } else {
+
         messaggio.textContent =
             '⚠️ Seleziona una tipologia di abbonamento.';
-        messaggio.className =
-            'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
-        messaggio.classList.remove('hidden');
-        return;
-    }
-
-
-    if (
-        dataFine &&
-        dataFine < dataInizio
-    ) {
-
-        messaggio.textContent =
-            '⚠️ La data di fine abbonamento non può essere precedente alla data di inizio.';
 
         messaggio.className =
             'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
@@ -3290,9 +3292,71 @@ async function salvaSchedaUtente(event) {
         messaggio.classList.remove('hidden');
 
         return;
-
     }
 
+
+    /* ========================================================= */
+    /* DATE ABBONAMENTO */
+    /* ========================================================= */
+
+    let dataInizio = null;
+    let dataFine = null;
+
+
+    /*
+     * Le date sono necessarie SOLO se il cliente
+     * ha un abbonamento.
+     */
+
+    if (tipoAbbonamento !== '') {
+
+        dataInizio =
+            document.getElementById(
+                'campoInizioAbbonamento'
+            ).value || null;
+
+
+        dataFine =
+            document.getElementById(
+                'campoFineAbbonamento'
+            ).value || null;
+
+
+        if (!dataInizio) {
+
+            messaggio.textContent =
+                '⚠️ Inserisci la data di inizio dell\'abbonamento.';
+
+            messaggio.className =
+                'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
+
+            messaggio.classList.remove('hidden');
+
+            return;
+        }
+
+
+        if (
+            dataFine &&
+            dataFine < dataInizio
+        ) {
+
+            messaggio.textContent =
+                '⚠️ La data di fine abbonamento non può essere precedente alla data di inizio.';
+
+            messaggio.className =
+                'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
+
+            messaggio.classList.remove('hidden');
+
+            return;
+        }
+    }
+
+
+    /* ========================================================= */
+    /* DATI DA INVIARE */
+    /* ========================================================= */
 
     const dati = {
 
@@ -3336,19 +3400,19 @@ async function salvaSchedaUtente(event) {
 
         metodo_pagamento:
             document.getElementById('campoMetodoPagamento').value || null
-
     };
 
 
-    bottone.disabled =
-        true;
+    /* ========================================================= */
+    /* SALVATAGGIO */
+    /* ========================================================= */
+
+    bottone.disabled = true;
 
     bottone.textContent =
         '⏳ Salvataggio...';
 
-    messaggio.classList.add(
-        'hidden'
-    );
+    messaggio.classList.add('hidden');
 
 
     try {
@@ -3378,7 +3442,6 @@ async function salvaSchedaUtente(event) {
                 risultato.error ||
                 'Errore durante il salvataggio.'
             );
-
         }
 
 
@@ -3388,9 +3451,7 @@ async function salvaSchedaUtente(event) {
         messaggio.className =
             'px-4 py-3 rounded-xl text-sm text-center bg-green-50 border border-green-200 text-green-700';
 
-        messaggio.classList.remove(
-            'hidden'
-        );
+        messaggio.classList.remove('hidden');
 
 
         const refreshResponse =
@@ -3407,15 +3468,12 @@ async function salvaSchedaUtente(event) {
             compilaScheda(
                 datiUtenteAttuali
             );
-
         }
 
 
         setTimeout(() => {
 
-            messaggio.classList.add(
-                'hidden'
-            );
+            messaggio.classList.add('hidden');
 
         }, 3500);
 
@@ -3428,20 +3486,16 @@ async function salvaSchedaUtente(event) {
         messaggio.className =
             'px-4 py-3 rounded-xl text-sm text-center bg-red-50 border border-red-200 text-red-700';
 
-        messaggio.classList.remove(
-            'hidden'
-        );
+        messaggio.classList.remove('hidden');
+
 
     } finally {
 
-        bottone.disabled =
-            false;
+        bottone.disabled = false;
 
         bottone.textContent =
             '💾 Salva modifiche';
-
     }
-
 }
 
 
